@@ -2,7 +2,6 @@ using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Presentation.Presenters;
 using CourseCore.Api.Modules.Access.Presentation.Requests;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
-using CourseCore.Api.Shared.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Access.Presentation.Controllers;
@@ -30,26 +29,11 @@ public class AreasController : ControllerBase
         GrantUserAreaAccessRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _grantUserAreaAccessUseCase.ExecuteAsync(
-                AccessPresenter.ToInput(request),
-                cancellationToken);
+        var output = await _grantUserAreaAccessUseCase.ExecuteAsync(
+            AccessPresenter.ToInput(request),
+            cancellationToken);
 
-            return Ok(AccessPresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(AccessPresenter.ToResponse(output));
     }
 
     [HttpPost("role-area")]
@@ -57,26 +41,11 @@ public class AreasController : ControllerBase
         GrantRoleAreaAccessRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _grantRoleAreaAccessUseCase.ExecuteAsync(
-                AccessPresenter.ToInput(request),
-                cancellationToken);
+        var output = await _grantRoleAreaAccessUseCase.ExecuteAsync(
+            AccessPresenter.ToInput(request),
+            cancellationToken);
 
-            return Ok(AccessPresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(AccessPresenter.ToResponse(output));
     }
 
     [HttpPost("course/check")]
@@ -84,21 +53,10 @@ public class AreasController : ControllerBase
         CheckCourseAccessRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _checkCourseAccessUseCase.ExecuteAsync(
-                AccessPresenter.ToInput(request),
-                cancellationToken);
+        var output = await _checkCourseAccessUseCase.ExecuteAsync(
+            AccessPresenter.ToInput(request),
+            cancellationToken);
 
-            return Ok(AccessPresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(AccessPresenter.ToResponse(output));
     }
 }

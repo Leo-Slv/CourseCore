@@ -2,7 +2,6 @@ using CourseCore.Api.Modules.Progress.Application.UseCases;
 using CourseCore.Api.Modules.Progress.Presentation.Presenters;
 using CourseCore.Api.Modules.Progress.Presentation.Requests;
 using CourseCore.Api.Modules.Progress.Presentation.Responses;
-using CourseCore.Api.Shared.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Progress.Presentation.Controllers;
@@ -27,30 +26,11 @@ public class ProgressController : ControllerBase
         RegisterLessonProgressRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _registerLessonProgressUseCase.ExecuteAsync(
-                ProgressPresenter.ToInput(request),
-                cancellationToken);
+        var output = await _registerLessonProgressUseCase.ExecuteAsync(
+            ProgressPresenter.ToInput(request),
+            cancellationToken);
 
-            return Ok(ProgressPresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(ProgressPresenter.ToResponse(output));
     }
 
     [HttpPost("courses")]
@@ -58,29 +38,10 @@ public class ProgressController : ControllerBase
         GetCourseProgressRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _getCourseProgressUseCase.ExecuteAsync(
-                ProgressPresenter.ToInput(request),
-                cancellationToken);
+        var output = await _getCourseProgressUseCase.ExecuteAsync(
+            ProgressPresenter.ToInput(request),
+            cancellationToken);
 
-            return Ok(ProgressPresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(ProgressPresenter.ToResponse(output));
     }
 }

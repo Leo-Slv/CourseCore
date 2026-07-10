@@ -2,7 +2,6 @@ using CourseCore.Api.Modules.Users.Application.UseCases;
 using CourseCore.Api.Modules.Users.Presentation.Presenters;
 using CourseCore.Api.Modules.Users.Presentation.Requests;
 using CourseCore.Api.Modules.Users.Presentation.Responses;
-using CourseCore.Api.Shared.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Users.Presentation.Controllers;
@@ -30,24 +29,9 @@ public class UsersController : ControllerBase
         CreateUserRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _createUserUseCase.ExecuteAsync(UserPresenter.ToInput(request), cancellationToken);
+        var output = await _createUserUseCase.ExecuteAsync(UserPresenter.ToInput(request), cancellationToken);
 
-            return Ok(UserPresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(UserPresenter.ToResponse(output));
     }
 
     [HttpPut("{userId:guid}")]
@@ -56,26 +40,11 @@ public class UsersController : ControllerBase
         UpdateUserRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _updateUserUseCase.ExecuteAsync(
-                UserPresenter.ToInput(userId, request),
-                cancellationToken);
+        var output = await _updateUserUseCase.ExecuteAsync(
+            UserPresenter.ToInput(userId, request),
+            cancellationToken);
 
-            return Ok(UserPresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(UserPresenter.ToResponse(output));
     }
 
     [HttpGet]

@@ -3,7 +3,6 @@ using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
-using CourseCore.Api.Shared.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Courses.Presentation.Controllers;
@@ -37,26 +36,11 @@ public class CoursesController : ControllerBase
         CreateCourseRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _createCourseUseCase.ExecuteAsync(
-                CoursePresenter.ToInput(request),
-                cancellationToken);
+        var output = await _createCourseUseCase.ExecuteAsync(
+            CoursePresenter.ToInput(request),
+            cancellationToken);
 
-            return Ok(CoursePresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(CoursePresenter.ToResponse(output));
     }
 
     [HttpPut("{courseId:guid}")]
@@ -65,26 +49,11 @@ public class CoursesController : ControllerBase
         UpdateCourseRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _updateCourseUseCase.ExecuteAsync(
-                CoursePresenter.ToInput(courseId, request),
-                cancellationToken);
+        var output = await _updateCourseUseCase.ExecuteAsync(
+            CoursePresenter.ToInput(courseId, request),
+            cancellationToken);
 
-            return Ok(CoursePresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(CoursePresenter.ToResponse(output));
     }
 
     [HttpPost("{courseId:guid}/publish")]
@@ -92,26 +61,11 @@ public class CoursesController : ControllerBase
         Guid courseId,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _publishCourseUseCase.ExecuteAsync(
-                new PublishCourseInput { CourseId = courseId },
-                cancellationToken);
+        var output = await _publishCourseUseCase.ExecuteAsync(
+            new PublishCourseInput { CourseId = courseId },
+            cancellationToken);
 
-            return Ok(CoursePresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(CoursePresenter.ToResponse(output));
     }
 
     [HttpGet("{courseId:guid}")]
@@ -119,22 +73,11 @@ public class CoursesController : ControllerBase
         Guid courseId,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _getCourseDetailsUseCase.ExecuteAsync(
-                new GetCourseDetailsInput { CourseId = courseId },
-                cancellationToken);
+        var output = await _getCourseDetailsUseCase.ExecuteAsync(
+            new GetCourseDetailsInput { CourseId = courseId },
+            cancellationToken);
 
-            return Ok(CoursePresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        return Ok(CoursePresenter.ToResponse(output));
     }
 
     [HttpGet("available")]
@@ -142,21 +85,10 @@ public class CoursesController : ControllerBase
         [FromQuery] Guid userId,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var output = await _listAvailableCoursesUseCase.ExecuteAsync(
-                new ListAvailableCoursesInput { UserId = userId },
-                cancellationToken);
+        var output = await _listAvailableCoursesUseCase.ExecuteAsync(
+            new ListAvailableCoursesInput { UserId = userId },
+            cancellationToken);
 
-            return Ok(CoursePresenter.ToResponse(output));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (DomainException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok(CoursePresenter.ToResponse(output));
     }
 }
