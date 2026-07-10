@@ -6,6 +6,7 @@ using CourseCore.Api.Modules.Media;
 using CourseCore.Api.Modules.Progress;
 using CourseCore.Api.Modules.Users;
 using CourseCore.Api.Shared;
+using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
 using CourseCore.Api.Shared.Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    await app.SeedCourseCoreDatabaseAsync();
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

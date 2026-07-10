@@ -1,5 +1,6 @@
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
+using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseCore.Api.Shared;
@@ -23,6 +24,9 @@ public static class SharedDependencyInjection
         });
 
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+        services.Configure<AdminSeedOptions>(
+            configuration.GetSection(AdminSeedOptions.SectionName));
+        services.AddScoped<CourseCoreDatabaseSeeder>();
 
         return services;
     }
