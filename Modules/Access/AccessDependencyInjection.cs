@@ -1,3 +1,5 @@
+using CourseCore.Api.Modules.Access.Application.Services;
+using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Repositories;
 
@@ -9,6 +11,10 @@ public static class AccessDependencyInjection
     {
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IAreaRepository, EfAreaRepository>();
+        services.AddScoped<CourseAccessService>();
+        services.AddScoped<GrantUserAreaAccessUseCase>();
+        services.AddScoped<GrantRoleAreaAccessUseCase>();
+        services.AddScoped<CheckCourseAccessUseCase>();
 
         return services;
     }
