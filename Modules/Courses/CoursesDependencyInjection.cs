@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Repositories;
 
@@ -9,6 +10,11 @@ public static class CoursesDependencyInjection
     {
         services.AddScoped<ICourseRepository, EfCourseRepository>();
         services.AddScoped<ILessonRepository, EfLessonRepository>();
+        services.AddScoped<CreateCourseUseCase>();
+        services.AddScoped<UpdateCourseUseCase>();
+        services.AddScoped<PublishCourseUseCase>();
+        services.AddScoped<GetCourseDetailsUseCase>();
+        services.AddScoped<ListAvailableCoursesUseCase>();
 
         return services;
     }
