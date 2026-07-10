@@ -6,6 +6,7 @@ using CourseCore.Api.Modules.Progress.Domain.Entities;
 using CourseCore.Api.Modules.Progress.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Progress.Application.UseCases;
 
@@ -46,26 +47,26 @@ public class RegisterLessonProgressUseCase
 
             if (user is null)
             {
-                throw new InvalidOperationException("User not found.");
+                throw new NotFoundException("User not found.");
             }
 
             if (!user.Active)
             {
-                throw new UnauthorizedAccessException("User is inactive.");
+                throw new ForbiddenException("User is inactive.");
             }
 
             var lesson = await _lessons.FindByIdAsync(input.LessonId, cancellationToken);
 
             if (lesson is null)
             {
-                throw new InvalidOperationException("Lesson not found.");
+                throw new NotFoundException("Lesson not found.");
             }
 
             var course = await FindCourseByLessonAsync(lesson, cancellationToken);
 
             if (course is null)
             {
-                throw new InvalidOperationException("Course not found for lesson.");
+                throw new NotFoundException("Course not found for lesson.");
             }
 
             var access = await _courseAccessService.CanUserAccessCourseAsync(
@@ -75,7 +76,7 @@ public class RegisterLessonProgressUseCase
 
             if (!access.CanAccess)
             {
-                throw new UnauthorizedAccessException("User cannot access this course.");
+                throw new ForbiddenException("User cannot access this course.");
             }
 
             var lessonProgress = await _progress.FindLessonProgressAsync(

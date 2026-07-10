@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Shared.Domain.Exceptions;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Mvc;
@@ -51,7 +52,8 @@ public sealed class ExceptionHandlingMiddleware
             Error = error.Title,
             Message = GetMessage(exception, error),
             TraceId = Activity.Current?.Id ?? context.TraceIdentifier,
-            Timestamp = DateTime.UtcNow
+            Timestamp = DateTime.UtcNow,
+            Details = GetDetails(exception)
         };
 
         await context.Response.WriteAsJsonAsync(response);
@@ -61,6 +63,18 @@ public sealed class ExceptionHandlingMiddleware
     {
         return exception switch
         {
+            ApplicationValidationException => new ErrorDescriptor(
+                StatusCodes.Status400BadRequest,
+                "Bad Request"),
+            NotFoundException => new ErrorDescriptor(
+                StatusCodes.Status404NotFound,
+                "Not Found"),
+            ConflictException => new ErrorDescriptor(
+                StatusCodes.Status409Conflict,
+                "Conflict"),
+            ForbiddenException => new ErrorDescriptor(
+                StatusCodes.Status403Forbidden,
+                "Forbidden"),
             DomainException => new ErrorDescriptor(
                 StatusCodes.Status400BadRequest,
                 "Bad Request"),
@@ -94,6 +108,13 @@ public sealed class ExceptionHandlingMiddleware
         }
 
         return exception.Message;
+    }
+
+    private static IReadOnlyCollection<string> GetDetails(Exception exception)
+    {
+        return exception is ApplicationValidationException validationException
+            ? validationException.Details
+            : Array.Empty<string>();
     }
 
     private sealed record ErrorDescriptor(int StatusCode, string Title);

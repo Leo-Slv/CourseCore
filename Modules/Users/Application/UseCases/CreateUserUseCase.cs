@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Users.Application.DTOs;
 using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
 namespace CourseCore.Api.Modules.Users.Application.UseCases;
@@ -43,7 +44,7 @@ public class CreateUserUseCase
         {
             if (await _users.ExistsByEmailAsync(email, cancellationToken))
             {
-                throw new InvalidOperationException("A user with this email already exists.");
+                throw new ConflictException("A user with this email already exists.");
             }
 
             var passwordHash = _passwordHasher.Hash(input.Password);

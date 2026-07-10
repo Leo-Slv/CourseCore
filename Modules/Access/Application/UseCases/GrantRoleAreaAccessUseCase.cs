@@ -2,6 +2,7 @@ using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Access.Application.UseCases;
 
@@ -34,12 +35,12 @@ public class GrantRoleAreaAccessUseCase
 
             if (role is null)
             {
-                throw new InvalidOperationException("Role not found.");
+                throw new NotFoundException("Role not found.");
             }
 
             if (area is null)
             {
-                throw new InvalidOperationException("Area not found.");
+                throw new NotFoundException("Area not found.");
             }
 
             var access = RoleAreaAccess.Create(

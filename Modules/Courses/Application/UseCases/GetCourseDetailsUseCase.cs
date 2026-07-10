@@ -1,5 +1,6 @@
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
+using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Courses.Application.UseCases;
 
@@ -25,7 +26,7 @@ public class GetCourseDetailsUseCase
 
         if (course is null)
         {
-            throw new InvalidOperationException("Course not found.");
+            throw new NotFoundException("Course not found.");
         }
 
         return CourseDetailsOutput.FromCourse(course);

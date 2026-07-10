@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Access.Application.UseCases;
 
@@ -35,12 +36,12 @@ public class GrantUserAreaAccessUseCase
 
             if (user is null)
             {
-                throw new InvalidOperationException("User not found.");
+                throw new NotFoundException("User not found.");
             }
 
             if (area is null)
             {
-                throw new InvalidOperationException("Area not found.");
+                throw new NotFoundException("Area not found.");
             }
 
             var access = UserAreaAccess.Create(

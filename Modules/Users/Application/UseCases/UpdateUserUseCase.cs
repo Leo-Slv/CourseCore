@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Users.Application.DTOs;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
 namespace CourseCore.Api.Modules.Users.Application.UseCases;
@@ -33,12 +34,12 @@ public class UpdateUserUseCase
 
             if (user is null)
             {
-                throw new InvalidOperationException("User not found.");
+                throw new NotFoundException("User not found.");
             }
 
             if (user.Email != email && await _users.ExistsByEmailAsync(email, cancellationToken))
             {
-                throw new InvalidOperationException("A user with this email already exists.");
+                throw new ConflictException("A user with this email already exists.");
             }
 
             user.ChangeName(input.Name);

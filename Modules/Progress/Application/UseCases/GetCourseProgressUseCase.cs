@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Progress.Application.DTOs;
 using CourseCore.Api.Modules.Progress.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
+using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Progress.Application.UseCases;
 
@@ -43,7 +44,7 @@ public class GetCourseProgressUseCase
 
         if (user is null)
         {
-            throw new InvalidOperationException("User not found.");
+            throw new NotFoundException("User not found.");
         }
 
         var course = await _courses.FindDetailsByIdAsync(input.CourseId, cancellationToken)
@@ -51,7 +52,7 @@ public class GetCourseProgressUseCase
 
         if (course is null)
         {
-            throw new InvalidOperationException("Course not found.");
+            throw new NotFoundException("Course not found.");
         }
 
         var access = await _courseAccessService.CanUserAccessCourseAsync(
@@ -61,7 +62,7 @@ public class GetCourseProgressUseCase
 
         if (!access.CanAccess)
         {
-            throw new UnauthorizedAccessException("User cannot access this course.");
+            throw new ForbiddenException("User cannot access this course.");
         }
 
         var courseProgress = await _progress.FindCourseProgressAsync(

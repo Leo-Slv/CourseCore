@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
 namespace CourseCore.Api.Modules.Courses.Application.UseCases;
@@ -37,12 +38,12 @@ public class UpdateCourseUseCase
 
             if (course is null)
             {
-                throw new InvalidOperationException("Course not found.");
+                throw new NotFoundException("Course not found.");
             }
 
             if (course.Slug != slug && await _courses.ExistsBySlugAsync(slug, cancellationToken))
             {
-                throw new InvalidOperationException("A course with this slug already exists.");
+                throw new ConflictException("A course with this slug already exists.");
             }
 
             course.ChangeTitle(input.Title);

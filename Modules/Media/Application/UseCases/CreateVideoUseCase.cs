@@ -4,6 +4,7 @@ using CourseCore.Api.Modules.Media.Domain.Entities;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Media.Application.UseCases;
 
@@ -36,14 +37,14 @@ public class CreateVideoUseCase
 
             if (lesson is null)
             {
-                throw new InvalidOperationException("Lesson not found.");
+                throw new NotFoundException("Lesson not found.");
             }
 
             var existingVideo = await _videos.FindByLessonIdAsync(input.LessonId, cancellationToken);
 
             if (existingVideo is not null)
             {
-                throw new InvalidOperationException("Lesson already has a video.");
+                throw new ConflictException("A video is already registered for this lesson.");
             }
 
             var video = Video.Create(
