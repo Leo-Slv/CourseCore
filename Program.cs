@@ -8,6 +8,7 @@ using CourseCore.Api.Modules.Users;
 using CourseCore.Api.Shared;
 using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
 using CourseCore.Api.Shared.Presentation.Middleware;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.WithTitle("CourseCore API");
+    });
 
     await app.SeedCourseCoreDatabaseAsync();
 }
