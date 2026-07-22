@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Access.Presentation.Presenters;
 using CourseCore.Api.Modules.Access.Presentation.Requests;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Shared.Application.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,15 +17,18 @@ public class AreasController : ControllerBase
     private readonly GrantUserAreaAccessUseCase _grantUserAreaAccessUseCase;
     private readonly GrantRoleAreaAccessUseCase _grantRoleAreaAccessUseCase;
     private readonly CheckCourseAccessUseCase _checkCourseAccessUseCase;
+    private readonly ICurrentUserService _currentUserService;
 
     public AreasController(
         GrantUserAreaAccessUseCase grantUserAreaAccessUseCase,
         GrantRoleAreaAccessUseCase grantRoleAreaAccessUseCase,
-        CheckCourseAccessUseCase checkCourseAccessUseCase)
+        CheckCourseAccessUseCase checkCourseAccessUseCase,
+        ICurrentUserService currentUserService)
     {
         _grantUserAreaAccessUseCase = grantUserAreaAccessUseCase;
         _grantRoleAreaAccessUseCase = grantRoleAreaAccessUseCase;
         _checkCourseAccessUseCase = checkCourseAccessUseCase;
+        _currentUserService = currentUserService;
     }
 
     [HttpPost("user-area")]
@@ -57,9 +61,21 @@ public class AreasController : ControllerBase
         CancellationToken cancellationToken)
     {
         var output = await _checkCourseAccessUseCase.ExecuteAsync(
-            AccessPresenter.ToInput(request),
+            AccessPresenter.ToInput(GetCurrentUserId(), request),
             cancellationToken);
 
         return Ok(AccessPresenter.ToResponse(output));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userId = _currentUserService.UserId;
+
+        if (userId is null || userId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Authenticated user was not found.");
+        }
+
+        return userId.Value;
     }
 }

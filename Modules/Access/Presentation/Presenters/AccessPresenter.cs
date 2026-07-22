@@ -30,11 +30,11 @@ public static class AccessPresenter
         };
     }
 
-    public static CheckCourseAccessInput ToInput(CheckCourseAccessRequest request)
+    public static CheckCourseAccessInput ToInput(Guid userId, CheckCourseAccessRequest request)
     {
         return new CheckCourseAccessInput
         {
-            UserId = request.UserId,
+            UserId = userId,
             CourseId = request.CourseId
         };
     }

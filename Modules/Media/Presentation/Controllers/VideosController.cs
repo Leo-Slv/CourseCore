@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Requests;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
+using CourseCore.Api.Shared.Application.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,13 +16,16 @@ public class VideosController : ControllerBase
 {
     private readonly CreateVideoUseCase _createVideoUseCase;
     private readonly RequestVideoPlaybackUseCase _requestVideoPlaybackUseCase;
+    private readonly ICurrentUserService _currentUserService;
 
     public VideosController(
         CreateVideoUseCase createVideoUseCase,
-        RequestVideoPlaybackUseCase requestVideoPlaybackUseCase)
+        RequestVideoPlaybackUseCase requestVideoPlaybackUseCase,
+        ICurrentUserService currentUserService)
     {
         _createVideoUseCase = createVideoUseCase;
         _requestVideoPlaybackUseCase = requestVideoPlaybackUseCase;
+        _currentUserService = currentUserService;
     }
 
     [HttpPost]
@@ -43,9 +47,21 @@ public class VideosController : ControllerBase
         CancellationToken cancellationToken)
     {
         var output = await _requestVideoPlaybackUseCase.ExecuteAsync(
-            VideoPresenter.ToInput(request),
+            VideoPresenter.ToInput(GetCurrentUserId(), request),
             cancellationToken);
 
         return Ok(VideoPresenter.ToResponse(output));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userId = _currentUserService.UserId;
+
+        if (userId is null || userId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Authenticated user was not found.");
+        }
+
+        return userId.Value;
     }
 }

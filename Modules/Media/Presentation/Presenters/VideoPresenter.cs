@@ -22,11 +22,11 @@ public static class VideoPresenter
         };
     }
 
-    public static RequestVideoPlaybackInput ToInput(RequestVideoPlaybackRequest request)
+    public static RequestVideoPlaybackInput ToInput(Guid userId, RequestVideoPlaybackRequest request)
     {
         return new RequestVideoPlaybackInput
         {
-            UserId = request.UserId,
+            UserId = userId,
             VideoId = request.VideoId
         };
     }

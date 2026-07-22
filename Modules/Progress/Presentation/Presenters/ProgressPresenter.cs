@@ -6,22 +6,22 @@ namespace CourseCore.Api.Modules.Progress.Presentation.Presenters;
 
 public static class ProgressPresenter
 {
-    public static RegisterLessonProgressInput ToInput(RegisterLessonProgressRequest request)
+    public static RegisterLessonProgressInput ToInput(Guid userId, RegisterLessonProgressRequest request)
     {
         return new RegisterLessonProgressInput
         {
-            UserId = request.UserId,
+            UserId = userId,
             LessonId = request.LessonId,
             WatchedSeconds = request.WatchedSeconds,
             MarkAsCompleted = request.MarkAsCompleted
         };
     }
 
-    public static GetCourseProgressInput ToInput(GetCourseProgressRequest request)
+    public static GetCourseProgressInput ToInput(Guid userId, GetCourseProgressRequest request)
     {
         return new GetCourseProgressInput
         {
-            UserId = request.UserId,
+            UserId = userId,
             CourseId = request.CourseId
         };
     }

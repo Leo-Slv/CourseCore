@@ -4,6 +4,7 @@ using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
+using CourseCore.Api.Shared.Application.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,19 +20,22 @@ public class CoursesController : ControllerBase
     private readonly PublishCourseUseCase _publishCourseUseCase;
     private readonly GetCourseDetailsUseCase _getCourseDetailsUseCase;
     private readonly ListAvailableCoursesUseCase _listAvailableCoursesUseCase;
+    private readonly ICurrentUserService _currentUserService;
 
     public CoursesController(
         CreateCourseUseCase createCourseUseCase,
         UpdateCourseUseCase updateCourseUseCase,
         PublishCourseUseCase publishCourseUseCase,
         GetCourseDetailsUseCase getCourseDetailsUseCase,
-        ListAvailableCoursesUseCase listAvailableCoursesUseCase)
+        ListAvailableCoursesUseCase listAvailableCoursesUseCase,
+        ICurrentUserService currentUserService)
     {
         _createCourseUseCase = createCourseUseCase;
         _updateCourseUseCase = updateCourseUseCase;
         _publishCourseUseCase = publishCourseUseCase;
         _getCourseDetailsUseCase = getCourseDetailsUseCase;
         _listAvailableCoursesUseCase = listAvailableCoursesUseCase;
+        _currentUserService = currentUserService;
     }
 
     [HttpPost]
@@ -88,13 +92,24 @@ public class CoursesController : ControllerBase
 
     [HttpGet("available")]
     public async Task<ActionResult<IReadOnlyCollection<CourseListItemResponse>>> ListAvailableAsync(
-        [FromQuery] Guid userId,
         CancellationToken cancellationToken)
     {
         var output = await _listAvailableCoursesUseCase.ExecuteAsync(
-            new ListAvailableCoursesInput { UserId = userId },
+            new ListAvailableCoursesInput { UserId = GetCurrentUserId() },
             cancellationToken);
 
         return Ok(CoursePresenter.ToResponse(output));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userId = _currentUserService.UserId;
+
+        if (userId is null || userId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Authenticated user was not found.");
+        }
+
+        return userId.Value;
     }
 }
