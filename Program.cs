@@ -8,6 +8,7 @@ using CourseCore.Api.Modules.Users;
 using CourseCore.Api.Shared;
 using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
 using CourseCore.Api.Shared.Presentation.Middleware;
+using CourseCore.Api.Shared.Presentation.OpenApi;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+});
 builder.Services.AddSharedInfrastructure(builder.Configuration);
 builder.Services.AddAuthModule(builder.Configuration);
 builder.Services.AddUsersModule();
