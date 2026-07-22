@@ -1,13 +1,16 @@
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Requests;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Media.Presentation.Controllers;
 
 [ApiController]
 [Route("api/videos")]
+[Authorize]
 public class VideosController : ControllerBase
 {
     private readonly CreateVideoUseCase _createVideoUseCase;
@@ -22,6 +25,7 @@ public class VideosController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
     public async Task<ActionResult<VideoResponse>> CreateAsync(
         CreateVideoRequest request,
         CancellationToken cancellationToken)

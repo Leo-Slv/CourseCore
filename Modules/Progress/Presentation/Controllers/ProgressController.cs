@@ -2,12 +2,14 @@ using CourseCore.Api.Modules.Progress.Application.UseCases;
 using CourseCore.Api.Modules.Progress.Presentation.Presenters;
 using CourseCore.Api.Modules.Progress.Presentation.Requests;
 using CourseCore.Api.Modules.Progress.Presentation.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Progress.Presentation.Controllers;
 
 [ApiController]
 [Route("api/progress")]
+[Authorize]
 public class ProgressController : ControllerBase
 {
     private readonly RegisterLessonProgressUseCase _registerLessonProgressUseCase;

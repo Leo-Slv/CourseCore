@@ -1,13 +1,16 @@
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Users.Application.UseCases;
 using CourseCore.Api.Modules.Users.Presentation.Presenters;
 using CourseCore.Api.Modules.Users.Presentation.Requests;
 using CourseCore.Api.Modules.Users.Presentation.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Users.Presentation.Controllers;
 
 [ApiController]
 [Route("api/users")]
+[Authorize(Policy = AuthPolicyNames.ManageUsers)]
 public class UsersController : ControllerBase
 {
     private readonly CreateUserUseCase _createUserUseCase;

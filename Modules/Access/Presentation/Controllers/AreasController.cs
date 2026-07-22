@@ -2,12 +2,15 @@ using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Presentation.Presenters;
 using CourseCore.Api.Modules.Access.Presentation.Requests;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
+using CourseCore.Api.Modules.Auth.Application.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Access.Presentation.Controllers;
 
 [ApiController]
 [Route("api/access")]
+[Authorize(Policy = AuthPolicyNames.ManageAccess)]
 public class AreasController : ControllerBase
 {
     private readonly GrantUserAreaAccessUseCase _grantUserAreaAccessUseCase;

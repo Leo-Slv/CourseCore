@@ -1,5 +1,6 @@
 using System.Text;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,7 +40,44 @@ public static class AuthDependencyInjection
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(AuthPolicyNames.AdminOnly, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole(AuthRoleNames.Admin);
+            });
+
+            options.AddPolicy(AuthPolicyNames.ManageUsers, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole(AuthRoleNames.Admin);
+            });
+
+            options.AddPolicy(AuthPolicyNames.ManageAccess, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole(AuthRoleNames.Admin);
+            });
+
+            options.AddPolicy(AuthPolicyNames.ManageCourses, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole(AuthRoleNames.Admin);
+            });
+
+            options.AddPolicy(AuthPolicyNames.ManageVideos, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole(AuthRoleNames.Admin);
+            });
+
+            options.AddPolicy(AuthPolicyNames.ReadProgress, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole(AuthRoleNames.Admin);
+            });
+        });
 
         return services;
     }

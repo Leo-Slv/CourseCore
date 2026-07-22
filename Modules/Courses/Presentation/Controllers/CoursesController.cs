@@ -1,14 +1,17 @@
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseCore.Api.Modules.Courses.Presentation.Controllers;
 
 [ApiController]
 [Route("api/courses")]
+[Authorize]
 public class CoursesController : ControllerBase
 {
     private readonly CreateCourseUseCase _createCourseUseCase;
@@ -32,6 +35,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     public async Task<ActionResult<CourseResponse>> CreateAsync(
         CreateCourseRequest request,
         CancellationToken cancellationToken)
@@ -44,6 +48,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpPut("{courseId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     public async Task<ActionResult<CourseResponse>> UpdateAsync(
         Guid courseId,
         UpdateCourseRequest request,
@@ -57,6 +62,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpPost("{courseId:guid}/publish")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     public async Task<ActionResult<CourseResponse>> PublishAsync(
         Guid courseId,
         CancellationToken cancellationToken)

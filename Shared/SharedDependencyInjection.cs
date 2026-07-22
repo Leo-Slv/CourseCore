@@ -1,6 +1,7 @@
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
 using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
+using CourseCore.Api.Shared.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseCore.Api.Shared;
@@ -23,6 +24,8 @@ public static class SharedDependencyInjection
             options.UseNpgsql(connectionString);
         });
 
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.Configure<AdminSeedOptions>(
             configuration.GetSection(AdminSeedOptions.SectionName));
