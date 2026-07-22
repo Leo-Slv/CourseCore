@@ -8,8 +8,4 @@ public interface ITokenService
         User user,
         IReadOnlyCollection<string> roles,
         CancellationToken cancellationToken = default);
-
-    Task<Guid?> ValidateRefreshTokenAsync(
-        string refreshToken,
-        CancellationToken cancellationToken = default);
 }

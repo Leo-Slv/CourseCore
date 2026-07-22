@@ -50,16 +50,6 @@ public class JwtTokenService : ITokenService
         return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
     }
 
-    public Task<Guid?> ValidateRefreshTokenAsync(
-        string refreshToken,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // TODO: Persist and validate refresh tokens if the project adds long-lived sessions.
-        return Task.FromResult<Guid?>(null);
-    }
-
     internal static void ValidateOptions(JwtOptions options)
     {
         if (string.IsNullOrWhiteSpace(options.Issuer))
@@ -80,6 +70,11 @@ public class JwtTokenService : ITokenService
         if (options.AccessTokenExpirationMinutes <= 0)
         {
             throw new InvalidOperationException("JWT access token expiration must be greater than zero.");
+        }
+
+        if (options.RefreshTokenExpirationDays <= 0)
+        {
+            throw new InvalidOperationException("JWT refresh token expiration must be greater than zero.");
         }
     }
 }

@@ -1,5 +1,6 @@
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.AuditLogs.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Auth.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Progress.Infrastructure.Persistence.Models;
@@ -16,6 +17,8 @@ public class CourseCoreDbContext : DbContext
     }
 
     public DbSet<UserPersistenceModel> Users => Set<UserPersistenceModel>();
+
+    public DbSet<RefreshTokenPersistenceModel> RefreshTokens => Set<RefreshTokenPersistenceModel>();
 
     public DbSet<RolePersistenceModel> Roles => Set<RolePersistenceModel>();
 

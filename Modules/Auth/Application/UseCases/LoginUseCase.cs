@@ -1,9 +1,12 @@
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Auth.Application.DTOs;
+using CourseCore.Api.Modules.Auth.Domain.Entities;
+using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
+using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 using Microsoft.Extensions.Options;
 
@@ -15,6 +18,10 @@ public class LoginUseCase
     private readonly IRoleRepository _roles;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly IRefreshTokenRepository _refreshTokens;
+    private readonly IRefreshTokenHasher _refreshTokenHasher;
+    private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly JwtOptions _jwtOptions;
 
     public LoginUseCase(
@@ -22,12 +29,20 @@ public class LoginUseCase
         IRoleRepository roles,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
+        IRefreshTokenRepository refreshTokens,
+        IRefreshTokenHasher refreshTokenHasher,
+        IRefreshTokenGenerator refreshTokenGenerator,
+        IUnitOfWork unitOfWork,
         IOptions<JwtOptions> jwtOptions)
     {
         _users = users;
         _roles = roles;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
+        _refreshTokens = refreshTokens;
+        _refreshTokenHasher = refreshTokenHasher;
+        _refreshTokenGenerator = refreshTokenGenerator;
+        _unitOfWork = unitOfWork;
         _jwtOptions = jwtOptions.Value;
     }
 
@@ -51,6 +66,19 @@ public class LoginUseCase
         var roles = await _roles.FindByUserIdAsync(user.Id, cancellationToken);
         var roleNames = roles.Select(role => role.Name).ToArray();
         var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, cancellationToken);
+        var refreshToken = _refreshTokenGenerator.Generate();
+        var refreshTokenHash = _refreshTokenHasher.Hash(refreshToken);
+        var now = DateTime.UtcNow;
+
+        await _unitOfWork.ExecuteAsync(
+            () => _refreshTokens.AddAsync(
+                RefreshToken.Create(
+                    user.Id,
+                    refreshTokenHash,
+                    now.AddDays(_jwtOptions.RefreshTokenExpirationDays),
+                    now),
+                cancellationToken),
+            cancellationToken);
 
         return new AuthOutput
         {
@@ -61,8 +89,8 @@ public class LoginUseCase
             Token = new AuthToken
             {
                 AccessToken = accessToken,
-                RefreshToken = null,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes)
+                RefreshToken = refreshToken,
+                ExpiresAt = now.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes)
             }
         };
     }

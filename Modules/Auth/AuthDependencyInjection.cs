@@ -2,6 +2,8 @@ using System.Text;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
+using CourseCore.Api.Modules.Auth.Domain.Repositories;
+using CourseCore.Api.Modules.Auth.Infrastructure.Persistence.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +22,9 @@ public static class AuthDependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IRefreshTokenHasher, Sha256RefreshTokenHasher>();
+        services.AddScoped<IRefreshTokenGenerator, SecureRefreshTokenGenerator>();
+        services.AddScoped<IRefreshTokenRepository, EfRefreshTokenRepository>();
         services.AddScoped<LoginUseCase>();
         services.AddScoped<RefreshTokenUseCase>();
 
