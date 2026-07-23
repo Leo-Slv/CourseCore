@@ -56,6 +56,15 @@ public static class CoursePresenter
         };
     }
 
+    public static GetCourseDetailsInput ToGetCourseDetailsInput(Guid courseId, Guid userId)
+    {
+        return new GetCourseDetailsInput
+        {
+            UserId = userId,
+            CourseId = courseId
+        };
+    }
+
     public static CourseResponse ToResponse(CourseOutput output)
     {
         return new CourseResponse

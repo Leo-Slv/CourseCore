@@ -1,5 +1,6 @@
 using System.Text;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -24,6 +25,64 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
     private const string JwtSecretKey = "integration-test-secret-key-32-characters-minimum";
 
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
+
+    public async Task<Guid> SeedPublishedCourseAsync(bool grantAdminAccess)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var adminUser = await dbContext.Users.SingleAsync(user => user.Email == AdminEmail);
+        var now = DateTime.UtcNow;
+        var area = new AreaPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Integration Area",
+            Slug = $"integration-area-{Guid.NewGuid():N}",
+            Description = "Integration test area",
+            Active = true,
+            DisplayOrder = 0,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        var course = new CoursePersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            Title = "Integration Course",
+            Slug = $"integration-course-{Guid.NewGuid():N}",
+            Description = "Integration test course",
+            Published = true,
+            DisplayOrder = 0,
+            PublishedAt = now,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        dbContext.Areas.Add(area);
+        dbContext.Courses.Add(course);
+        dbContext.CourseAreas.Add(new CourseAreaPersistenceModel
+        {
+            CourseId = course.Id,
+            AreaId = area.Id,
+            CreatedAt = now
+        });
+
+        if (grantAdminAccess)
+        {
+            dbContext.UserAreaAccesses.Add(new UserAreaAccessPersistenceModel
+            {
+                Id = Guid.NewGuid(),
+                UserId = adminUser.Id,
+                AreaId = area.Id,
+                CanView = true,
+                CanManage = false,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        return course.Id;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

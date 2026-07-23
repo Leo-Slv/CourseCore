@@ -115,7 +115,7 @@ public class CoursesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var output = await _getCourseDetailsUseCase.ExecuteAsync(
-            new GetCourseDetailsInput { CourseId = courseId },
+            CoursePresenter.ToGetCourseDetailsInput(courseId, GetCurrentUserId()),
             cancellationToken);
 
         return Ok(CoursePresenter.ToResponse(output));
