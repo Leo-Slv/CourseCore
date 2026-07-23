@@ -9,6 +9,8 @@ public interface ICourseRepository
 
     Task<Course?> FindDetailsByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<Course?> FindByLessonIdAsync(Guid lessonId, CancellationToken cancellationToken = default);
+
     Task<Course?> FindBySlugAsync(Slug slug, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<Course>> ListAsync(CancellationToken cancellationToken = default);

@@ -62,7 +62,7 @@ public class RegisterLessonProgressUseCase
                 throw new NotFoundException("Lesson not found.");
             }
 
-            var course = await FindCourseByLessonAsync(lesson, cancellationToken);
+            var course = await _courses.FindByLessonIdAsync(lesson.Id, cancellationToken);
 
             if (course is null)
             {
@@ -116,32 +116,6 @@ public class RegisterLessonProgressUseCase
 
             return LessonProgressOutput.FromProgress(lessonProgress);
         }, cancellationToken);
-    }
-
-    private async Task<Course?> FindCourseByLessonAsync(
-        Lesson lesson,
-        CancellationToken cancellationToken)
-    {
-        var courses = await _courses.ListAsync(cancellationToken);
-
-        foreach (var course in courses)
-        {
-            var details = await _courses.FindDetailsByIdAsync(course.Id, cancellationToken);
-
-            if (details is not null && ContainsLesson(details, lesson))
-            {
-                return details;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool ContainsLesson(Course course, Lesson lesson)
-    {
-        return course.Modules.Any(module =>
-            module.Id == lesson.ModuleId ||
-            module.Lessons.Any(moduleLesson => moduleLesson.Id == lesson.Id));
     }
 
     private static decimal CalculateProgressPercent(

@@ -35,6 +35,17 @@ public class EfCourseRepository : ICourseRepository
         return model is null ? null : CourseMapper.ToDomain(model);
     }
 
+    public async Task<Course?> FindByLessonIdAsync(Guid lessonId, CancellationToken cancellationToken = default)
+    {
+        var model = await CourseDetailsQuery()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                course => course.Modules.Any(module => module.Lessons.Any(lesson => lesson.Id == lessonId)),
+                cancellationToken);
+
+        return model is null ? null : CourseMapper.ToDomain(model);
+    }
+
     public async Task<Course?> FindBySlugAsync(Slug slug, CancellationToken cancellationToken = default)
     {
         var model = await CourseQuery()

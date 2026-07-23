@@ -2,6 +2,8 @@ using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
+using CourseCore.Api.Modules.Progress.Domain.Entities;
+using CourseCore.Api.Modules.Progress.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Domain.ValueObjects;
@@ -187,6 +189,12 @@ public sealed class FakeCourseRepository : ICourseRepository
 {
     public List<Course> Courses { get; } = [];
 
+    public int FindByLessonIdCalls { get; private set; }
+
+    public int FindDetailsByIdCalls { get; private set; }
+
+    public int ListCalls { get; private set; }
+
     public Task<Course?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(Courses.FirstOrDefault(course => course.Id == id));
@@ -194,7 +202,17 @@ public sealed class FakeCourseRepository : ICourseRepository
 
     public Task<Course?> FindDetailsByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        FindDetailsByIdCalls++;
+
         return FindByIdAsync(id, cancellationToken);
+    }
+
+    public Task<Course?> FindByLessonIdAsync(Guid lessonId, CancellationToken cancellationToken = default)
+    {
+        FindByLessonIdCalls++;
+
+        return Task.FromResult(Courses.FirstOrDefault(course =>
+            course.Modules.Any(module => module.Lessons.Any(lesson => lesson.Id == lessonId))));
     }
 
     public Task<Course?> FindBySlugAsync(Slug slug, CancellationToken cancellationToken = default)
@@ -204,6 +222,8 @@ public sealed class FakeCourseRepository : ICourseRepository
 
     public Task<IReadOnlyCollection<Course>> ListAsync(CancellationToken cancellationToken = default)
     {
+        ListCalls++;
+
         return Task.FromResult<IReadOnlyCollection<Course>>(Courses.ToArray());
     }
 
@@ -237,5 +257,85 @@ public sealed class FakeCourseRepository : ICourseRepository
     public Task<bool> ExistsBySlugAsync(Slug slug, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(Courses.Any(course => course.Slug == slug));
+    }
+}
+
+public sealed class FakeLessonRepository : ILessonRepository
+{
+    public List<Lesson> Lessons { get; } = [];
+
+    public Task<Lesson?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Lessons.FirstOrDefault(lesson => lesson.Id == id));
+    }
+
+    public Task<IReadOnlyCollection<Lesson>> ListByModuleIdAsync(Guid moduleId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<Lesson>>(
+            Lessons.Where(lesson => lesson.ModuleId == moduleId).ToArray());
+    }
+
+    public Task<IReadOnlyCollection<Lesson>> ListByCourseIdAsync(Guid courseId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<Lesson>>([]);
+    }
+}
+
+public sealed class FakeProgressRepository : IProgressRepository
+{
+    private readonly Dictionary<(Guid UserId, Guid LessonId), UserLessonProgress> _lessonProgresses = [];
+    private readonly Dictionary<(Guid UserId, Guid CourseId), UserCourseProgress> _courseProgresses = [];
+
+    public List<UserLessonProgress> SavedLessonProgresses { get; } = [];
+
+    public List<UserCourseProgress> SavedCourseProgresses { get; } = [];
+
+    public Task<UserLessonProgress?> FindLessonProgressAsync(
+        Guid userId,
+        Guid lessonId,
+        CancellationToken cancellationToken = default)
+    {
+        _lessonProgresses.TryGetValue((userId, lessonId), out var progress);
+
+        return Task.FromResult(progress);
+    }
+
+    public Task<UserCourseProgress?> FindCourseProgressAsync(
+        Guid userId,
+        Guid courseId,
+        CancellationToken cancellationToken = default)
+    {
+        _courseProgresses.TryGetValue((userId, courseId), out var progress);
+
+        return Task.FromResult(progress);
+    }
+
+    public Task<IReadOnlyCollection<UserLessonProgress>> ListLessonProgressByCourseAsync(
+        Guid userId,
+        Guid courseId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<UserLessonProgress>>(
+            _lessonProgresses.Values.Where(progress => progress.UserId == userId).ToArray());
+    }
+
+    public Task SaveLessonProgressAsync(
+        UserLessonProgress progress,
+        CancellationToken cancellationToken = default)
+    {
+        SavedLessonProgresses.Add(progress);
+        _lessonProgresses[(progress.UserId, progress.LessonId)] = progress;
+
+        return Task.CompletedTask;
+    }
+
+    public Task SaveCourseProgressAsync(
+        UserCourseProgress progress,
+        CancellationToken cancellationToken = default)
+    {
+        SavedCourseProgresses.Add(progress);
+        _courseProgresses[(progress.UserId, progress.CourseId)] = progress;
+
+        return Task.CompletedTask;
     }
 }

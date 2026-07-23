@@ -1,5 +1,4 @@
 using CourseCore.Api.Modules.Access.Application.Services;
-using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Application.DTOs;
@@ -64,7 +63,7 @@ public class RequestVideoPlaybackUseCase
             throw new NotFoundException("Lesson not found.");
         }
 
-        var course = await FindCourseByLessonAsync(lesson, cancellationToken);
+        var course = await _courses.FindByLessonIdAsync(lesson.Id, cancellationToken);
 
         if (course is null)
         {
@@ -92,31 +91,5 @@ public class RequestVideoPlaybackUseCase
             DurationSeconds = video.DurationSeconds,
             Status = video.Status.ToString()
         };
-    }
-
-    private async Task<Course?> FindCourseByLessonAsync(
-        Lesson lesson,
-        CancellationToken cancellationToken)
-    {
-        var courses = await _courses.ListAsync(cancellationToken);
-
-        foreach (var course in courses)
-        {
-            var details = await _courses.FindDetailsByIdAsync(course.Id, cancellationToken);
-
-            if (details is not null && ContainsLesson(details, lesson))
-            {
-                return details;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool ContainsLesson(Course course, Lesson lesson)
-    {
-        return course.Modules.Any(module =>
-            module.Id == lesson.ModuleId ||
-            module.Lessons.Any(moduleLesson => moduleLesson.Id == lesson.Id));
     }
 }
