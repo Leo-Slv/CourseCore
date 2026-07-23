@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,6 +41,13 @@ public class CoursesController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = AuthPolicyNames.ManageCourses)]
+    [ProducesResponseType(typeof(CourseResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CourseResponse>> CreateAsync(
         CreateCourseRequest request,
         CancellationToken cancellationToken)
@@ -47,12 +55,23 @@ public class CoursesController : ControllerBase
         var output = await _createCourseUseCase.ExecuteAsync(
             CoursePresenter.ToInput(request),
             cancellationToken);
+        var response = CoursePresenter.ToResponse(output);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return CreatedAtAction(
+            nameof(GetDetailsAsync),
+            new { courseId = response.Id },
+            response);
     }
 
     [HttpPut("{courseId:guid}")]
     [Authorize(Policy = AuthPolicyNames.ManageCourses)]
+    [ProducesResponseType(typeof(CourseResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CourseResponse>> UpdateAsync(
         Guid courseId,
         UpdateCourseRequest request,
@@ -67,6 +86,12 @@ public class CoursesController : ControllerBase
 
     [HttpPost("{courseId:guid}/publish")]
     [Authorize(Policy = AuthPolicyNames.ManageCourses)]
+    [ProducesResponseType(typeof(CourseResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CourseResponse>> PublishAsync(
         Guid courseId,
         CancellationToken cancellationToken)
@@ -79,6 +104,12 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet("{courseId:guid}")]
+    [ProducesResponseType(typeof(CourseDetailsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CourseDetailsResponse>> GetDetailsAsync(
         Guid courseId,
         CancellationToken cancellationToken)
@@ -91,6 +122,11 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet("available")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<CourseListItemResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IReadOnlyCollection<CourseListItemResponse>>> ListAvailableAsync(
         CancellationToken cancellationToken)
     {

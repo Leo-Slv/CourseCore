@@ -4,6 +4,7 @@ using CourseCore.Api.Modules.Access.Presentation.Requests;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,6 +33,12 @@ public class AreasController : ControllerBase
     }
 
     [HttpPost("user-area")]
+    [ProducesResponseType(typeof(AreaAccessResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AreaAccessResponse>> GrantUserAreaAccessAsync(
         GrantUserAreaAccessRequest request,
         CancellationToken cancellationToken)
@@ -44,6 +51,12 @@ public class AreasController : ControllerBase
     }
 
     [HttpPost("role-area")]
+    [ProducesResponseType(typeof(AreaAccessResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AreaAccessResponse>> GrantRoleAreaAccessAsync(
         GrantRoleAreaAccessRequest request,
         CancellationToken cancellationToken)
@@ -56,6 +69,11 @@ public class AreasController : ControllerBase
     }
 
     [HttpPost("course/check")]
+    [ProducesResponseType(typeof(CourseAccessResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CourseAccessResponse>> CheckCourseAccessAsync(
         CheckCourseAccessRequest request,
         CancellationToken cancellationToken)

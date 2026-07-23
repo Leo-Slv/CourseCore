@@ -4,6 +4,7 @@ using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Requests;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,6 +31,13 @@ public class VideosController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(VideoResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<VideoResponse>> CreateAsync(
         CreateVideoRequest request,
         CancellationToken cancellationToken)
@@ -37,11 +45,19 @@ public class VideosController : ControllerBase
         var output = await _createVideoUseCase.ExecuteAsync(
             VideoPresenter.ToInput(request),
             cancellationToken);
+        var response = VideoPresenter.ToResponse(output);
 
-        return Ok(VideoPresenter.ToResponse(output));
+        return Created($"/api/videos/{response.Id}", response);
     }
 
     [HttpPost("playback")]
+    [ProducesResponseType(typeof(VideoPlaybackResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<VideoPlaybackResponse>> RequestPlaybackAsync(
         RequestVideoPlaybackRequest request,
         CancellationToken cancellationToken)

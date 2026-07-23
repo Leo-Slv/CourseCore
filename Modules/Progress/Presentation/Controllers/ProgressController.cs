@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Progress.Presentation.Presenters;
 using CourseCore.Api.Modules.Progress.Presentation.Requests;
 using CourseCore.Api.Modules.Progress.Presentation.Responses;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,6 +29,12 @@ public class ProgressController : ControllerBase
     }
 
     [HttpPost("lessons")]
+    [ProducesResponseType(typeof(LessonProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<LessonProgressResponse>> RegisterLessonProgressAsync(
         RegisterLessonProgressRequest request,
         CancellationToken cancellationToken)
@@ -40,6 +47,12 @@ public class ProgressController : ControllerBase
     }
 
     [HttpPost("courses")]
+    [ProducesResponseType(typeof(CourseProgressResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CourseProgressResponse>> GetCourseProgressAsync(
         GetCourseProgressRequest request,
         CancellationToken cancellationToken)
