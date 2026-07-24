@@ -10,6 +10,8 @@ public sealed class ApiErrorResponse
 
     public string TraceId { get; init; } = string.Empty;
 
+    public string CorrelationId { get; init; } = string.Empty;
+
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
 
     public IReadOnlyCollection<string> Details { get; init; } = Array.Empty<string>();

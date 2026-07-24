@@ -8,6 +8,7 @@ using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Auth.Application.UseCases;
@@ -23,6 +24,7 @@ public class LoginUseCase
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly JwtOptions _jwtOptions;
+    private readonly ILogger<LoginUseCase> _logger;
 
     public LoginUseCase(
         IUserRepository users,
@@ -33,7 +35,8 @@ public class LoginUseCase
         IRefreshTokenHasher refreshTokenHasher,
         IRefreshTokenGenerator refreshTokenGenerator,
         IUnitOfWork unitOfWork,
-        IOptions<JwtOptions> jwtOptions)
+        IOptions<JwtOptions> jwtOptions,
+        ILogger<LoginUseCase> logger)
     {
         _users = users;
         _roles = roles;
@@ -44,6 +47,7 @@ public class LoginUseCase
         _refreshTokenGenerator = refreshTokenGenerator;
         _unitOfWork = unitOfWork;
         _jwtOptions = jwtOptions.Value;
+        _logger = logger;
     }
 
     public async Task<AuthOutput> ExecuteAsync(
@@ -52,6 +56,7 @@ public class LoginUseCase
     {
         if (string.IsNullOrWhiteSpace(input.Email) || string.IsNullOrWhiteSpace(input.Password))
         {
+            _logger.LogWarning("Login attempt rejected because credentials were incomplete.");
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
@@ -60,6 +65,7 @@ public class LoginUseCase
 
         if (user is null || !user.Active || !_passwordHasher.Verify(input.Password, user.PasswordHash))
         {
+            _logger.LogWarning("Login attempt rejected with invalid credentials.");
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
@@ -79,6 +85,8 @@ public class LoginUseCase
                     now),
                 cancellationToken),
             cancellationToken);
+
+        _logger.LogInformation("User {UserId} signed in successfully.", user.Id);
 
         return new AuthOutput
         {

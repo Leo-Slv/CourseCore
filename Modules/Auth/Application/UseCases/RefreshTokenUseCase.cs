@@ -6,6 +6,7 @@ using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Auth.Application.UseCases;
@@ -20,6 +21,7 @@ public class RefreshTokenUseCase
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly JwtOptions _jwtOptions;
+    private readonly ILogger<RefreshTokenUseCase> _logger;
 
     public RefreshTokenUseCase(
         IUserRepository users,
@@ -29,7 +31,8 @@ public class RefreshTokenUseCase
         IRefreshTokenHasher refreshTokenHasher,
         IRefreshTokenGenerator refreshTokenGenerator,
         IUnitOfWork unitOfWork,
-        IOptions<JwtOptions> jwtOptions)
+        IOptions<JwtOptions> jwtOptions,
+        ILogger<RefreshTokenUseCase> logger)
     {
         _users = users;
         _roles = roles;
@@ -39,6 +42,7 @@ public class RefreshTokenUseCase
         _refreshTokenGenerator = refreshTokenGenerator;
         _unitOfWork = unitOfWork;
         _jwtOptions = jwtOptions.Value;
+        _logger = logger;
     }
 
     public async Task<AuthOutput> ExecuteAsync(
@@ -47,6 +51,7 @@ public class RefreshTokenUseCase
     {
         if (string.IsNullOrWhiteSpace(refreshToken))
         {
+            _logger.LogWarning("Refresh token request rejected because the token was missing.");
             throw new UnauthorizedAccessException("Invalid refresh token.");
         }
 
@@ -57,6 +62,7 @@ public class RefreshTokenUseCase
 
         if (persistedRefreshToken is null || !persistedRefreshToken.IsActive)
         {
+            _logger.LogWarning("Refresh token request rejected because the token is invalid or inactive.");
             throw new UnauthorizedAccessException("Invalid refresh token.");
         }
 
@@ -64,6 +70,7 @@ public class RefreshTokenUseCase
 
         if (user is null || !user.Active)
         {
+            _logger.LogWarning("Refresh token request rejected because the user is invalid or inactive.");
             throw new UnauthorizedAccessException("Invalid refresh token.");
         }
 
@@ -87,6 +94,8 @@ public class RefreshTokenUseCase
                     now),
                 cancellationToken);
         }, cancellationToken);
+
+        _logger.LogInformation("Refresh token rotated successfully for user {UserId}.", user.Id);
 
         return new AuthOutput
         {

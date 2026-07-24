@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Shared.Domain.Exceptions;
+using CourseCore.Api.Shared.Presentation.Observability;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,11 +38,27 @@ public sealed class ExceptionHandlingMiddleware
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var error = MapException(exception);
+        var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
+        var correlationId = CorrelationIdConstants.GetFromItems(context) ?? string.Empty;
 
-        _logger.LogError(
-            exception,
-            "Unhandled exception handled by middleware. TraceId: {TraceId}",
-            Activity.Current?.Id ?? context.TraceIdentifier);
+        if (error.StatusCode >= StatusCodes.Status500InternalServerError)
+        {
+            _logger.LogError(
+                exception,
+                "Unhandled exception handled by middleware. StatusCode: {StatusCode} TraceId: {TraceId} CorrelationId: {CorrelationId}",
+                error.StatusCode,
+                traceId,
+                correlationId);
+        }
+        else
+        {
+            _logger.LogWarning(
+                exception,
+                "Application exception handled by middleware. StatusCode: {StatusCode} TraceId: {TraceId} CorrelationId: {CorrelationId}",
+                error.StatusCode,
+                traceId,
+                correlationId);
+        }
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = error.StatusCode;
@@ -51,7 +68,8 @@ public sealed class ExceptionHandlingMiddleware
             StatusCode = error.StatusCode,
             Error = error.Title,
             Message = GetMessage(exception, error),
-            TraceId = Activity.Current?.Id ?? context.TraceIdentifier,
+            TraceId = traceId,
+            CorrelationId = correlationId,
             Timestamp = DateTime.UtcNow,
             Details = GetDetails(exception)
         };

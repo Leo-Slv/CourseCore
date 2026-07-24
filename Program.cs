@@ -81,6 +81,7 @@ if (app.Environment.IsDevelopment())
     await app.SeedCourseCoreDatabaseAsync();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (!app.Environment.IsDevelopment())

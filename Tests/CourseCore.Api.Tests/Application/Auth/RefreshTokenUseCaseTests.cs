@@ -2,6 +2,7 @@ using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Domain.Entities;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Tests.TestDoubles;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Tests.Application.Auth;
@@ -127,7 +128,8 @@ public class RefreshTokenUseCaseTests
             {
                 AccessTokenExpirationMinutes = 60,
                 RefreshTokenExpirationDays = 7
-            }));
+            }),
+            NullLogger<RefreshTokenUseCase>.Instance);
 
         return new RefreshTokenFixture(useCase, refreshTokens, unitOfWork, existingRefreshToken, user.Id);
     }
