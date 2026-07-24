@@ -57,6 +57,14 @@ dotnet ef database update
 
 Migration execution must remain a controlled deployment operation, not part of basic validation.
 
+The current CI also does not start PostgreSQL and does not apply generated SQL scripts. A future deployment workflow may generate an idempotent migration script as an artifact:
+
+```bash
+dotnet ef migrations script --context CourseCoreDbContext --idempotent --output ./artifacts/migrations/coursecore-migration.sql
+```
+
+That future workflow should publish the SQL for review and require manual approval before applying it to staging or production. Production application must not be automatic from the validation CI job.
+
 ## Seed
 
 The CI keeps seed disabled with:

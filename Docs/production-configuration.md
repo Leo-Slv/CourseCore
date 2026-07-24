@@ -89,6 +89,32 @@ The application does not apply migrations during startup.
 
 Apply migrations outside the app startup, through a controlled local command, deployment job, or reviewed SQL script. Do not run `dotnet ef database update` automatically in production startup.
 
+For staging and production, generate an idempotent SQL script and review it before applying:
+
+```bash
+./scripts/generate-migration-script.sh
+```
+
+or on Windows:
+
+```powershell
+./scripts/generate-migration-script.ps1
+```
+
+The generated artifact belongs under `artifacts/migrations/` and must not contain secrets. Keep database credentials in the deployment environment, CI/CD secret store, or database administration tool.
+
+Before production migration execution:
+
+```text
+backup or snapshot the database
+review potentially destructive SQL
+plan rollback
+apply with an authorized database user
+validate /health/ready after execution
+```
+
+Seed must remain disabled in Production unless a controlled operational procedure explicitly enables it for a one-time action.
+
 ## Docker
 
 The repository includes a Dockerfile and docker-compose file for local or staging-like execution. They use environment variables and placeholders only.

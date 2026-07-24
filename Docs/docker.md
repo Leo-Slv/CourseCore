@@ -108,13 +108,29 @@ http://localhost:8080/scalar
 
 Migrations are not applied automatically during container startup.
 
-Apply migrations manually through a controlled command when needed. From the host machine with the .NET SDK installed and the PostgreSQL container running:
+`docker-compose.yml` starts PostgreSQL and the API only. It does not run `dotnet ef database update`, does not run `Database.Migrate()`, and does not execute SQL migration scripts automatically.
+
+The API can start before the database has the expected schema. In that case, `/health/live` can still report the process as healthy, while `/health/ready` or endpoints that query the database can fail until migrations are applied through a controlled process.
+
+For local development, apply migrations manually through a controlled command when needed. From the host machine with the .NET SDK installed and the PostgreSQL container running:
 
 ```bash
 dotnet ef database update --context CourseCoreDbContext
 ```
 
-For staging or production, prefer a reviewed deployment job or SQL script generated from EF Core migrations. Do not apply migrations as part of normal API startup.
+For staging or production, prefer a reviewed SQL script generated from EF Core migrations:
+
+```bash
+./scripts/generate-migration-script.sh
+```
+
+or on Windows:
+
+```powershell
+./scripts/generate-migration-script.ps1
+```
+
+The generated SQL goes to `artifacts/migrations/`, which is ignored by Git. Review and apply it with credentials supplied outside the repository. Do not apply migrations as part of normal API startup.
 
 ## Seed
 
