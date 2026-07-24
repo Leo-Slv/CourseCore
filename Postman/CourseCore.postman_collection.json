@@ -1,0 +1,660 @@
+{
+  "info": {
+    "_postman_id": "0c28d830-56c0-4d48-8ff1-140e9289d344",
+    "name": "CourseCore API",
+    "description": "Colecao para testar os endpoints HTTP da CourseCore API. Importe tambem o environment CourseCore Local e rode Auth/Login antes dos endpoints protegidos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.environment.set(\"correlationId\", pm.variables.replaceIn(\"{{$guid}}\"));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Response has correlation id header\", function () {",
+          "  pm.expect(pm.response.headers.has(\"X-Correlation-ID\")).to.eql(true);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Login as Seed Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is OK\", function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Login returned access token\", function () {",
+                  "  pm.expect(json.token && json.token.accessToken).to.exist;",
+                  "});",
+                  "if (json.token && json.token.accessToken) {",
+                  "  pm.environment.set(\"accessToken\", json.token.accessToken);",
+                  "}",
+                  "if (json.token && json.token.refreshToken) {",
+                  "  pm.environment.set(\"refreshToken\", json.token.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh-token"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is OK\", function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json.token && json.token.accessToken) {",
+                  "  pm.environment.set(\"accessToken\", json.token.accessToken);",
+                  "}",
+                  "if (json.token && json.token.refreshToken) {",
+                  "  pm.environment.set(\"refreshToken\", json.token.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Live",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/health/live"
+          }
+        },
+        {
+          "name": "Ready",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/health/ready"
+          }
+        },
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{accessToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User\",\n  \"email\": \"postman.user{{$timestamp}}@coursecore.local\",\n  \"password\": \"PostmanUser123!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is Created\", function () {",
+                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.environment.set(\"createdUserId\", json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Postman User\",\n  \"email\": \"updated.postman.user{{$timestamp}}@coursecore.local\",\n  \"active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/users/{{createdUserId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{accessToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Grant User Area Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{createdUserId}}\",\n  \"areaId\": \"{{areaId}}\",\n  \"canView\": true,\n  \"canManage\": false,\n  \"startsAt\": null,\n  \"expiresAt\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/access/user-area"
+          }
+        },
+        {
+          "name": "Grant Role Area Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": \"{{roleId}}\",\n  \"areaId\": \"{{areaId}}\",\n  \"canView\": true,\n  \"canManage\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/access/role-area"
+          }
+        },
+        {
+          "name": "Check Course Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"{{courseId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/access/course/check"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{accessToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Available Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/available"
+          }
+        },
+        {
+          "name": "Get Course Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.modules && json.modules.length > 0) {",
+                  "    pm.environment.set(\"moduleId\", json.modules[0].id);",
+                  "    if (json.modules[0].lessons && json.modules[0].lessons.length > 0) {",
+                  "      pm.environment.set(\"lessonId\", json.modules[0].lessons[0].id);",
+                  "    }",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Course\",\n  \"slug\": \"postman-course-{{$timestamp}}\",\n  \"description\": \"Course created from Postman collection\",\n  \"thumbnailUrl\": \"https://cdn.coursecore.local/postman-course.png\",\n  \"displayOrder\": 0,\n  \"areaIds\": [\n    \"{{areaId}}\"\n  ],\n  \"modules\": [\n    {\n      \"title\": \"Postman Module\",\n      \"description\": \"Module created from Postman collection\",\n      \"displayOrder\": 0,\n      \"lessons\": [\n        {\n          \"title\": \"Postman Lesson\",\n          \"description\": \"Lesson created from Postman collection\",\n          \"displayOrder\": 0,\n          \"freePreview\": false\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/courses"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is Created\", function () {",
+                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.environment.set(\"courseId\", json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Postman Course\",\n  \"slug\": \"updated-postman-course-{{$timestamp}}\",\n  \"description\": \"Updated from Postman collection\",\n  \"thumbnailUrl\": \"https://cdn.coursecore.local/updated-postman-course.png\",\n  \"displayOrder\": 1,\n  \"areaIds\": [\n    \"{{areaId}}\"\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/courses/{{courseId}}"
+          }
+        },
+        {
+          "name": "Publish Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}/publish"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media / Videos",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{accessToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Create Video",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lessonId\": \"{{lessonId}}\",\n  \"title\": \"Postman Video\",\n  \"description\": \"Video created from Postman collection\",\n  \"storageProvider\": \"Local\",\n  \"storageKey\": \"postman/videos/sample.mp4\",\n  \"playbackUrl\": \"https://media.coursecore.local/postman/sample.mp4\",\n  \"thumbnailUrl\": \"https://media.coursecore.local/postman/sample.png\",\n  \"durationSeconds\": 120,\n  \"sizeBytes\": 2048\n}"
+            },
+            "url": "{{baseUrl}}/api/videos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is Created\", function () {",
+                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.environment.set(\"videoId\", json.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Request Video Playback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"videoId\": \"{{videoId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/videos/playback"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Progress",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{accessToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Register Lesson Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lessonId\": \"{{lessonId}}\",\n  \"watchedSeconds\": 90,\n  \"markAsCompleted\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/progress/lessons"
+          }
+        },
+        {
+          "name": "Get Course Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"{{courseId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/progress/courses"
+          }
+        }
+      ]
+    },
+    {
+      "name": "OpenAPI / Scalar",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/openapi/v1.json"
+          }
+        },
+        {
+          "name": "Scalar UI",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/scalar"
+          }
+        }
+      ]
+    }
+  ],
+  "protocolProfileBehavior": {
+    "disableBodyPruning": true
+  }
+}

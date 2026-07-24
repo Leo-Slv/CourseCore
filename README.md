@@ -227,6 +227,17 @@ dotnet test --configuration Release
 
 Os testes de integracao HTTP usam SQLite in-memory via `WebApplicationFactory`. Eles nao dependem de PostgreSQL real, nao executam migrations e nao rodam seed real.
 
+## Postman
+
+O projeto inclui uma collection Postman importavel e um environment local com placeholders:
+
+```text
+Postman/CourseCore.postman_collection.json
+Postman/CourseCore.local.postman_environment.json
+```
+
+Use `Docs/postman.md` para configurar `adminPassword`, executar login, renovar refresh token e preencher variaveis como `areaId`, `roleId`, `courseId`, `lessonId` e `videoId`.
+
 ## Health checks
 
 Endpoints:
@@ -341,6 +352,7 @@ CourseCore/
 - `Docs/deployment-migrations.md`
 - `Docs/observability.md`
 - `Docs/ci.md`
+- `Docs/postman.md`
 
 ## Cuidados de producao
 
