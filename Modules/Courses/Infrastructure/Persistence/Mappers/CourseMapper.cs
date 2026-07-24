@@ -63,12 +63,8 @@ public static class CourseMapper
             model.CourseAreas.Add(courseArea);
         }
 
-        model.Modules.Clear();
-
-        foreach (var module in course.Modules)
-        {
-            model.Modules.Add(CourseModuleMapper.ToPersistence(module));
-        }
+        // Course update/publish flows do not edit module structure.
+        // Preserve existing required child rows to avoid severing EF relationships.
     }
 
     private static IEnumerable<CourseAreaPersistenceModel> ToCourseAreas(Course course)

@@ -57,10 +57,7 @@ public class CoursesController : ControllerBase
             cancellationToken);
         var response = CoursePresenter.ToResponse(output);
 
-        return CreatedAtAction(
-            nameof(GetDetailsAsync),
-            new { courseId = response.Id },
-            response);
+        return Created($"/api/courses/{response.Id}", response);
     }
 
     [HttpPut("{courseId:guid}")]

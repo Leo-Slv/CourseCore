@@ -2,6 +2,8 @@ using System.Text;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Media.Domain.Enums;
+using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,23 +29,95 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
 
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
 
-    public async Task<Guid> SeedPublishedCourseAsync(bool grantAdminAccess)
+    public async Task<Guid> GetAdminRoleIdAsync()
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
-        var adminUser = await dbContext.Users.SingleAsync(user => user.Email == AdminEmail);
+
+        return await dbContext.Roles
+            .Where(role => role.Name == AuthRoleNames.Admin)
+            .Select(role => role.Id)
+            .SingleAsync();
+    }
+
+    public async Task<TestUser> SeedUserAsync(string? permissionKey = null)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
         var now = DateTime.UtcNow;
-        var area = new AreaPersistenceModel
+        var user = new UserPersistenceModel
         {
             Id = Guid.NewGuid(),
-            Name = "Integration Area",
-            Slug = $"integration-area-{Guid.NewGuid():N}",
-            Description = "Integration test area",
+            Name = "Integration User",
+            Email = $"user-{Guid.NewGuid():N}@coursecore.local",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("IntegrationUser123!"),
             Active = true,
-            DisplayOrder = 0,
+            EmailVerifiedAt = now,
             CreatedAt = now,
             UpdatedAt = now
         };
+
+        dbContext.Users.Add(user);
+
+        if (!string.IsNullOrWhiteSpace(permissionKey))
+        {
+            var permission = await dbContext.Permissions.SingleAsync(permission => permission.Key == permissionKey);
+            var role = new RolePersistenceModel
+            {
+                Id = Guid.NewGuid(),
+                Name = $"role-{Guid.NewGuid():N}",
+                Description = $"Role for {permissionKey}",
+                Active = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            dbContext.Roles.Add(role);
+            dbContext.UserRoles.Add(new UserRolePersistenceModel
+            {
+                UserId = user.Id,
+                RoleId = role.Id,
+                CreatedAt = now
+            });
+            dbContext.RolePermissions.Add(new RolePermissionPersistenceModel
+            {
+                RoleId = role.Id,
+                PermissionId = permission.Id,
+                CreatedAt = now
+            });
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        return new TestUser(user.Id, user.Email, "IntegrationUser123!");
+    }
+
+    public async Task<Guid> SeedAreaAsync()
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var area = CreateArea(DateTime.UtcNow);
+
+        dbContext.Areas.Add(area);
+        await dbContext.SaveChangesAsync();
+
+        return area.Id;
+    }
+
+    public async Task<Guid> SeedPublishedCourseAsync(bool grantAdminAccess)
+    {
+        var adminUserId = grantAdminAccess ? await GetAdminUserIdAsync() : (Guid?)null;
+        var course = await SeedPublishedCourseWithLessonAsync(adminUserId);
+
+        return course.CourseId;
+    }
+
+    public async Task<TestCourseData> SeedPublishedCourseWithLessonAsync(Guid? grantUserAccess = null)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+        var area = CreateArea(now);
         var course = new CoursePersistenceModel
         {
             Id = Guid.NewGuid(),
@@ -56,9 +130,34 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             CreatedAt = now,
             UpdatedAt = now
         };
+        var module = new CourseModulePersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            CourseId = course.Id,
+            Title = "Integration Module",
+            Description = "Integration test module",
+            Published = true,
+            DisplayOrder = 0,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        var lesson = new LessonPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            ModuleId = module.Id,
+            Title = "Integration Lesson",
+            Description = "Integration test lesson",
+            FreePreview = false,
+            Published = true,
+            DisplayOrder = 0,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
 
         dbContext.Areas.Add(area);
         dbContext.Courses.Add(course);
+        dbContext.CourseModules.Add(module);
+        dbContext.Lessons.Add(lesson);
         dbContext.CourseAreas.Add(new CourseAreaPersistenceModel
         {
             CourseId = course.Id,
@@ -66,12 +165,12 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             CreatedAt = now
         });
 
-        if (grantAdminAccess)
+        if (grantUserAccess is not null)
         {
             dbContext.UserAreaAccesses.Add(new UserAreaAccessPersistenceModel
             {
                 Id = Guid.NewGuid(),
-                UserId = adminUser.Id,
+                UserId = grantUserAccess.Value,
                 AreaId = area.Id,
                 CanView = true,
                 CanManage = false,
@@ -82,7 +181,54 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
 
         await dbContext.SaveChangesAsync();
 
-        return course.Id;
+        return new TestCourseData(area.Id, course.Id, module.Id, lesson.Id);
+    }
+
+    public async Task GrantUserAreaAccessAsync(Guid userId, Guid areaId, bool canView = true, bool canManage = false)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+
+        dbContext.UserAreaAccesses.Add(new UserAreaAccessPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            AreaId = areaId,
+            CanView = canView,
+            CanManage = canManage,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task<TestVideoData> SeedReadyVideoAsync(Guid lessonId)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+        var video = new VideoPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            LessonId = lessonId,
+            Title = "Integration Video",
+            Description = "Integration test video",
+            StorageProvider = VideoStorageProvider.Local.ToString(),
+            StorageKey = $"videos/{Guid.NewGuid():N}.mp4",
+            PlaybackUrl = $"https://media.coursecore.local/{Guid.NewGuid():N}.mp4",
+            DurationSeconds = 120,
+            SizeBytes = 1024,
+            Status = VideoStatus.Ready.ToString(),
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        dbContext.Videos.Add(video);
+        await dbContext.SaveChangesAsync();
+
+        return new TestVideoData(video.Id, video.LessonId);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -210,4 +356,36 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             UpdatedAt = now
         };
     }
+
+    private async Task<Guid> GetAdminUserIdAsync()
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+
+        return await dbContext.Users
+            .Where(user => user.Email == AdminEmail)
+            .Select(user => user.Id)
+            .SingleAsync();
+    }
+
+    private static AreaPersistenceModel CreateArea(DateTime now)
+    {
+        return new AreaPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Integration Area",
+            Slug = $"integration-area-{Guid.NewGuid():N}",
+            Description = "Integration test area",
+            Active = true,
+            DisplayOrder = 0,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+    }
 }
+
+public sealed record TestUser(Guid Id, string Email, string Password);
+
+public sealed record TestCourseData(Guid AreaId, Guid CourseId, Guid ModuleId, Guid LessonId);
+
+public sealed record TestVideoData(Guid VideoId, Guid LessonId);
