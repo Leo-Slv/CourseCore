@@ -1,0 +1,47 @@
+services:
+  coursecore-postgres:
+    image: postgres:17
+    container_name: coursecore-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-coursecore}
+      POSTGRES_USER: ${POSTGRES_USER:-coursecore_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-CHANGE_ME}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - coursecore-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  coursecore-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coursecore-api
+    depends_on:
+      coursecore-postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__CourseCoreDatabase: Host=coursecore-postgres;Port=5432;Database=${POSTGRES_DB:-coursecore};Username=${POSTGRES_USER:-coursecore_user};Password=${POSTGRES_PASSWORD:-CHANGE_ME};Timeout=15;Command Timeout=60
+      Jwt__SecretKey: ${Jwt__SecretKey:-CHANGE_ME_USE_A_LONG_RANDOM_SECRET}
+      Jwt__Issuer: ${Jwt__Issuer:-CourseCore}
+      Jwt__Audience: ${Jwt__Audience:-CourseCore}
+      Jwt__AccessTokenExpirationMinutes: ${Jwt__AccessTokenExpirationMinutes:-60}
+      Jwt__RefreshTokenExpirationDays: ${Jwt__RefreshTokenExpirationDays:-7}
+      Cors__AllowedOrigins__0: ${Cors__AllowedOrigins__0:-http://localhost:3000}
+      Seed__Admin__Enabled: ${Seed__Admin__Enabled:-false}
+      Seed__Admin__Name: ${Seed__Admin__Name:-CourseCore Admin}
+      Seed__Admin__Email: ${Seed__Admin__Email:-admin@coursecore.local}
+      Seed__Admin__Password: ${Seed__Admin__Password:-CHANGE_ME_ONLY_IF_SEED_IS_ENABLED}
+      Seed__Admin__ResetPassword: ${Seed__Admin__ResetPassword:-false}
+    ports:
+      - "${COURSECORE_API_HTTP_PORT:-8080}:8080"
+
+volumes:
+  coursecore-postgres-data:

@@ -89,6 +89,12 @@ The application does not apply migrations during startup.
 
 Apply migrations outside the app startup, through a controlled local command, deployment job, or reviewed SQL script. Do not run `dotnet ef database update` automatically in production startup.
 
+## Docker
+
+The repository includes a Dockerfile and docker-compose file for local or staging-like execution. They use environment variables and placeholders only.
+
+Do not copy `.env` into images or commit real Docker secrets. For local container instructions, see `Docs/docker.md`.
+
 ## Health Checks
 
 The API exposes:
