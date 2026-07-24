@@ -62,6 +62,9 @@ artifacts-*/
 
 # ASP.NET
 appsettings.*.local.json
+.env
+.env.*
+!.env.example
 
 # NuGet
 *.nuget.props

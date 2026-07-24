@@ -2,6 +2,8 @@
 
 The CourseCore seed is opt-in, idempotent, and does not apply migrations automatically.
 
+The application only calls the seed during `Development`. Production deployments should keep `Seed__Admin__Enabled=false` and use a controlled operational process if an admin user must be created or rotated.
+
 Before running the application with seed enabled, apply migrations with the configured PostgreSQL credentials:
 
 ```powershell
@@ -37,3 +39,5 @@ $env:Seed__Admin__ResetPassword="true"
 ```
 
 The seed does not call `Database.MigrateAsync()`. The database schema must already be up to date.
+
+For staging or production configuration details, see `Docs/production-configuration.md`.
