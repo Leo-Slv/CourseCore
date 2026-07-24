@@ -57,6 +57,7 @@ builder.Services
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    options.AddOperationTransformer<BearerSecurityOperationTransformer>();
 });
 builder.Services.AddSharedInfrastructure(builder.Configuration);
 builder.Services.AddAuthModule(builder.Configuration);

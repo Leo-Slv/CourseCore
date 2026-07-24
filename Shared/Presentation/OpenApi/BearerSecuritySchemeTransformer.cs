@@ -22,13 +22,6 @@ public sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransforme
             Description = "Informe o token JWT no formato: Bearer {token}"
         };
 
-        document.Security ??= [];
-        document.Security.Add(new OpenApiSecurityRequirement
-        {
-            [new OpenApiSecuritySchemeReference(SecuritySchemeName, document)]
-                = []
-        });
-
         return Task.CompletedTask;
     }
 }
