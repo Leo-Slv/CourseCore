@@ -1,7 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Tests.Integration.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -39,6 +41,23 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task Login_WhenAdminCredentialsAreValid_ShouldReturnPermissionClaims()
+    {
+        using var client = CreateClient();
+
+        var login = await LoginAsync(client);
+        var permissions = ReadPermissionClaims(login.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.Contains(AuthPermissionNames.ManageUsers, permissions);
+        Assert.Contains(AuthPermissionNames.ManageRoles, permissions);
+        Assert.Contains(AuthPermissionNames.ManageAreas, permissions);
+        Assert.Contains(AuthPermissionNames.ManageCourses, permissions);
+        Assert.Contains(AuthPermissionNames.ManageVideos, permissions);
+        Assert.Contains(AuthPermissionNames.ReadProgress, permissions);
+    }
+
+    [Fact]
     public async Task GetUsers_WhenAdminTokenIsValid_ShouldReturnOk()
     {
         using var client = CreateClient();
@@ -66,6 +85,21 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.False(string.IsNullOrWhiteSpace(refresh.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(refresh.RefreshToken));
         Assert.NotEqual(login.RefreshToken, refresh.RefreshToken);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WhenRefreshTokenIsValid_ShouldReturnPermissionClaims()
+    {
+        using var client = CreateClient();
+        var login = await LoginAsync(client);
+
+        var refresh = await RefreshAsync(client, login.RefreshToken);
+        var permissions = ReadPermissionClaims(refresh.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        Assert.Contains(AuthPermissionNames.ManageUsers, permissions);
+        Assert.Contains(AuthPermissionNames.ManageCourses, permissions);
+        Assert.Contains(AuthPermissionNames.ReadProgress, permissions);
     }
 
     [Fact]
@@ -130,6 +164,16 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
             response.StatusCode,
             token.GetProperty("accessToken").GetString() ?? string.Empty,
             token.GetProperty("refreshToken").GetString() ?? string.Empty);
+    }
+
+    private static IReadOnlyCollection<string> ReadPermissionClaims(string accessToken)
+    {
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+
+        return jwt.Claims
+            .Where(claim => claim.Type == AuthClaimTypes.Permission)
+            .Select(claim => claim.Value)
+            .ToArray();
     }
 
     private sealed record AuthTokenResult(

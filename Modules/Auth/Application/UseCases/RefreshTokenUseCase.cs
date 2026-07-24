@@ -76,7 +76,8 @@ public class RefreshTokenUseCase
 
         var roles = await _roles.FindByUserIdAsync(user.Id, cancellationToken);
         var roleNames = roles.Select(role => role.Name).ToArray();
-        var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, cancellationToken);
+        var permissions = await _roles.FindPermissionKeysByUserIdAsync(user.Id, cancellationToken);
+        var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, permissions, cancellationToken);
         var newRefreshToken = _refreshTokenGenerator.Generate();
         var newRefreshTokenHash = _refreshTokenHasher.Hash(newRefreshToken);
         var now = DateTime.UtcNow;

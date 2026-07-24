@@ -1,4 +1,5 @@
 using System.Text;
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
@@ -170,13 +171,43 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
 
         dbContext.Users.Add(adminUser);
         dbContext.Roles.Add(adminRole);
+        var permissions = new[]
+        {
+            CreatePermission(AuthPermissionNames.ManageUsers, "Manage users", now),
+            CreatePermission(AuthPermissionNames.ManageRoles, "Manage roles", now),
+            CreatePermission(AuthPermissionNames.ManageAreas, "Manage areas", now),
+            CreatePermission(AuthPermissionNames.ManageCourses, "Manage courses", now),
+            CreatePermission(AuthPermissionNames.ManageVideos, "Manage videos", now),
+            CreatePermission(AuthPermissionNames.ReadProgress, "Read progress", now),
+            CreatePermission(AuthPermissionNames.ReadAudit, "Read audit", now)
+        };
+        dbContext.Permissions.AddRange(permissions);
         dbContext.UserRoles.Add(new UserRolePersistenceModel
         {
             UserId = adminUser.Id,
             RoleId = adminRole.Id,
             CreatedAt = now
         });
+        dbContext.RolePermissions.AddRange(permissions.Select(permission => new RolePermissionPersistenceModel
+        {
+            RoleId = adminRole.Id,
+            PermissionId = permission.Id,
+            CreatedAt = now
+        }));
 
         dbContext.SaveChanges();
+    }
+
+    private static PermissionPersistenceModel CreatePermission(string key, string name, DateTime now)
+    {
+        return new PermissionPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            Key = key,
+            Name = name,
+            Description = name,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
     }
 }

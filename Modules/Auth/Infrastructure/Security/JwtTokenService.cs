@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Users.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +21,7 @@ public class JwtTokenService : ITokenService
     public Task<string> GenerateAccessTokenAsync(
         User user,
         IReadOnlyCollection<string> roles,
+        IReadOnlyCollection<string> permissions,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -37,7 +39,12 @@ public class JwtTokenService : ITokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(roles
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(role => new Claim(AuthClaimTypes.Role, role)));
+        claims.AddRange(permissions
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(permission => new Claim(AuthClaimTypes.Permission, permission)));
 
         var token = new JwtSecurityToken(
             issuer: _options.Issuer,

@@ -64,12 +64,19 @@ public sealed class FakeRoleRepository : IRoleRepository
 {
     private readonly Dictionary<Guid, Role> _roles = [];
     private readonly Dictionary<Guid, List<Role>> _rolesByUserId = [];
+    private readonly Dictionary<Guid, List<string>> _permissionKeysByUserId = [];
 
     public void AddForUser(Guid userId, Role role)
     {
         _roles[role.Id] = role;
         _rolesByUserId.TryAdd(userId, []);
         _rolesByUserId[userId].Add(role);
+    }
+
+    public void AddPermissionForUser(Guid userId, string permissionKey)
+    {
+        _permissionKeysByUserId.TryAdd(userId, []);
+        _permissionKeysByUserId[userId].Add(permissionKey);
     }
 
     public Task<Role?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -88,6 +95,16 @@ public sealed class FakeRoleRepository : IRoleRepository
     {
         return Task.FromResult<IReadOnlyCollection<Role>>(
             _rolesByUserId.TryGetValue(userId, out var roles) ? roles.ToArray() : []);
+    }
+
+    public Task<IReadOnlyCollection<string>> FindPermissionKeysByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<string>>(
+            _permissionKeysByUserId.TryGetValue(userId, out var permissions)
+                ? permissions.Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+                : []);
     }
 
     public Task<IReadOnlyCollection<Role>> ListAsync(CancellationToken cancellationToken = default)

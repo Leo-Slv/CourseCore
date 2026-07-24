@@ -10,6 +10,10 @@ public interface IRoleRepository
 
     Task<IReadOnlyCollection<Role>> FindByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<string>> FindPermissionKeysByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<Role>> ListAsync(CancellationToken cancellationToken = default);
 
     Task CreateAsync(Role role, CancellationToken cancellationToken = default);

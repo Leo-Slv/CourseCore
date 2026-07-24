@@ -7,5 +7,6 @@ public interface ITokenService
     Task<string> GenerateAccessTokenAsync(
         User user,
         IReadOnlyCollection<string> roles,
+        IReadOnlyCollection<string> permissions,
         CancellationToken cancellationToken = default);
 }

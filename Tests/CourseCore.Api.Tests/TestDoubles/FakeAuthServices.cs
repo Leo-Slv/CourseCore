@@ -87,6 +87,7 @@ public sealed class FakeTokenService : ITokenService
     public Task<string> GenerateAccessTokenAsync(
         User user,
         IReadOnlyCollection<string> roles,
+        IReadOnlyCollection<string> permissions,
         CancellationToken cancellationToken = default)
     {
         _calls++;

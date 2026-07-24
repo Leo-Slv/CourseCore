@@ -45,6 +45,22 @@ public class EfRoleRepository : IRoleRepository
         return models.Select(RoleMapper.ToDomain).ToList();
     }
 
+    public async Task<IReadOnlyCollection<string>> FindPermissionKeysByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.RolePermissions
+            .AsNoTracking()
+            .Where(x => x.Role != null
+                && x.Permission != null
+                && x.Role.Active
+                && x.Role.UserRoles.Any(userRole => userRole.UserId == userId))
+            .Select(x => x.Permission!.Key)
+            .Distinct()
+            .OrderBy(key => key)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<Role>> ListAsync(CancellationToken cancellationToken = default)
     {
         var models = await _dbContext.Roles

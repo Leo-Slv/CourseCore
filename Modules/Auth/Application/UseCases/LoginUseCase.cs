@@ -71,7 +71,8 @@ public class LoginUseCase
 
         var roles = await _roles.FindByUserIdAsync(user.Id, cancellationToken);
         var roleNames = roles.Select(role => role.Name).ToArray();
-        var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, cancellationToken);
+        var permissions = await _roles.FindPermissionKeysByUserIdAsync(user.Id, cancellationToken);
+        var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, permissions, cancellationToken);
         var refreshToken = _refreshTokenGenerator.Generate();
         var refreshTokenHash = _refreshTokenHasher.Hash(refreshToken);
         var now = DateTime.UtcNow;

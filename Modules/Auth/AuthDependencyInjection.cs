@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Persistence.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -53,37 +54,35 @@ public static class AuthDependencyInjection
                 policy.RequireRole(AuthRoleNames.Admin);
             });
 
-            options.AddPolicy(AuthPolicyNames.ManageUsers, policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.RequireRole(AuthRoleNames.Admin);
-            });
-
-            options.AddPolicy(AuthPolicyNames.ManageAccess, policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.RequireRole(AuthRoleNames.Admin);
-            });
-
-            options.AddPolicy(AuthPolicyNames.ManageCourses, policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.RequireRole(AuthRoleNames.Admin);
-            });
-
-            options.AddPolicy(AuthPolicyNames.ManageVideos, policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.RequireRole(AuthRoleNames.Admin);
-            });
-
-            options.AddPolicy(AuthPolicyNames.ReadProgress, policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.RequireRole(AuthRoleNames.Admin);
-            });
+            AddPermissionPolicy(options, AuthPolicyNames.ManageUsers, AuthPermissionNames.ManageUsers);
+            AddPermissionPolicy(
+                options,
+                AuthPolicyNames.ManageAccess,
+                AuthPermissionNames.ManageAreas,
+                AuthPermissionNames.ManageRoles);
+            AddPermissionPolicy(options, AuthPolicyNames.ManageCourses, AuthPermissionNames.ManageCourses);
+            AddPermissionPolicy(options, AuthPolicyNames.ManageVideos, AuthPermissionNames.ManageVideos);
+            AddPermissionPolicy(options, AuthPolicyNames.ReadProgress, AuthPermissionNames.ReadProgress);
         });
 
         return services;
+    }
+
+    private static void AddPermissionPolicy(
+        AuthorizationOptions options,
+        string policyName,
+        params string[] permissions)
+    {
+        options.AddPolicy(policyName, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireAssertion(context => HasPermissionOrAdmin(context, permissions));
+        });
+    }
+
+    private static bool HasPermissionOrAdmin(AuthorizationHandlerContext context, IReadOnlyCollection<string> permissions)
+    {
+        return context.User.IsInRole(AuthRoleNames.Admin)
+            || permissions.Any(permission => context.User.HasClaim(AuthClaimTypes.Permission, permission));
     }
 }
