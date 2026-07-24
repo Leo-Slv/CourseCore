@@ -1,3 +1,5 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Domain.Entities;
@@ -13,15 +15,18 @@ public class CreateVideoUseCase
     private readonly IVideoRepository _videos;
     private readonly ILessonRepository _lessons;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
 
     public CreateVideoUseCase(
         IVideoRepository videos,
         ILessonRepository lessons,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs)
     {
         _videos = videos;
         _lessons = lessons;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
     }
 
     public Task<VideoOutput> ExecuteAsync(
@@ -63,6 +68,16 @@ public class CreateVideoUseCase
             }
 
             await _videos.CreateAsync(video, cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.VideoCreated,
+                "Video",
+                video.Id,
+                new Dictionary<string, string?>
+                {
+                    ["lessonId"] = video.LessonId.ToString(),
+                    ["status"] = video.Status.ToString()
+                },
+                cancellationToken: cancellationToken);
 
             return VideoOutput.FromVideo(video);
         }, cancellationToken);

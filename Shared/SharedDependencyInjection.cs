@@ -2,6 +2,7 @@ using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
 using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
 using CourseCore.Api.Shared.Infrastructure.Security;
+using CourseCore.Api.Shared.Presentation.Observability;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseCore.Api.Shared;
@@ -26,6 +27,7 @@ public static class SharedDependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IRequestContextService, RequestContextService>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.Configure<AdminSeedOptions>(
             configuration.GetSection(AdminSeedOptions.SectionName));

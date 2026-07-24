@@ -1,3 +1,5 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
@@ -11,11 +13,16 @@ public class CreateCourseUseCase
 {
     private readonly ICourseRepository _courses;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
 
-    public CreateCourseUseCase(ICourseRepository courses, IUnitOfWork unitOfWork)
+    public CreateCourseUseCase(
+        ICourseRepository courses,
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs)
     {
         _courses = courses;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
     }
 
     public Task<CourseOutput> ExecuteAsync(
@@ -52,6 +59,11 @@ public class CreateCourseUseCase
             }
 
             await _courses.CreateAsync(course, cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.CourseCreated,
+                "Course",
+                course.Id,
+                cancellationToken: cancellationToken);
 
             return CourseOutput.FromCourse(course);
         }, cancellationToken);

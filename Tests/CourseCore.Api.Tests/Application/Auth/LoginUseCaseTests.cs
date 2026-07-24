@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Auth.Application.DTOs;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Tests.TestDoubles;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -40,6 +41,26 @@ public class LoginUseCaseTests
         Assert.Equal("hash:refresh-token", storedToken.TokenHash);
         Assert.NotEqual("refresh-token", storedToken.TokenHash);
         Assert.Equal(1, fixture.UnitOfWork.ExecuteCalls);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenLoginIsValid_ShouldRecordLoginSucceededAuditLog()
+    {
+        var fixture = CreateFixture();
+
+        var output = await fixture.UseCase.ExecuteAsync(new LoginInput
+        {
+            Email = "user@coursecore.local",
+            Password = "password"
+        });
+
+        var auditLog = Assert.Single(fixture.AuditLogs.Entries);
+        Assert.Equal(AuditLogActionNames.LoginSucceeded, auditLog.Action);
+        Assert.Equal("User", auditLog.EntityName);
+        Assert.Equal(output.UserId, auditLog.EntityId);
+        Assert.Equal(output.UserId, auditLog.UserId);
+        Assert.Equal("succeeded", auditLog.Metadata["result"]);
+        Assert.DoesNotContain("token", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -84,6 +105,7 @@ public class LoginUseCaseTests
         var roles = new FakeRoleRepository();
         var refreshTokens = new FakeRefreshTokenRepository();
         var unitOfWork = new FakeUnitOfWork();
+        var auditLogs = new FakeAuditLogService();
         var user = TestEntityFactory.User(active: userActive);
 
         if (addUser)
@@ -101,6 +123,7 @@ public class LoginUseCaseTests
             new FakeRefreshTokenHasher(),
             new FakeRefreshTokenGenerator("refresh-token"),
             unitOfWork,
+            auditLogs,
             Options.Create(new JwtOptions
             {
                 AccessTokenExpirationMinutes = 60,
@@ -108,11 +131,12 @@ public class LoginUseCaseTests
             }),
             NullLogger<LoginUseCase>.Instance);
 
-        return new LoginFixture(useCase, refreshTokens, unitOfWork);
+        return new LoginFixture(useCase, refreshTokens, unitOfWork, auditLogs);
     }
 
     private sealed record LoginFixture(
         LoginUseCase UseCase,
         FakeRefreshTokenRepository RefreshTokens,
-        FakeUnitOfWork UnitOfWork);
+        FakeUnitOfWork UnitOfWork,
+        FakeAuditLogService AuditLogs);
 }

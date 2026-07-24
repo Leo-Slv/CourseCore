@@ -1,3 +1,5 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
@@ -9,11 +11,16 @@ public class PublishCourseUseCase
 {
     private readonly ICourseRepository _courses;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
 
-    public PublishCourseUseCase(ICourseRepository courses, IUnitOfWork unitOfWork)
+    public PublishCourseUseCase(
+        ICourseRepository courses,
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs)
     {
         _courses = courses;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
     }
 
     public Task<CourseOutput> ExecuteAsync(
@@ -38,6 +45,11 @@ public class PublishCourseUseCase
             course.Publish();
 
             await _courses.UpdateAsync(course, cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.CoursePublished,
+                "Course",
+                course.Id,
+                cancellationToken: cancellationToken);
 
             return CourseOutput.FromCourse(course);
         }, cancellationToken);

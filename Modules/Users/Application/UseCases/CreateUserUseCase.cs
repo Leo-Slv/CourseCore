@@ -1,3 +1,5 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Users.Application.DTOs;
 using CourseCore.Api.Modules.Users.Domain.Entities;
@@ -13,15 +15,18 @@ public class CreateUserUseCase
     private readonly IUserRepository _users;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
 
     public CreateUserUseCase(
         IUserRepository users,
         IPasswordHasher passwordHasher,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs)
     {
         _users = users;
         _passwordHasher = passwordHasher;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
     }
 
     public Task<UserOutput> ExecuteAsync(
@@ -51,6 +56,11 @@ public class CreateUserUseCase
             var user = User.Create(input.Name, email, passwordHash);
 
             await _users.CreateAsync(user, cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.UserCreated,
+                "User",
+                user.Id,
+                cancellationToken: cancellationToken);
 
             return UserOutput.FromUser(user);
         }, cancellationToken);

@@ -1,4 +1,6 @@
 using CourseCore.Api.Modules.Access.Domain.Repositories;
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Auth.Application.DTOs;
 using CourseCore.Api.Modules.Auth.Domain.Entities;
@@ -20,6 +22,7 @@ public class RefreshTokenUseCase
     private readonly IRefreshTokenHasher _refreshTokenHasher;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<RefreshTokenUseCase> _logger;
 
@@ -31,6 +34,7 @@ public class RefreshTokenUseCase
         IRefreshTokenHasher refreshTokenHasher,
         IRefreshTokenGenerator refreshTokenGenerator,
         IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs,
         IOptions<JwtOptions> jwtOptions,
         ILogger<RefreshTokenUseCase> logger)
     {
@@ -41,6 +45,7 @@ public class RefreshTokenUseCase
         _refreshTokenHasher = refreshTokenHasher;
         _refreshTokenGenerator = refreshTokenGenerator;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
         _jwtOptions = jwtOptions.Value;
         _logger = logger;
     }
@@ -51,6 +56,7 @@ public class RefreshTokenUseCase
     {
         if (string.IsNullOrWhiteSpace(refreshToken))
         {
+            await AuditRefreshTokenRejectedAsync(null, "missing", cancellationToken);
             _logger.LogWarning("Refresh token request rejected because the token was missing.");
             throw new UnauthorizedAccessException("Invalid refresh token.");
         }
@@ -62,6 +68,7 @@ public class RefreshTokenUseCase
 
         if (persistedRefreshToken is null || !persistedRefreshToken.IsActive)
         {
+            await AuditRefreshTokenRejectedAsync(persistedRefreshToken?.UserId, "invalid_or_inactive", cancellationToken);
             _logger.LogWarning("Refresh token request rejected because the token is invalid or inactive.");
             throw new UnauthorizedAccessException("Invalid refresh token.");
         }
@@ -70,6 +77,7 @@ public class RefreshTokenUseCase
 
         if (user is null || !user.Active)
         {
+            await AuditRefreshTokenRejectedAsync(persistedRefreshToken.UserId, "invalid_user", cancellationToken);
             _logger.LogWarning("Refresh token request rejected because the user is invalid or inactive.");
             throw new UnauthorizedAccessException("Invalid refresh token.");
         }
@@ -94,6 +102,13 @@ public class RefreshTokenUseCase
                     now.AddDays(_jwtOptions.RefreshTokenExpirationDays),
                     now),
                 cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.RefreshTokenRotated,
+                "RefreshToken",
+                persistedRefreshToken.Id,
+                new Dictionary<string, string?> { ["result"] = "rotated" },
+                user.Id,
+                cancellationToken);
         }, cancellationToken);
 
         _logger.LogInformation("Refresh token rotated successfully for user {UserId}.", user.Id);
@@ -111,5 +126,21 @@ public class RefreshTokenUseCase
                 ExpiresAt = now.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes)
             }
         };
+    }
+
+    private Task AuditRefreshTokenRejectedAsync(
+        Guid? userId,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        return _unitOfWork.ExecuteAsync(
+            () => _auditLogs.RecordAsync(
+                AuditLogActionNames.RefreshTokenRejected,
+                "RefreshToken",
+                null,
+                new Dictionary<string, string?> { ["reason"] = reason },
+                userId,
+                cancellationToken),
+            cancellationToken);
     }
 }

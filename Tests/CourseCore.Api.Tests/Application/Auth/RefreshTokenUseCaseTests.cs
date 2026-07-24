@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Domain.Entities;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
@@ -47,12 +48,33 @@ public class RefreshTokenUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenRefreshTokenIsValid_ShouldRecordRefreshTokenRotatedAuditLog()
+    {
+        var fixture = CreateFixture();
+
+        await fixture.UseCase.ExecuteAsync("old-refresh-token");
+
+        var auditLog = Assert.Single(fixture.AuditLogs.Entries);
+        Assert.Equal(AuditLogActionNames.RefreshTokenRotated, auditLog.Action);
+        Assert.Equal("RefreshToken", auditLog.EntityName);
+        Assert.Equal(fixture.ExistingRefreshToken.Id, auditLog.EntityId);
+        Assert.Equal(fixture.UserId, auditLog.UserId);
+        Assert.Equal("rotated", auditLog.Metadata["result"]);
+        Assert.DoesNotContain("token", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenRefreshTokenIsReused_ShouldThrowUnauthorizedAccessException()
     {
         var fixture = CreateFixture();
         await fixture.UseCase.ExecuteAsync("old-refresh-token");
+        fixture.AuditLogs.Clear();
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync("old-refresh-token"));
+
+        var auditLog = Assert.Single(fixture.AuditLogs.Entries);
+        Assert.Equal(AuditLogActionNames.RefreshTokenRejected, auditLog.Action);
+        Assert.Equal("invalid_or_inactive", auditLog.Metadata["reason"]);
     }
 
     [Fact]
@@ -61,6 +83,10 @@ public class RefreshTokenUseCaseTests
         var fixture = CreateFixture(addRefreshToken: false);
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync("missing-token"));
+
+        var auditLog = Assert.Single(fixture.AuditLogs.Entries);
+        Assert.Equal(AuditLogActionNames.RefreshTokenRejected, auditLog.Action);
+        Assert.Equal("invalid_or_inactive", auditLog.Metadata["reason"]);
     }
 
     [Fact]
@@ -98,6 +124,7 @@ public class RefreshTokenUseCaseTests
         var roles = new FakeRoleRepository();
         var refreshTokens = new FakeRefreshTokenRepository();
         var unitOfWork = new FakeUnitOfWork();
+        var auditLogs = new FakeAuditLogService();
         var user = TestEntityFactory.User(userId, active: userActive);
         users.Add(user);
         roles.AddForUser(user.Id, TestEntityFactory.Role(name: "Admin"));
@@ -124,6 +151,7 @@ public class RefreshTokenUseCaseTests
             new FakeRefreshTokenHasher(),
             new FakeRefreshTokenGenerator("new-refresh-token"),
             unitOfWork,
+            auditLogs,
             Options.Create(new JwtOptions
             {
                 AccessTokenExpirationMinutes = 60,
@@ -131,7 +159,7 @@ public class RefreshTokenUseCaseTests
             }),
             NullLogger<RefreshTokenUseCase>.Instance);
 
-        return new RefreshTokenFixture(useCase, refreshTokens, unitOfWork, existingRefreshToken, user.Id);
+        return new RefreshTokenFixture(useCase, refreshTokens, unitOfWork, existingRefreshToken, user.Id, auditLogs);
     }
 
     private sealed record RefreshTokenFixture(
@@ -139,5 +167,6 @@ public class RefreshTokenUseCaseTests
         FakeRefreshTokenRepository RefreshTokens,
         FakeUnitOfWork UnitOfWork,
         RefreshToken ExistingRefreshToken,
-        Guid UserId);
+        Guid UserId,
+        FakeAuditLogService AuditLogs);
 }

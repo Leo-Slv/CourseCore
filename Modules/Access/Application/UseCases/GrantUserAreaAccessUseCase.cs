@@ -1,6 +1,8 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
@@ -12,15 +14,18 @@ public class GrantUserAreaAccessUseCase
     private readonly IUserRepository _users;
     private readonly IAreaRepository _areas;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
 
     public GrantUserAreaAccessUseCase(
         IUserRepository users,
         IAreaRepository areas,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs)
     {
         _users = users;
         _areas = areas;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
     }
 
     public Task<AreaAccessOutput> ExecuteAsync(
@@ -53,6 +58,18 @@ public class GrantUserAreaAccessUseCase
                 input.ExpiresAt);
 
             await _areas.CreateUserAreaAccessAsync(access, cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.UserAreaAccessGranted,
+                "UserAreaAccess",
+                access.Id,
+                new Dictionary<string, string?>
+                {
+                    ["targetUserId"] = access.UserId.ToString(),
+                    ["areaId"] = access.AreaId.ToString(),
+                    ["canView"] = access.CanView.ToString(),
+                    ["canManage"] = access.CanManage.ToString()
+                },
+                cancellationToken: cancellationToken);
 
             return new AreaAccessOutput
             {

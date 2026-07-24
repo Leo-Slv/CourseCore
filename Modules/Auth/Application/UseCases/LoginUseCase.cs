@@ -1,4 +1,6 @@
 using CourseCore.Api.Modules.Access.Domain.Repositories;
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Auth.Application.DTOs;
 using CourseCore.Api.Modules.Auth.Domain.Entities;
@@ -23,6 +25,7 @@ public class LoginUseCase
     private readonly IRefreshTokenHasher _refreshTokenHasher;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<LoginUseCase> _logger;
 
@@ -35,6 +38,7 @@ public class LoginUseCase
         IRefreshTokenHasher refreshTokenHasher,
         IRefreshTokenGenerator refreshTokenGenerator,
         IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs,
         IOptions<JwtOptions> jwtOptions,
         ILogger<LoginUseCase> logger)
     {
@@ -46,6 +50,7 @@ public class LoginUseCase
         _refreshTokenHasher = refreshTokenHasher;
         _refreshTokenGenerator = refreshTokenGenerator;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
         _jwtOptions = jwtOptions.Value;
         _logger = logger;
     }
@@ -77,15 +82,23 @@ public class LoginUseCase
         var refreshTokenHash = _refreshTokenHasher.Hash(refreshToken);
         var now = DateTime.UtcNow;
 
-        await _unitOfWork.ExecuteAsync(
-            () => _refreshTokens.AddAsync(
+        await _unitOfWork.ExecuteAsync(async () =>
+        {
+            await _refreshTokens.AddAsync(
                 RefreshToken.Create(
                     user.Id,
                     refreshTokenHash,
                     now.AddDays(_jwtOptions.RefreshTokenExpirationDays),
                     now),
-                cancellationToken),
-            cancellationToken);
+                cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.LoginSucceeded,
+                "User",
+                user.Id,
+                new Dictionary<string, string?> { ["result"] = "succeeded" },
+                user.Id,
+                cancellationToken);
+        }, cancellationToken);
 
         _logger.LogInformation("User {UserId} signed in successfully.", user.Id);
 

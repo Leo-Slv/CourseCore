@@ -1,3 +1,5 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Users.Application.DTOs;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
@@ -10,11 +12,16 @@ public class UpdateUserUseCase
 {
     private readonly IUserRepository _users;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
 
-    public UpdateUserUseCase(IUserRepository users, IUnitOfWork unitOfWork)
+    public UpdateUserUseCase(
+        IUserRepository users,
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs)
     {
         _users = users;
         _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
     }
 
     public Task<UserOutput> ExecuteAsync(
@@ -59,6 +66,11 @@ public class UpdateUserUseCase
             }
 
             await _users.UpdateAsync(user, cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.UserUpdated,
+                "User",
+                user.Id,
+                cancellationToken: cancellationToken);
 
             return UserOutput.FromUser(user);
         }, cancellationToken);
