@@ -83,6 +83,13 @@ Jwt__Issuer
 Jwt__Audience
 Jwt__AccessTokenExpirationMinutes
 Jwt__RefreshTokenExpirationDays
+Auth__ExposeRefreshTokenInBody
+Auth__AllowRefreshTokenInBodyFallback
+Auth__RefreshTokenCookie__Name
+Auth__RefreshTokenCookie__Path
+Auth__RefreshTokenCookie__SameSite
+Auth__RefreshTokenCookie__Secure
+Auth__RefreshTokenCookie__MaxAgeDays
 Cors__AllowedOrigins__0
 Seed__Admin__Enabled
 Seed__Admin__Name
@@ -269,9 +276,11 @@ Scalar/OpenAPI nao sao expostos por padrao em `Production`.
 
 - Login emite JWT.
 - Refresh token e persistido somente como hash.
+- Refresh token e enviado para clientes web em cookie `HttpOnly`.
 - Refresh token possui expiracao, revogacao e rotacao atomica.
 - Reutilizacao de refresh token antigo e rejeitada.
 - Logout revoga o refresh token da sessao atual.
+- Access token continua no body da resposta; refresh token nao e exposto no body em Production.
 - JWT inclui roles e permission claims.
 - Policies usam permissions com fallback para a role `Admin`.
 - Fluxos sensiveis usam o usuario autenticado pelo token, nao `userId` enviado pelo cliente.
@@ -287,6 +296,8 @@ X-Correlation-ID
 Se o cliente envia um GUID valido, a API preserva o valor. Caso contrario, a API gera um novo correlation id. O response devolve `X-Correlation-ID`, e respostas de erro incluem `traceId` e `correlationId`.
 
 Logs de aplicacao nao devem conter senha, access token, refresh token, hash, JWT secret, connection string ou secrets de ambiente.
+
+Cookies de refresh token usam `HttpOnly`, path `/api/auth` e `SameSite=Lax` por padrao. Em Production, o cookie e sempre `Secure`. Esta etapa nao habilita CORS com credentials nem protecao CSRF completa; para deployments cross-site, avalie CORS explicito com credentials, `SameSite=None; Secure` e CSRF token/custom header em etapa propria.
 
 Veja `Docs/observability.md`.
 

@@ -1,10 +1,14 @@
 using CourseCore.Api.Modules.Auth.Application.UseCases;
+using CourseCore.Api.Modules.Auth.Application.DTOs;
+using CourseCore.Api.Modules.Auth.Infrastructure.Security;
+using CourseCore.Api.Modules.Auth.Presentation.Cookies;
 using CourseCore.Api.Modules.Auth.Presentation.Presenters;
 using CourseCore.Api.Modules.Auth.Presentation.Requests;
 using CourseCore.Api.Modules.Auth.Presentation.Responses;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Auth.Presentation.Controllers;
 
@@ -15,15 +19,24 @@ public class AuthController : ControllerBase
     private readonly LoginUseCase _loginUseCase;
     private readonly RefreshTokenUseCase _refreshTokenUseCase;
     private readonly LogoutUseCase _logoutUseCase;
+    private readonly IRefreshTokenCookieService _refreshTokenCookieService;
+    private readonly AuthResponseOptions _authResponseOptions;
+    private readonly IWebHostEnvironment _environment;
 
     public AuthController(
         LoginUseCase loginUseCase,
         RefreshTokenUseCase refreshTokenUseCase,
-        LogoutUseCase logoutUseCase)
+        LogoutUseCase logoutUseCase,
+        IRefreshTokenCookieService refreshTokenCookieService,
+        IOptions<AuthResponseOptions> authResponseOptions,
+        IWebHostEnvironment environment)
     {
         _loginUseCase = loginUseCase;
         _refreshTokenUseCase = refreshTokenUseCase;
         _logoutUseCase = logoutUseCase;
+        _refreshTokenCookieService = refreshTokenCookieService;
+        _authResponseOptions = authResponseOptions.Value;
+        _environment = environment;
     }
 
     [HttpPost("login")]
@@ -38,7 +51,9 @@ public class AuthController : ControllerBase
     {
         var output = await _loginUseCase.ExecuteAsync(AuthPresenter.ToInput(request), cancellationToken);
 
-        return Ok(AuthPresenter.ToResponse(output));
+        AppendRefreshTokenCookie(output);
+
+        return Ok(AuthPresenter.ToResponse(output, ShouldExposeRefreshTokenInBody()));
     }
 
     [HttpPost("refresh-token")]
@@ -51,11 +66,14 @@ public class AuthController : ControllerBase
         RefreshTokenRequest request,
         CancellationToken cancellationToken)
     {
+        var refreshToken = GetRefreshTokenFromCookieOrBody(request.RefreshToken);
         var output = await _refreshTokenUseCase.ExecuteAsync(
-            AuthPresenter.ToRefreshToken(request),
+            refreshToken,
             cancellationToken);
 
-        return Ok(AuthPresenter.ToResponse(output));
+        AppendRefreshTokenCookie(output);
+
+        return Ok(AuthPresenter.ToResponse(output, ShouldExposeRefreshTokenInBody()));
     }
 
     [HttpPost("logout")]
@@ -66,10 +84,41 @@ public class AuthController : ControllerBase
         LogoutRequest request,
         CancellationToken cancellationToken)
     {
+        var refreshToken = GetRefreshTokenFromCookieOrBody(request.RefreshToken);
+
         await _logoutUseCase.ExecuteAsync(
-            AuthPresenter.ToRefreshToken(request),
+            refreshToken,
             cancellationToken);
 
+        _refreshTokenCookieService.Delete(Response);
+
         return NoContent();
+    }
+
+    private void AppendRefreshTokenCookie(AuthOutput output)
+    {
+        if (!string.IsNullOrWhiteSpace(output.Token.RefreshToken))
+        {
+            _refreshTokenCookieService.Append(Response, output.Token.RefreshToken);
+        }
+    }
+
+    private string GetRefreshTokenFromCookieOrBody(string bodyRefreshToken)
+    {
+        var cookieRefreshToken = _refreshTokenCookieService.Read(Request);
+
+        if (!string.IsNullOrWhiteSpace(cookieRefreshToken))
+        {
+            return cookieRefreshToken;
+        }
+
+        return _authResponseOptions.AllowRefreshTokenInBodyFallback
+            ? bodyRefreshToken
+            : string.Empty;
+    }
+
+    private bool ShouldExposeRefreshTokenInBody()
+    {
+        return !_environment.IsProduction() && _authResponseOptions.ExposeRefreshTokenInBody;
     }
 }

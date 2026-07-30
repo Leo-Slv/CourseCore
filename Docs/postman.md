@@ -60,19 +60,20 @@ Veja tambem `Docs/database-seeding.md`.
 3. Preencha `adminPassword`.
 4. Execute `Auth / Login as Seed Admin`.
 5. Use os endpoints protegidos.
-6. Quando necessario, execute `Auth / Refresh Token` para renovar os tokens.
-7. Execute `Auth / Logout` para revogar o refresh token da sessao atual.
+6. Quando necessario, execute `Auth / Refresh Token` para renovar o access token usando o cookie jar do Postman.
+7. Execute `Auth / Logout` para revogar o refresh token da sessao atual e limpar o cookie.
 
 A request de login salva automaticamente:
 
 ```text
 accessToken
-refreshToken
 ```
 
-A request de refresh token tambem atualiza os dois valores.
+O refresh token nao e salvo no environment. A API envia o refresh token em cookie `HttpOnly`, e o Postman usa o cookie jar automaticamente nas requests seguintes.
 
-A request de logout envia o `refreshToken` atual no body, espera `204 No Content` e limpa a variavel `refreshToken` do environment.
+A request de refresh token atualiza o `accessToken` e recebe um novo cookie de refresh token.
+
+A request de logout usa o cookie do Postman, espera `204 No Content` e limpa o cookie no servidor.
 
 ## Variaveis do environment
 
@@ -80,7 +81,6 @@ Variaveis preenchidas pela collection:
 
 ```text
 accessToken
-refreshToken
 correlationId
 createdUserId
 courseId
@@ -108,6 +108,12 @@ Bearer {{accessToken}}
 ```
 
 Login, refresh token e logout sao publicos e nao usam Bearer.
+
+Login, refresh token e logout usam cookie `HttpOnly` para o refresh token. Se voce estiver testando um cliente mobile ou uma ferramenta sem cookie jar, o fallback por body pode ser habilitado por configuracao local com `Auth__AllowRefreshTokenInBodyFallback=true`. Em producao, mantenha o fallback desabilitado salvo decisao operacional explicita.
+
+Para frontends web/PWA, mantenha o access token apenas em memoria no cliente. O navegador envia o cookie automaticamente para `/api/auth`.
+
+Se frontend e API forem cross-site, sera necessario avaliar CORS com credentials, origem explicita e `SameSite=None; Secure`. Esta etapa nao habilita `AllowCredentials` nem abre CORS. Protecao CSRF completa fica como pendencia futura para fluxos com cookie.
 
 ## Correlation id
 

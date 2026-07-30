@@ -48,7 +48,9 @@ public static class IntegrationAuth
         return new AuthTokenResult(
             response.StatusCode,
             token.GetProperty("accessToken").GetString() ?? string.Empty,
-            token.GetProperty("refreshToken").GetString() ?? string.Empty);
+            token.TryGetProperty("refreshToken", out var refreshToken)
+                ? refreshToken.GetString() ?? string.Empty
+                : string.Empty);
     }
 
     public static async Task AuthenticateAsAdminAsync(HttpClient client)

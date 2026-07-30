@@ -25,7 +25,7 @@ public static class AuthPresenter
         return request.RefreshToken;
     }
 
-    public static AuthResponse ToResponse(AuthOutput output)
+    public static AuthResponse ToResponse(AuthOutput output, bool exposeRefreshToken)
     {
         return new AuthResponse
         {
@@ -33,16 +33,16 @@ public static class AuthPresenter
             Name = output.Name,
             Email = output.Email,
             Roles = output.Roles.ToList(),
-            Token = ToResponse(output.Token)
+            Token = ToResponse(output.Token, exposeRefreshToken)
         };
     }
 
-    public static AuthTokenResponse ToResponse(AuthToken token)
+    public static AuthTokenResponse ToResponse(AuthToken token, bool exposeRefreshToken)
     {
         return new AuthTokenResponse
         {
             AccessToken = token.AccessToken,
-            RefreshToken = token.RefreshToken,
+            RefreshToken = exposeRefreshToken ? token.RefreshToken : null,
             ExpiresAt = token.ExpiresAt
         };
     }

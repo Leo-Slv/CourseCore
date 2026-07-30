@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Persistence.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
+using CourseCore.Api.Modules.Auth.Presentation.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -21,11 +22,14 @@ public static class AuthDependencyInjection
         JwtTokenService.ValidateOptions(jwtOptions);
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        services.Configure<AuthResponseOptions>(configuration.GetSection("Auth"));
+        services.Configure<RefreshTokenCookieOptions>(configuration.GetSection("Auth:RefreshTokenCookie"));
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IRefreshTokenHasher, Sha256RefreshTokenHasher>();
         services.AddScoped<IRefreshTokenGenerator, SecureRefreshTokenGenerator>();
         services.AddScoped<IRefreshTokenRepository, EfRefreshTokenRepository>();
+        services.AddScoped<IRefreshTokenCookieService, RefreshTokenCookieService>();
         services.AddScoped<LoginUseCase>();
         services.AddScoped<RefreshTokenUseCase>();
         services.AddScoped<LogoutUseCase>();

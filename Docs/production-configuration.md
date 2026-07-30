@@ -26,6 +26,13 @@ Jwt__Issuer=CourseCore
 Jwt__Audience=CourseCore
 Jwt__AccessTokenExpirationMinutes=60
 Jwt__RefreshTokenExpirationDays=7
+Auth__ExposeRefreshTokenInBody=false
+Auth__AllowRefreshTokenInBodyFallback=false
+Auth__RefreshTokenCookie__Name=coursecore_refresh_token
+Auth__RefreshTokenCookie__Path=/api/auth
+Auth__RefreshTokenCookie__SameSite=Lax
+Auth__RefreshTokenCookie__Secure=true
+Auth__RefreshTokenCookie__MaxAgeDays=7
 Cors__AllowedOrigins__0=https://your-frontend-domain.com
 Seed__Admin__Enabled=false
 ```
@@ -35,6 +42,12 @@ Seed__Admin__Enabled=false
 `ConnectionStrings__CourseCoreDatabase` must point to the production PostgreSQL instance. Do not commit real credentials.
 
 `Cors__AllowedOrigins` must list only trusted frontend origins. Do not use wildcard origins in production.
+
+`Auth__ExposeRefreshTokenInBody` must remain `false` in Production. The API also suppresses refresh tokens in response bodies when running in Production even if this setting is accidentally enabled.
+
+`Auth__AllowRefreshTokenInBodyFallback` should remain `false` for web/PWA production deployments. The preferred flow stores the refresh token in the `coursecore_refresh_token` cookie.
+
+`Auth__RefreshTokenCookie__Secure` must be `true` in Production. The application forces refresh token cookies to `Secure` in Production. `SameSite=Lax` is the default same-site posture; use `SameSite=None` only with `Secure=true` when a cross-site frontend/API deployment explicitly requires it.
 
 ## Production Startup Validation
 
@@ -64,6 +77,8 @@ https://localhost:3000
 ```
 
 Production requires configured origins and does not use `AllowAnyOrigin`. Credentials are not enabled because the API uses Bearer tokens.
+
+Refresh token cookies are scoped to `/api/auth`. If a cross-site frontend needs browser credentials for auth endpoints, configure CORS carefully with explicit origins and credentials in a future step. Do not combine credentials with wildcard origins.
 
 ## HTTPS and HSTS
 

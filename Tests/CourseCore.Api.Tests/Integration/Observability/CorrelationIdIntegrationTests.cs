@@ -10,6 +10,7 @@ namespace CourseCore.Api.Tests.Integration.Observability;
 public class CorrelationIdIntegrationTests : IClassFixture<CourseCoreApiFactory>
 {
     private const string CorrelationHeader = "X-Correlation-ID";
+    private const string RefreshTokenCookieName = "coursecore_refresh_token";
     private readonly CourseCoreApiFactory _factory;
 
     public CorrelationIdIntegrationTests(CourseCoreApiFactory factory)
@@ -68,10 +69,12 @@ public class CorrelationIdIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = CreateClient();
 
         var login = await LoginAsync(client);
-        var refreshResponse = await client.PostAsJsonAsync("/api/auth/refresh-token", new
+        using var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh-token")
         {
-            refreshToken = login.RefreshToken
-        });
+            Content = JsonContent.Create(new { refreshToken = string.Empty })
+        };
+        refreshRequest.Headers.Add("Cookie", $"{RefreshTokenCookieName}={login.RefreshToken}");
+        var refreshResponse = await client.SendAsync(refreshRequest);
         var refresh = await ReadAuthTokenAsync(refreshResponse);
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
@@ -112,10 +115,11 @@ public class CorrelationIdIntegrationTests : IClassFixture<CourseCoreApiFactory>
     private static async Task<AuthTokenResult> ReadAuthTokenAsync(HttpResponseMessage response)
     {
         var content = await response.Content.ReadAsStringAsync();
+        var refreshTokenFromCookie = ReadRefreshTokenFromSetCookie(response);
 
         if (!response.IsSuccessStatusCode)
         {
-            return new AuthTokenResult(response.StatusCode, string.Empty, string.Empty);
+            return new AuthTokenResult(response.StatusCode, string.Empty, refreshTokenFromCookie ?? string.Empty);
         }
 
         using var json = JsonDocument.Parse(content);
@@ -124,7 +128,32 @@ public class CorrelationIdIntegrationTests : IClassFixture<CourseCoreApiFactory>
         return new AuthTokenResult(
             response.StatusCode,
             token.GetProperty("accessToken").GetString() ?? string.Empty,
-            token.GetProperty("refreshToken").GetString() ?? string.Empty);
+            token.TryGetProperty("refreshToken", out var refreshToken)
+                ? refreshToken.GetString() ?? string.Empty
+                : refreshTokenFromCookie ?? string.Empty);
+    }
+
+    private static string? ReadRefreshTokenFromSetCookie(HttpResponseMessage response)
+    {
+        if (!response.Headers.TryGetValues("Set-Cookie", out var values))
+        {
+            return null;
+        }
+
+        var setCookieHeader = values.FirstOrDefault(value =>
+            value.StartsWith($"{RefreshTokenCookieName}=", StringComparison.OrdinalIgnoreCase));
+
+        if (string.IsNullOrWhiteSpace(setCookieHeader))
+        {
+            return null;
+        }
+
+        var prefix = $"{RefreshTokenCookieName}=";
+        var endIndex = setCookieHeader.IndexOf(';');
+
+        return endIndex < 0
+            ? setCookieHeader[prefix.Length..]
+            : setCookieHeader[prefix.Length..endIndex];
     }
 
     private sealed record AuthTokenResult(

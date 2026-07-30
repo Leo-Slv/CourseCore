@@ -82,9 +82,6 @@
                   "});",
                   "if (json.token && json.token.accessToken) {",
                   "  pm.environment.set(\"accessToken\", json.token.accessToken);",
-                  "}",
-                  "if (json.token && json.token.refreshToken) {",
-                  "  pm.environment.set(\"refreshToken\", json.token.refreshToken);",
                   "}"
                 ]
               }
@@ -107,7 +104,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+              "raw": "{\n  \"refreshToken\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/refresh-token",
@@ -133,9 +130,6 @@
                   "const json = pm.response.json();",
                   "if (json.token && json.token.accessToken) {",
                   "  pm.environment.set(\"accessToken\", json.token.accessToken);",
-                  "}",
-                  "if (json.token && json.token.refreshToken) {",
-                  "  pm.environment.set(\"refreshToken\", json.token.refreshToken);",
                   "}"
                 ]
               }
@@ -158,7 +152,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+              "raw": "{\n  \"refreshToken\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/logout",
@@ -180,8 +174,7 @@
                 "exec": [
                   "pm.test(\"Status code is No Content\", function () {",
                   "  pm.expect(pm.response.code).to.eql(204);",
-                  "});",
-                  "pm.environment.unset(\"refreshToken\");"
+                  "});"
                 ]
               }
             }

@@ -28,6 +28,28 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
     private const string JwtSecretKey = "integration-test-secret-key-32-characters-minimum";
 
     private readonly SqliteConnection _connection = new($"Data Source=CourseCoreTests-{Guid.NewGuid():N};Mode=Memory;Cache=Shared");
+    private readonly string _environmentName;
+    private readonly IReadOnlyDictionary<string, string?> _configurationOverrides;
+
+    public CourseCoreApiFactory()
+        : this("Development", null)
+    {
+    }
+
+    private CourseCoreApiFactory(
+        string environmentName,
+        IReadOnlyDictionary<string, string?>? configurationOverrides = null)
+    {
+        _environmentName = environmentName;
+        _configurationOverrides = configurationOverrides ?? new Dictionary<string, string?>();
+    }
+
+    public static CourseCoreApiFactory Create(
+        string environmentName = "Development",
+        IReadOnlyDictionary<string, string?>? configurationOverrides = null)
+    {
+        return new CourseCoreApiFactory(environmentName, configurationOverrides);
+    }
 
     public async Task<Guid> GetAdminRoleIdAsync()
     {
@@ -332,10 +354,10 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
     {
         _connection.Open();
 
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment(_environmentName);
         builder.ConfigureAppConfiguration(configuration =>
         {
-            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            var testConfiguration = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:CourseCoreDatabase"] = "Data Source=:memory:",
                 ["Jwt:Issuer"] = JwtIssuer,
@@ -343,8 +365,23 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["Jwt:SecretKey"] = JwtSecretKey,
                 ["Jwt:AccessTokenExpirationMinutes"] = "60",
                 ["Jwt:RefreshTokenExpirationDays"] = "7",
+                ["Auth:ExposeRefreshTokenInBody"] = "false",
+                ["Auth:AllowRefreshTokenInBodyFallback"] = "true",
+                ["Auth:RefreshTokenCookie:Name"] = "coursecore_refresh_token",
+                ["Auth:RefreshTokenCookie:Path"] = "/api/auth",
+                ["Auth:RefreshTokenCookie:SameSite"] = "Lax",
+                ["Auth:RefreshTokenCookie:Secure"] = "false",
+                ["Auth:RefreshTokenCookie:MaxAgeDays"] = "7",
+                ["Cors:AllowedOrigins:0"] = "https://localhost",
                 ["Seed:Admin:Enabled"] = "false"
-            });
+            };
+
+            foreach (var (key, value) in _configurationOverrides)
+            {
+                testConfiguration[key] = value;
+            }
+
+            configuration.AddInMemoryCollection(testConfiguration);
         });
 
         builder.ConfigureServices(services =>
