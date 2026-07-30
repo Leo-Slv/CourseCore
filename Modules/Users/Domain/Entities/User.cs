@@ -6,13 +6,14 @@ namespace CourseCore.Api.Modules.Users.Domain.Entities;
 
 public class User : EntityBase
 {
-    private User(string name, Email email, string passwordHash, bool active, DateTime? emailVerifiedAt)
+    private User(string name, Email email, string passwordHash, bool active, DateTime? emailVerifiedAt, int tokenVersion)
     {
         Name = ValidateRequired(name, nameof(Name));
         Email = email ?? throw new DomainException("Email is required.");
         PasswordHash = ValidateRequired(passwordHash, nameof(PasswordHash));
         Active = active;
         EmailVerifiedAt = emailVerifiedAt;
+        TokenVersion = ValidateTokenVersion(tokenVersion);
     }
 
     public string Name { get; private set; }
@@ -25,9 +26,11 @@ public class User : EntityBase
 
     public DateTime? EmailVerifiedAt { get; private set; }
 
+    public int TokenVersion { get; private set; }
+
     public static User Create(string name, Email email, string passwordHash)
     {
-        return new User(name, email, passwordHash, active: true, emailVerifiedAt: null);
+        return new User(name, email, passwordHash, active: true, emailVerifiedAt: null, tokenVersion: 0);
     }
 
     public static User Restore(
@@ -37,10 +40,11 @@ public class User : EntityBase
         string passwordHash,
         bool active,
         DateTime? emailVerifiedAt,
+        int tokenVersion,
         DateTime createdAt,
         DateTime updatedAt)
     {
-        return new User(name, email, passwordHash, active, emailVerifiedAt)
+        return new User(name, email, passwordHash, active, emailVerifiedAt, tokenVersion)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -63,6 +67,12 @@ public class User : EntityBase
     public void ChangePasswordHash(string passwordHash)
     {
         PasswordHash = ValidateRequired(passwordHash, nameof(PasswordHash));
+        MarkAsUpdated();
+    }
+
+    public void IncrementTokenVersion()
+    {
+        TokenVersion++;
         MarkAsUpdated();
     }
 
@@ -92,5 +102,15 @@ public class User : EntityBase
         }
 
         return value.Trim();
+    }
+
+    private static int ValidateTokenVersion(int tokenVersion)
+    {
+        if (tokenVersion < 0)
+        {
+            throw new DomainException("TokenVersion cannot be negative.");
+        }
+
+        return tokenVersion;
     }
 }

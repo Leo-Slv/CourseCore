@@ -15,6 +15,7 @@ public static class UserMapper
             model.PasswordHash,
             model.Active,
             model.EmailVerifiedAt,
+            model.TokenVersion,
             model.CreatedAt,
             model.UpdatedAt);
     }
@@ -29,6 +30,7 @@ public static class UserMapper
             PasswordHash = user.PasswordHash,
             Active = user.Active,
             EmailVerifiedAt = user.EmailVerifiedAt,
+            TokenVersion = user.TokenVersion,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
         };
@@ -41,6 +43,7 @@ public static class UserMapper
         model.PasswordHash = user.PasswordHash;
         model.Active = user.Active;
         model.EmailVerifiedAt = user.EmailVerifiedAt;
+        model.TokenVersion = user.TokenVersion;
         model.UpdatedAt = user.UpdatedAt;
     }
 }

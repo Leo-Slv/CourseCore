@@ -289,7 +289,9 @@ Scalar/OpenAPI nao sao expostos por padrao em `Production`.
 - Reutilizacao de refresh token antigo e rejeitada.
 - Logout revoga o refresh token da sessao atual.
 - Access token continua no body da resposta; refresh token nao e exposto no body em Production.
-- JWT inclui roles e permission claims.
+- JWT inclui roles, permission claims e `token_version`.
+- Requests autenticadas validam o usuario atual no banco e rejeitam JWT antigo quando `TokenVersion` diverge ou o usuario esta inativo.
+- Atualizacoes criticas de usuario incrementam `TokenVersion` e revogam refresh tokens ativos do usuario afetado.
 - Policies usam permissions com fallback para a role `Admin`.
 - Fluxos sensiveis usam o usuario autenticado pelo token, nao `userId` enviado pelo cliente.
 
@@ -308,6 +310,8 @@ Logs de aplicacao nao devem conter senha, access token, refresh token, hash, JWT
 Cookies de refresh token usam `HttpOnly`, path `/api/auth` e `SameSite=Lax` por padrao. Em Production, o cookie e sempre `Secure`. Esta etapa nao habilita CORS com credentials nem protecao CSRF completa; para deployments cross-site, avalie CORS explicito com credentials, `SameSite=None; Secure` e CSRF token/custom header em etapa propria.
 
 Rate limiting reduz brute force, credential stuffing e abuso operacional, mas nao substitui MFA, CAPTCHA, lockout progressivo ou monitoramento antifraude em uma etapa futura.
+
+Validacao de `token_version` consulta o banco em requests autenticadas. Otimizacoes futuras podem usar cache curto por `userId/tokenVersion`, cache distribuido ou validacao mais seletiva em endpoints sensiveis.
 
 Veja `Docs/observability.md`.
 

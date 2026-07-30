@@ -17,6 +17,8 @@ public class UserPersistenceModel
 
     public DateTime? EmailVerifiedAt { get; set; }
 
+    public int TokenVersion { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

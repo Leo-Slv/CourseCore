@@ -115,6 +115,8 @@ The application does not apply migrations during startup.
 
 Apply migrations outside the app startup, through a controlled local command, deployment job, or reviewed SQL script. Do not run `dotnet ef database update` automatically in production startup.
 
+Security Hardening 05 adds `TokenVersion` to `users`. Deploy the reviewed migration before running an API version that validates the `token_version` JWT claim against the database.
+
 For staging and production, generate an idempotent SQL script and review it before applying:
 
 ```bash
@@ -140,6 +142,8 @@ validate /health/ready after execution
 ```
 
 Seed must remain disabled in Production unless a controlled operational procedure explicitly enables it for a one-time action.
+
+Authenticated requests now query the current user to reject inactive users and stale JWTs. Monitor database latency and consider a short user token-version cache in a future performance hardening step if needed.
 
 ## Docker
 

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Globalization;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
@@ -6,6 +7,7 @@ using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Persistence.Repositories;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Modules.Auth.Presentation.Cookies;
+using CourseCore.Api.Modules.Users.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -49,6 +51,10 @@ public static class AuthDependencyInjection
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
                     ClockSkew = TimeSpan.Zero
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = ValidateTokenVersionAsync
+                };
             });
 
         services.AddAuthorization(options =>
@@ -89,5 +95,26 @@ public static class AuthDependencyInjection
     {
         return context.User.IsInRole(AuthRoleNames.Admin)
             || permissions.Any(permission => context.User.HasClaim(AuthClaimTypes.Permission, permission));
+    }
+
+    private static async Task ValidateTokenVersionAsync(TokenValidatedContext context)
+    {
+        var userIdValue = context.Principal?.FindFirst(AuthClaimTypes.UserId)?.Value;
+        var tokenVersionValue = context.Principal?.FindFirst(AuthClaimTypes.TokenVersion)?.Value;
+
+        if (!Guid.TryParse(userIdValue, out var userId)
+            || !int.TryParse(tokenVersionValue, NumberStyles.None, CultureInfo.InvariantCulture, out var tokenVersion))
+        {
+            context.Fail("Invalid token.");
+            return;
+        }
+
+        var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+        var user = await users.FindByIdAsync(userId, context.HttpContext.RequestAborted);
+
+        if (user is null || !user.Active || user.TokenVersion != tokenVersion)
+        {
+            context.Fail("Invalid token.");
+        }
     }
 }

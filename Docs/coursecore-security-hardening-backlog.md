@@ -307,6 +307,7 @@ Tests/CourseCore.Api.Tests/
 **Origem:** H-05  
 **Severidade:** Alta  
 **Bloqueia produção:** Sim
+**Status:** Implementado no Security Hardening 05.
 
 ### Problema
 

@@ -17,6 +17,7 @@ public class UserConfiguration : IEntityTypeConfiguration<UserPersistenceModel>
         builder.Property(x => x.PasswordHash).IsRequired().HasMaxLength(500);
         builder.Property(x => x.Active).IsRequired();
         builder.Property(x => x.EmailVerifiedAt).IsRequired(false);
+        builder.Property(x => x.TokenVersion).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 

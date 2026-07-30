@@ -7,4 +7,5 @@ public static class AuthClaimTypes
     public const string Name = System.Security.Claims.ClaimTypes.Name;
     public const string Role = System.Security.Claims.ClaimTypes.Role;
     public const string Permission = "permission";
+    public const string TokenVersion = "token_version";
 }

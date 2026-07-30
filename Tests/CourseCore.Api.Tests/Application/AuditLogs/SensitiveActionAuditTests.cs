@@ -42,7 +42,7 @@ public class SensitiveActionAuditTests
         var users = new FakeUserRepository();
         users.Add(user);
         var auditLogs = new FakeAuditLogService();
-        var useCase = new UpdateUserUseCase(users, new FakeUnitOfWork(), auditLogs);
+        var useCase = new UpdateUserUseCase(users, new FakeRefreshTokenRepository(), new FakeUnitOfWork(), auditLogs);
 
         await useCase.ExecuteAsync(new UpdateUserInput
         {
@@ -52,7 +52,9 @@ public class SensitiveActionAuditTests
             Active = true
         });
 
-        var auditLog = Assert.Single(auditLogs.Entries);
+        var auditLog = Assert.Single(
+            auditLogs.Entries,
+            entry => entry.Action == AuditLogActionNames.UserUpdated);
         Assert.Equal(AuditLogActionNames.UserUpdated, auditLog.Action);
         Assert.Equal("User", auditLog.EntityName);
         Assert.Equal(user.Id, auditLog.EntityId);

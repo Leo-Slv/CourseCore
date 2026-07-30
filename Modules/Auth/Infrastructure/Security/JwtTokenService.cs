@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
@@ -36,6 +37,7 @@ public class JwtTokenService : ITokenService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email.Value),
             new(ClaimTypes.Name, user.Name),
+            new(AuthClaimTypes.TokenVersion, user.TokenVersion.ToString(CultureInfo.InvariantCulture)),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

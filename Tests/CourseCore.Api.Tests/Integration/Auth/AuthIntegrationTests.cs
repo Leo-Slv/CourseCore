@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -86,6 +87,18 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task Login_WhenAdminCredentialsAreValid_ShouldReturnTokenVersionClaim()
+    {
+        using var client = CreateClient();
+
+        var login = await LoginAsync(client);
+        var tokenVersion = ReadTokenVersionClaim(login.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.Equal(0, tokenVersion);
+    }
+
+    [Fact]
     public async Task Login_WhenAdminRoleIsInactive_ShouldNotReturnAdminRoleOrPermissionClaims()
     {
         using var factory = new CourseCoreApiFactory();
@@ -156,6 +169,19 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task Login_WhenUserIsInactive_ShouldReturnUnauthorized()
+    {
+        using var client = CreateClient();
+        var user = await _factory.SeedUserWithRoleAsync(
+            AuthPermissionNames.ManageUsers,
+            userActive: false);
+
+        var login = await IntegrationAuth.LoginAsync(client, user);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
+    }
+
+    [Fact]
     public async Task GetUsers_WhenAdminTokenIsValid_ShouldReturnOk()
     {
         using var client = CreateClient();
@@ -200,6 +226,19 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Contains(AuthPermissionNames.ManageUsers, permissions);
         Assert.Contains(AuthPermissionNames.ManageCourses, permissions);
         Assert.Contains(AuthPermissionNames.ReadProgress, permissions);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WhenRefreshTokenIsValid_ShouldReturnTokenVersionClaim()
+    {
+        using var client = CreateClient();
+        var login = await LoginAsync(client);
+
+        var refresh = await RefreshWithCookieAsync(client, login.RefreshToken);
+        var tokenVersion = ReadTokenVersionClaim(refresh.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        Assert.Equal(0, tokenVersion);
     }
 
     [Fact]
@@ -339,6 +378,71 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Contains(HttpStatusCode.Unauthorized, statusCodes);
         Assert.Equal(1, activeRefreshTokens);
         Assert.Single(refreshAttempts, attempt => !string.IsNullOrWhiteSpace(attempt.RefreshToken));
+    }
+
+    [Fact]
+    public async Task GetUsers_WhenTokenVersionIsOld_ShouldReturnUnauthorized()
+    {
+        using var factory = new CourseCoreApiFactory();
+        var user = await factory.SeedUserAsync(AuthPermissionNames.ManageUsers);
+        using var client = CreateClient(factory);
+        var login = await IntegrationAuth.LoginAsync(client, user);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
+
+        await factory.IncrementUserTokenVersionAsync(user.Id);
+        var response = await client.GetAsync("/api/users");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUsers_WhenUserIsDeactivatedAfterLogin_ShouldReturnUnauthorized()
+    {
+        using var factory = new CourseCoreApiFactory();
+        var user = await factory.SeedUserAsync(AuthPermissionNames.ManageUsers);
+        using var userClient = CreateClient(factory);
+        var login = await IntegrationAuth.LoginAsync(userClient, user);
+        userClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
+        using var adminClient = CreateClient(factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+
+        var update = await adminClient.PutAsJsonAsync($"/api/users/{user.Id}", new
+        {
+            name = "Deactivated Integration User",
+            email = user.Email,
+            active = false
+        });
+        var response = await userClient.GetAsync("/api/users");
+
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WhenUserIsDeactivated_ShouldReturnUnauthorizedAndRevokeRefreshTokens()
+    {
+        using var factory = new CourseCoreApiFactory();
+        var user = await factory.SeedUserAsync(AuthPermissionNames.ManageUsers);
+        using var userClient = CreateClient(factory);
+        var login = await IntegrationAuth.LoginAsync(userClient, user);
+        using var adminClient = CreateClient(factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+
+        var update = await adminClient.PutAsJsonAsync($"/api/users/{user.Id}", new
+        {
+            name = "Deactivated Integration User",
+            email = user.Email,
+            active = false
+        });
+        using var refreshClient = CreateClient(factory);
+        var refresh = await PostWithRefreshCookieAsync(refreshClient, "/api/auth/refresh-token", login.RefreshToken);
+        var tokenVersion = await factory.GetUserTokenVersionAsync(user.Id);
+        var activeRefreshTokens = await factory.CountActiveRefreshTokensByUserIdAsync(user.Id);
+
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
+        Assert.Equal(1, tokenVersion);
+        Assert.Equal(0, activeRefreshTokens);
     }
 
     [Fact]
@@ -561,6 +665,14 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
             .Where(claim => claim.Type is AuthClaimTypes.Role or "role")
             .Select(claim => claim.Value)
             .ToArray();
+    }
+
+    private static int ReadTokenVersionClaim(string accessToken)
+    {
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+        var value = jwt.Claims.Single(claim => claim.Type == AuthClaimTypes.TokenVersion).Value;
+
+        return int.Parse(value, CultureInfo.InvariantCulture);
     }
 
     private sealed record AuthTokenResult(

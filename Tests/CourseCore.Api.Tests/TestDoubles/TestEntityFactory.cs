@@ -11,7 +11,8 @@ public static class TestEntityFactory
         Guid? id = null,
         string email = "user@coursecore.local",
         string passwordHash = "hashed:password",
-        bool active = true)
+        bool active = true,
+        int tokenVersion = 0)
     {
         var now = DateTime.UtcNow.AddMinutes(-5);
 
@@ -22,6 +23,7 @@ public static class TestEntityFactory
             passwordHash,
             active,
             emailVerifiedAt: null,
+            tokenVersion,
             now,
             now);
     }

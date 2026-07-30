@@ -107,6 +107,8 @@ Os folders protegidos usam:
 Bearer {{accessToken}}
 ```
 
+O access token inclui a claim `token_version`. Se o usuario for desativado ou sofrer atualizacao critica, tokens antigos passam a receber `401 Unauthorized`; faca login novamente com um usuario ativo.
+
 Login, refresh token e logout sao publicos e nao usam Bearer.
 
 Login, refresh token e logout usam cookie `HttpOnly` para o refresh token. Se voce estiver testando um cliente mobile ou uma ferramenta sem cookie jar, o fallback por body pode ser habilitado por configuracao local com `Auth__AllowRefreshTokenInBodyFallback=true`. Em producao, mantenha o fallback desabilitado salvo decisao operacional explicita.
@@ -143,3 +145,4 @@ As respostas tambem devem devolver esse header.
 - Docker Compose nao aplica migrations automaticamente.
 - `/health/ready` pode falhar enquanto o schema do banco nao estiver aplicado.
 - Rate limiting nao substitui MFA, CAPTCHA ou lockout futuro.
+- JWT antigo pode ser rejeitado imediatamente apos mudancas criticas de usuario.

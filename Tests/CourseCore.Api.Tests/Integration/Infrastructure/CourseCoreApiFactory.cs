@@ -92,10 +92,47 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             .CountAsync();
     }
 
+    public async Task<int> CountActiveRefreshTokensByUserIdAsync(Guid userId)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+
+        return await dbContext.RefreshTokens
+            .Where(refreshToken => refreshToken.UserId == userId
+                && refreshToken.RevokedAt == null
+                && refreshToken.ExpiresAt > now)
+            .CountAsync();
+    }
+
+    public async Task<int> GetUserTokenVersionAsync(Guid userId)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+
+        return await dbContext.Users
+            .Where(user => user.Id == userId)
+            .Select(user => user.TokenVersion)
+            .SingleAsync();
+    }
+
+    public async Task IncrementUserTokenVersionAsync(Guid userId)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var user = await dbContext.Users.SingleAsync(user => user.Id == userId);
+
+        user.TokenVersion++;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+    }
+
     public async Task<TestUser> SeedUserWithRoleAsync(
         string? permissionKey = null,
         bool roleActive = true,
-        string? roleName = null)
+        string? roleName = null,
+        bool userActive = true)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
@@ -106,8 +143,9 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Name = "Integration User",
             Email = $"user-{Guid.NewGuid():N}@coursecore.local",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("IntegrationUser123!"),
-            Active = true,
+            Active = userActive,
             EmailVerifiedAt = now,
+            TokenVersion = 0,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -445,6 +483,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(AdminPassword),
             Active = true,
             EmailVerifiedAt = now,
+            TokenVersion = 0,
             CreatedAt = now,
             UpdatedAt = now
         };

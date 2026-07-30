@@ -73,6 +73,20 @@ public class EfRefreshTokenRepository : IRefreshTokenRepository
         return affectedRows == 1;
     }
 
+    public Task<int> RevokeActiveByUserIdAsync(
+        Guid userId,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default)
+    {
+        return _dbContext.RefreshTokens
+            .Where(x => x.UserId == userId
+                && x.RevokedAt == null
+                && x.ExpiresAt > revokedAt)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.RevokedAt, revokedAt),
+                cancellationToken);
+    }
+
     public async Task UpdateAsync(
         RefreshToken refreshToken,
         CancellationToken cancellationToken = default)

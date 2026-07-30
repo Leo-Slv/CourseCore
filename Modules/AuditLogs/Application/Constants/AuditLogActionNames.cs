@@ -9,6 +9,8 @@ public static class AuditLogActionNames
     public const string LogoutSucceeded = "LogoutSucceeded";
     public const string UserCreated = "UserCreated";
     public const string UserUpdated = "UserUpdated";
+    public const string UserTokenVersionIncremented = "UserTokenVersionIncremented";
+    public const string UserSessionsRevoked = "UserSessionsRevoked";
     public const string UserAreaAccessGranted = "UserAreaAccessGranted";
     public const string RoleAreaAccessGranted = "RoleAreaAccessGranted";
     public const string CourseCreated = "CourseCreated";

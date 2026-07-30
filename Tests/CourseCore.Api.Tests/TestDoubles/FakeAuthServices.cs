@@ -13,6 +13,10 @@ public sealed class FakeRefreshTokenRepository : IRefreshTokenRepository
 
     public List<RefreshToken> Updated { get; } = [];
 
+    public int RevokeActiveByUserIdCalls { get; private set; }
+
+    public Guid? LastRevokedUserId { get; private set; }
+
     public bool ForceRotateFailure { get; set; }
 
     public void AddExisting(RefreshToken refreshToken)
@@ -75,6 +79,28 @@ public sealed class FakeRefreshTokenRepository : IRefreshTokenRepository
         refreshToken.Revoke(revokedAt: revokedAt);
 
         return Task.FromResult(true);
+    }
+
+    public Task<int> RevokeActiveByUserIdAsync(
+        Guid userId,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default)
+    {
+        RevokeActiveByUserIdCalls++;
+        LastRevokedUserId = userId;
+
+        var revoked = 0;
+
+        foreach (var refreshToken in _tokens.Values.Where(token =>
+            token.UserId == userId
+            && token.IsActive
+            && token.ExpiresAt > revokedAt))
+        {
+            refreshToken.Revoke(revokedAt: revokedAt);
+            revoked++;
+        }
+
+        return Task.FromResult(revoked);
     }
 
     public Task UpdateAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)

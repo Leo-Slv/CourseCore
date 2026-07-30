@@ -32,6 +32,7 @@ Migrations existentes:
 ```text
 20260710184030_InitialCreate
 20260722193622_AddRefreshTokens
+20260730151936_AddUserTokenVersion
 ```
 
 Nao ha `IDesignTimeDbContextFactory` no estado atual. O EF Core usa a configuracao padrao do projeto de startup para criar o `CourseCoreDbContext` em design time.
@@ -121,6 +122,8 @@ artifacts/migrations/coursecore-migration.sql
 
 8. Valide login, refresh token e endpoints administrativos principais.
 9. Monitore logs, status HTTP 5xx e erros de banco.
+
+Quando a migration de `TokenVersion` estiver no pacote, aplique-a antes do deploy da API que valida a claim `token_version`; uma API nova contra schema antigo falharia ao consultar a coluna.
 
 ## Rollback
 
