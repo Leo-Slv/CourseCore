@@ -94,7 +94,9 @@ public sealed class FakeRoleRepository : IRoleRepository
     public Task<IReadOnlyCollection<Role>> FindByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return Task.FromResult<IReadOnlyCollection<Role>>(
-            _rolesByUserId.TryGetValue(userId, out var roles) ? roles.ToArray() : []);
+            _rolesByUserId.TryGetValue(userId, out var roles)
+                ? roles.Where(role => role.Active).ToArray()
+                : []);
     }
 
     public Task<IReadOnlyCollection<string>> FindPermissionKeysByUserIdAsync(

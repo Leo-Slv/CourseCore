@@ -41,6 +41,56 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task Login_WhenAdminRoleIsActive_ShouldReturnAdminRoleClaim()
+    {
+        using var client = CreateClient();
+
+        var login = await LoginAsync(client);
+        var roles = ReadRoleClaims(login.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.Contains(AuthRoleNames.Admin, roles);
+    }
+
+    [Fact]
+    public async Task Login_WhenAdminRoleIsInactive_ShouldNotReturnAdminRoleOrPermissionClaims()
+    {
+        using var factory = new CourseCoreApiFactory();
+        await factory.SetAdminRoleActiveAsync(false);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+
+        var login = await LoginAsync(client);
+        var roles = ReadRoleClaims(login.AccessToken);
+        var permissions = ReadPermissionClaims(login.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.DoesNotContain(AuthRoleNames.Admin, roles);
+        Assert.Empty(permissions);
+    }
+
+    [Fact]
+    public async Task GetUsers_WhenAdminRoleIsInactive_ShouldReturnForbidden()
+    {
+        using var factory = new CourseCoreApiFactory();
+        await factory.SetAdminRoleActiveAsync(false);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+        var login = await LoginAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
+
+        var response = await client.GetAsync("/api/users");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Login_WhenAdminCredentialsAreValid_ShouldReturnPermissionClaims()
     {
         using var client = CreateClient();
@@ -55,6 +105,21 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Contains(AuthPermissionNames.ManageCourses, permissions);
         Assert.Contains(AuthPermissionNames.ManageVideos, permissions);
         Assert.Contains(AuthPermissionNames.ReadProgress, permissions);
+    }
+
+    [Fact]
+    public async Task Login_WhenUserRoleWithPermissionIsInactive_ShouldNotReturnPermissionClaim()
+    {
+        using var client = CreateClient();
+        var user = await _factory.SeedUserWithRoleAsync(
+            AuthPermissionNames.ManageUsers,
+            roleActive: false);
+
+        var login = await IntegrationAuth.LoginAsync(client, user);
+        var permissions = ReadPermissionClaims(login.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.DoesNotContain(AuthPermissionNames.ManageUsers, permissions);
     }
 
     [Fact]
@@ -100,6 +165,25 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Contains(AuthPermissionNames.ManageUsers, permissions);
         Assert.Contains(AuthPermissionNames.ManageCourses, permissions);
         Assert.Contains(AuthPermissionNames.ReadProgress, permissions);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WhenAdminRoleIsInactive_ShouldNotReturnAdminRoleClaim()
+    {
+        using var factory = new CourseCoreApiFactory();
+        await factory.SetAdminRoleActiveAsync(false);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+        var login = await LoginAsync(client);
+
+        var refresh = await RefreshAsync(client, login.RefreshToken);
+        var roles = ReadRoleClaims(refresh.AccessToken);
+
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        Assert.DoesNotContain(AuthRoleNames.Admin, roles);
     }
 
     [Fact]
@@ -172,6 +256,16 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
 
         return jwt.Claims
             .Where(claim => claim.Type == AuthClaimTypes.Permission)
+            .Select(claim => claim.Value)
+            .ToArray();
+    }
+
+    private static IReadOnlyCollection<string> ReadRoleClaims(string accessToken)
+    {
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+
+        return jwt.Claims
+            .Where(claim => claim.Type is AuthClaimTypes.Role or "role")
             .Select(claim => claim.Value)
             .ToArray();
     }

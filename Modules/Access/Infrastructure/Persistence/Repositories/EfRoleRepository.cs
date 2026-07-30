@@ -38,7 +38,7 @@ public class EfRoleRepository : IRoleRepository
     {
         var models = await _dbContext.Roles
             .AsNoTracking()
-            .Where(x => x.UserRoles.Any(userRole => userRole.UserId == userId))
+            .Where(x => x.Active && x.UserRoles.Any(userRole => userRole.UserId == userId))
             .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 

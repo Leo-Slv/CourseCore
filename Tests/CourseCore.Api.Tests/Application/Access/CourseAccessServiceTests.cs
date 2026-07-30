@@ -29,6 +29,17 @@ public class CourseAccessServiceTests
     }
 
     [Fact]
+    public async Task CanUserAccessCourseAsync_WhenUserHasInactiveRoleAreaAccess_ShouldDenyAccess()
+    {
+        var fixture = CreateFixture(roleActive: false);
+        fixture.Areas.RoleAreaAccesses.Add(RoleAreaAccess.Create(fixture.RoleId, fixture.AreaId, canView: true, canManage: false));
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.False(output.CanAccess);
+    }
+
+    [Fact]
     public async Task CanUserAccessCourseAsync_WhenUserHasNoAccess_ShouldDenyAccess()
     {
         var fixture = CreateFixture();
@@ -60,7 +71,7 @@ public class CourseAccessServiceTests
         Assert.False(output.CanAccess);
     }
 
-    private static CourseAccessFixture CreateFixture(bool userActive = true, bool areaActive = true)
+    private static CourseAccessFixture CreateFixture(bool userActive = true, bool areaActive = true, bool roleActive = true)
     {
         var userId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
@@ -70,7 +81,7 @@ public class CourseAccessServiceTests
         var areas = new FakeAreaRepository();
         var courses = new FakeCourseRepository();
         var user = TestEntityFactory.User(userId, active: userActive);
-        var role = TestEntityFactory.Role(roleId);
+        var role = TestEntityFactory.Role(roleId, active: roleActive);
         var area = TestEntityFactory.Area(areaId, areaActive);
         var course = TestEntityFactory.PublishedCourse(area.Id);
 

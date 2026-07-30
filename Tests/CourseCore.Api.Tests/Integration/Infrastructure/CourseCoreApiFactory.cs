@@ -40,7 +40,27 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             .SingleAsync();
     }
 
+    public async Task SetAdminRoleActiveAsync(bool active)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var adminRole = await dbContext.Roles.SingleAsync(role => role.Name == AuthRoleNames.Admin);
+
+        adminRole.Active = active;
+        adminRole.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+    }
+
     public async Task<TestUser> SeedUserAsync(string? permissionKey = null)
+    {
+        return await SeedUserWithRoleAsync(permissionKey);
+    }
+
+    public async Task<TestUser> SeedUserWithRoleAsync(
+        string? permissionKey = null,
+        bool roleActive = true,
+        string? roleName = null)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
@@ -65,9 +85,9 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             var role = new RolePersistenceModel
             {
                 Id = Guid.NewGuid(),
-                Name = $"role-{Guid.NewGuid():N}",
+                Name = roleName ?? $"role-{Guid.NewGuid():N}",
                 Description = $"Role for {permissionKey}",
-                Active = true,
+                Active = roleActive,
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -90,6 +110,50 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         await dbContext.SaveChangesAsync();
 
         return new TestUser(user.Id, user.Email, "IntegrationUser123!");
+    }
+
+    public async Task<Guid> SeedRoleForUserAsync(
+        Guid userId,
+        bool active = true,
+        string? permissionKey = null,
+        string? roleName = null)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+        var role = new RolePersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            Name = roleName ?? $"role-{Guid.NewGuid():N}",
+            Description = "Integration test role",
+            Active = active,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        dbContext.Roles.Add(role);
+        dbContext.UserRoles.Add(new UserRolePersistenceModel
+        {
+            UserId = userId,
+            RoleId = role.Id,
+            CreatedAt = now
+        });
+
+        if (!string.IsNullOrWhiteSpace(permissionKey))
+        {
+            var permission = await dbContext.Permissions.SingleAsync(permission => permission.Key == permissionKey);
+
+            dbContext.RolePermissions.Add(new RolePermissionPersistenceModel
+            {
+                RoleId = role.Id,
+                PermissionId = permission.Id,
+                CreatedAt = now
+            });
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        return role.Id;
     }
 
     public async Task<Guid> SeedAreaAsync()
@@ -194,6 +258,26 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            AreaId = areaId,
+            CanView = canView,
+            CanManage = canManage,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task GrantRoleAreaAccessAsync(Guid roleId, Guid areaId, bool canView = true, bool canManage = false)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+
+        dbContext.RoleAreaAccesses.Add(new RoleAreaAccessPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            RoleId = roleId,
             AreaId = areaId,
             CanView = canView,
             CanManage = canManage,

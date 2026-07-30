@@ -26,7 +26,7 @@ public static class TestEntityFactory
             now);
     }
 
-    public static Role Role(Guid? id = null, string name = "Admin")
+    public static Role Role(Guid? id = null, string name = "Admin", bool active = true)
     {
         var now = DateTime.UtcNow.AddMinutes(-5);
 
@@ -34,7 +34,7 @@ public static class TestEntityFactory
             id ?? Guid.NewGuid(),
             name,
             "Role",
-            active: true,
+            active,
             now,
             now);
     }
