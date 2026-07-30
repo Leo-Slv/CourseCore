@@ -14,6 +14,10 @@ public class ProductionConfigurationValidatorTests
             ["Jwt:Issuer"] = "CourseCore",
             ["Jwt:Audience"] = "CourseCore",
             ["Jwt:SecretKey"] = "production-secret-with-at-least-32-characters",
+            ["Media:Playback:SigningSecret"] = "production-media-secret-with-at-least-32-characters",
+            ["Media:Playback:BaseUrl"] = "https://media.coursecore.local",
+            ["Media:Playback:SignedUrlExpirationMinutes"] = "10",
+            ["Media:Playback:AllowedStorageProviders:0"] = "Local",
             ["Cors:AllowedOrigins:0"] = "https://coursecore.local"
         });
 
@@ -27,6 +31,8 @@ public class ProductionConfigurationValidatorTests
     [InlineData("Jwt:Issuer")]
     [InlineData("Jwt:Audience")]
     [InlineData("Jwt:SecretKey")]
+    [InlineData("Media:Playback:SigningSecret")]
+    [InlineData("Media:Playback:BaseUrl")]
     public void ValidateProductionConfiguration_WhenRequiredValueIsMissing_ShouldThrow(string key)
     {
         var values = ValidValues();
@@ -50,10 +56,32 @@ public class ProductionConfigurationValidatorTests
     }
 
     [Fact]
+    public void ValidateProductionConfiguration_WhenMediaSigningSecretUsesPlaceholder_ShouldThrow()
+    {
+        var values = ValidValues();
+        values["Media:Playback:SigningSecret"] = "CHANGE_ME_USE_A_SEPARATE_MEDIA_SIGNING_SECRET";
+        var configuration = CreateConfiguration(values);
+
+        Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
+    }
+
+    [Fact]
     public void ValidateProductionConfiguration_WhenSecretIsTooShort_ShouldThrow()
     {
         var values = ValidValues();
         values["Jwt:SecretKey"] = "short";
+        var configuration = CreateConfiguration(values);
+
+        Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("61")]
+    public void ValidateProductionConfiguration_WhenMediaExpirationIsOutsideRange_ShouldThrow(string expiration)
+    {
+        var values = ValidValues();
+        values["Media:Playback:SignedUrlExpirationMinutes"] = expiration;
         var configuration = CreateConfiguration(values);
 
         Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
@@ -77,6 +105,10 @@ public class ProductionConfigurationValidatorTests
             ["Jwt:Issuer"] = "CourseCore",
             ["Jwt:Audience"] = "CourseCore",
             ["Jwt:SecretKey"] = "production-secret-with-at-least-32-characters",
+            ["Media:Playback:SigningSecret"] = "production-media-secret-with-at-least-32-characters",
+            ["Media:Playback:BaseUrl"] = "https://media.coursecore.local",
+            ["Media:Playback:SignedUrlExpirationMinutes"] = "10",
+            ["Media:Playback:AllowedStorageProviders:0"] = "Local",
             ["Cors:AllowedOrigins:0"] = "https://coursecore.local"
         };
     }

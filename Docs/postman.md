@@ -125,6 +125,12 @@ A request `Progress / Register Lesson Progress` deve enviar `watchedSeconds` suf
 
 O campo `markAsCompleted` pode existir em clientes antigos, mas esta deprecated e e ignorado. A collection nao depende mais dele; conclusao de aula e curso e calculada pela API.
 
+## Videos
+
+A request `Media / Videos / Create Video` nao envia mais `playbackUrl`. O campo ainda e aceito por compatibilidade em clientes antigos, mas esta deprecated e e ignorado pela API.
+
+Depois de criar um video, execute `Media / Videos / Mark Video Ready` para alterar o status para `Ready` sem informar URL. `Request Video Playback` retorna uma URL temporaria assinada e `expiresAt`; nao salve essa URL como variavel permanente.
+
 ## Correlation id
 
 A collection possui um pre-request script global que gera um novo GUID por request e salva em:

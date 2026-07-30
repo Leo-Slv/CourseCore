@@ -97,6 +97,10 @@ RateLimiting__Refresh__WindowSeconds
 RateLimiting__Logout__PermitLimit
 RateLimiting__Logout__WindowSeconds
 Progress__LessonCompletionThresholdPercent
+Media__Playback__SignedUrlExpirationMinutes
+Media__Playback__SigningSecret
+Media__Playback__BaseUrl
+Media__Playback__AllowedStorageProviders__0
 Cors__AllowedOrigins__0
 Seed__Admin__Enabled
 Seed__Admin__Name
@@ -323,6 +327,14 @@ O cliente registra apenas `watchedSeconds`. A API calcula a conclusao da aula no
 `WatchedSeconds` e monotonico: uma chamada posterior com valor menor nao reduz o progresso ja salvo. Quando existe video com duracao conhecida, o valor salvo tambem e limitado a `Video.DurationSeconds`.
 
 O campo `markAsCompleted` ainda e aceito temporariamente no request para compatibilidade, mas esta deprecated e e ignorado pelo servidor. A aula so e concluida quando o video esta `Ready`, possui `DurationSeconds > 0` e o progresso assistido atinge o percentual minimo configurado. Curso concluido e percentual do curso sao recalculados somente a partir de aulas concluidas por essa regra do servidor.
+
+## Playback de videos
+
+`playbackUrl` em `CreateVideo` continua aceito temporariamente por compatibilidade, mas esta deprecated e e ignorado. O backend nao usa URL arbitraria enviada pelo cliente para marcar video como pronto nem para responder playback.
+
+Videos novos iniciam como `Processing`. Um administrador com `ManageVideos` deve marcar o video como pronto por `POST /api/videos/{id}/ready`, sem enviar URL. O endpoint de playback gera uma URL temporaria assinada no momento da requisicao, com `expiresAt`, usando `Media:Playback:SigningSecret`, `BaseUrl`, `SignedUrlExpirationMinutes` e `AllowedStorageProviders`.
+
+`StorageKey` e uma chave interna de storage, nao uma URL publica. A API rejeita storage keys vazias, URLs completas, path traversal e caracteres inseguros. Integracao com storage/proxy real fica para etapa futura; a URL assinada atual e um contrato seguro para essa integracao.
 
 ## Audit logs
 

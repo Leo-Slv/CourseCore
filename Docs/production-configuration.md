@@ -43,6 +43,10 @@ RateLimiting__Logout__PermitLimit=30
 RateLimiting__Logout__WindowSeconds=60
 RateLimiting__Logout__QueueLimit=0
 Progress__LessonCompletionThresholdPercent=90
+Media__Playback__SignedUrlExpirationMinutes=10
+Media__Playback__SigningSecret=CHANGE_ME_USE_A_SEPARATE_MEDIA_SIGNING_SECRET
+Media__Playback__BaseUrl=https://media.your-domain.com
+Media__Playback__AllowedStorageProviders__0=Local
 Cors__AllowedOrigins__0=https://your-frontend-domain.com
 Seed__Admin__Enabled=false
 ```
@@ -63,6 +67,8 @@ Seed__Admin__Enabled=false
 
 `Progress__LessonCompletionThresholdPercent` configures the minimum watched percentage required for server-side lesson completion. The default is 90 and valid values are 1 through 100. The API ignores client-controlled `markAsCompleted`, keeps watched seconds monotonic, and clamps watched seconds to the video duration when the lesson has a known video duration.
 
+`Media__Playback__SigningSecret` signs temporary playback URLs. Use a long random secret that is separate from `Jwt__SecretKey`. Do not commit the real value. `Media__Playback__SignedUrlExpirationMinutes` defaults to 10 and must be between 1 and 60. `Media__Playback__BaseUrl` is the media/proxy base URL used in generated signed playback URLs. `Media__Playback__AllowedStorageProviders` restricts which stored video providers can generate playback URLs.
+
 ## Production Startup Validation
 
 When `ASPNETCORE_ENVIRONMENT` is `Production`, the API validates critical configuration during startup and fails fast if any required value is missing or still uses a placeholder.
@@ -74,6 +80,10 @@ ConnectionStrings:CourseCoreDatabase
 Jwt:SecretKey
 Jwt:Issuer
 Jwt:Audience
+Media:Playback:SigningSecret
+Media:Playback:BaseUrl
+Media:Playback:SignedUrlExpirationMinutes
+Media:Playback:AllowedStorageProviders
 Cors:AllowedOrigins
 ```
 

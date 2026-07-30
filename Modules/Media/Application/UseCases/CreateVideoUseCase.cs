@@ -62,11 +62,6 @@ public class CreateVideoUseCase
                 input.SizeBytes,
                 input.ThumbnailUrl);
 
-            if (!string.IsNullOrWhiteSpace(input.PlaybackUrl))
-            {
-                video.MarkAsReady(input.PlaybackUrl);
-            }
-
             await _videos.CreateAsync(video, cancellationToken);
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.VideoCreated,

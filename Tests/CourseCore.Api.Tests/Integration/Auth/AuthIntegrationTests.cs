@@ -635,6 +635,10 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Jwt__Issuer", "CourseCore.IntegrationTests");
         Environment.SetEnvironmentVariable("Jwt__Audience", "CourseCore.IntegrationTests");
         Environment.SetEnvironmentVariable("Jwt__SecretKey", "integration-test-secret-key-32-characters-minimum");
+        Environment.SetEnvironmentVariable("Media__Playback__SigningSecret", "integration-test-media-signing-secret-32-characters-minimum");
+        Environment.SetEnvironmentVariable("Media__Playback__BaseUrl", "/media");
+        Environment.SetEnvironmentVariable("Media__Playback__SignedUrlExpirationMinutes", "10");
+        Environment.SetEnvironmentVariable("Media__Playback__AllowedStorageProviders__0", "Local");
         Environment.SetEnvironmentVariable("Cors__AllowedOrigins__0", "https://localhost");
     }
 
@@ -644,6 +648,10 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Jwt__Issuer", null);
         Environment.SetEnvironmentVariable("Jwt__Audience", null);
         Environment.SetEnvironmentVariable("Jwt__SecretKey", null);
+        Environment.SetEnvironmentVariable("Media__Playback__SigningSecret", null);
+        Environment.SetEnvironmentVariable("Media__Playback__BaseUrl", null);
+        Environment.SetEnvironmentVariable("Media__Playback__SignedUrlExpirationMinutes", null);
+        Environment.SetEnvironmentVariable("Media__Playback__AllowedStorageProviders__0", null);
         Environment.SetEnvironmentVariable("Cors__AllowedOrigins__0", null);
     }
 

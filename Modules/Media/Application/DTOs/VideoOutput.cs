@@ -40,7 +40,7 @@ public class VideoOutput
             Description = video.Description,
             StorageProvider = video.StorageProvider.ToString(),
             StorageKey = video.StorageKey,
-            PlaybackUrl = video.PlaybackUrl,
+            PlaybackUrl = null,
             ThumbnailUrl = video.ThumbnailUrl,
             DurationSeconds = video.DurationSeconds,
             SizeBytes = video.SizeBytes,

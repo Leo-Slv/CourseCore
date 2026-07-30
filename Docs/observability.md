@@ -43,6 +43,9 @@ refresh token
 refresh token hash
 senha
 JWT secret
+media playback signing secret
+signed playback URL
+storage key
 connection string
 segredos de ambiente
 header Cookie

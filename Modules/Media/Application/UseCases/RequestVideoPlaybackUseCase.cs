@@ -4,12 +4,14 @@ using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
+using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Media.Application.UseCases;
 
 public class RequestVideoPlaybackUseCase
 {
+    private readonly IUserRepository _users;
     private readonly IVideoRepository _videos;
     private readonly ILessonRepository _lessons;
     private readonly ICourseRepository _courses;
@@ -17,12 +19,14 @@ public class RequestVideoPlaybackUseCase
     private readonly IVideoStorageService _videoStorageService;
 
     public RequestVideoPlaybackUseCase(
+        IUserRepository users,
         IVideoRepository videos,
         ILessonRepository lessons,
         ICourseRepository courses,
         CourseAccessService courseAccessService,
         IVideoStorageService videoStorageService)
     {
+        _users = users;
         _videos = videos;
         _lessons = lessons;
         _courses = courses;
@@ -42,6 +46,18 @@ public class RequestVideoPlaybackUseCase
         if (input.VideoId == Guid.Empty)
         {
             throw new ArgumentException("VideoId is required.", nameof(input));
+        }
+
+        var user = await _users.FindByIdAsync(input.UserId, cancellationToken);
+
+        if (user is null)
+        {
+            throw new NotFoundException("User not found.");
+        }
+
+        if (!user.Active)
+        {
+            throw new ForbiddenException("User is inactive.");
         }
 
         var video = await _videos.FindByIdAsync(input.VideoId, cancellationToken);
@@ -80,14 +96,18 @@ public class RequestVideoPlaybackUseCase
             throw new ForbiddenException("User cannot access this video.");
         }
 
-        var playbackUrl = await _videoStorageService.GeneratePlaybackUrlAsync(video, cancellationToken);
+        var playbackUrl = await _videoStorageService.GeneratePlaybackUrlAsync(
+            video,
+            input.UserId,
+            cancellationToken);
 
         return new VideoPlaybackOutput
         {
             VideoId = video.Id,
             LessonId = video.LessonId,
             Title = video.Title,
-            PlaybackUrl = playbackUrl,
+            PlaybackUrl = playbackUrl.Url,
+            ExpiresAt = playbackUrl.ExpiresAt,
             DurationSeconds = video.DurationSeconds,
             Status = video.Status.ToString()
         };

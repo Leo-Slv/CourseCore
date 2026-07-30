@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Media.Application.Contracts;
+using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Domain.Entities;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
 
@@ -35,9 +36,14 @@ public sealed class FakeVideoStorageService : IVideoStorageService
 {
     public string PlaybackUrl { get; set; } = "https://media.coursecore.local/playback";
 
-    public Task<string> GeneratePlaybackUrlAsync(Video video, CancellationToken cancellationToken = default)
+    public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddMinutes(10);
+
+    public Task<VideoPlaybackUrl> GeneratePlaybackUrlAsync(
+        Video video,
+        Guid userId,
+        CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(PlaybackUrl);
+        return Task.FromResult(new VideoPlaybackUrl(PlaybackUrl, ExpiresAt));
     }
 
     public Task<string> GetUploadUrlAsync(string storageKey, CancellationToken cancellationToken = default)

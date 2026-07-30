@@ -1,11 +1,15 @@
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Shared.Domain.Entities;
 using CourseCore.Api.Shared.Domain.Exceptions;
+using System.Text.RegularExpressions;
 
 namespace CourseCore.Api.Modules.Media.Domain.Entities;
 
 public class Video : EntityBase
 {
+    private const int MaxStorageKeyLength = 1000;
+    private static readonly Regex SafeStorageKeyPattern = new("^[A-Za-z0-9][A-Za-z0-9._/-]*$", RegexOptions.Compiled);
+
     private Video(
         Guid lessonId,
         string title,
@@ -22,7 +26,7 @@ public class Video : EntityBase
         Title = ValidateRequired(title, nameof(Title));
         Description = NormalizeDescription(description);
         StorageProvider = storageProvider;
-        StorageKey = ValidateRequired(storageKey, nameof(StorageKey));
+        StorageKey = ValidateStorageKey(storageKey);
         PlaybackUrl = NormalizeOptional(playbackUrl);
         ThumbnailUrl = NormalizeOptional(thumbnailUrl);
         DurationSeconds = ValidateNonNegative(durationSeconds, nameof(DurationSeconds));
@@ -127,7 +131,7 @@ public class Video : EntityBase
     public void ChangeStorage(VideoStorageProvider provider, string storageKey)
     {
         StorageProvider = provider;
-        StorageKey = ValidateRequired(storageKey, nameof(StorageKey));
+        StorageKey = ValidateStorageKey(storageKey);
         MarkAsUpdated();
     }
 
@@ -149,9 +153,8 @@ public class Video : EntityBase
         MarkAsUpdated();
     }
 
-    public void MarkAsReady(string playbackUrl)
+    public void MarkAsReady()
     {
-        PlaybackUrl = ValidateRequired(playbackUrl, nameof(PlaybackUrl));
         Status = VideoStatus.Ready;
         MarkAsUpdated();
     }
@@ -190,6 +193,32 @@ public class Video : EntityBase
     private static string? NormalizeOptional(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string ValidateStorageKey(string storageKey)
+    {
+        var normalized = ValidateRequired(storageKey, nameof(StorageKey));
+
+        if (normalized.Length > MaxStorageKeyLength)
+        {
+            throw new DomainException("StorageKey is too long.");
+        }
+
+        if (Uri.TryCreate(normalized, UriKind.Absolute, out _))
+        {
+            throw new DomainException("StorageKey cannot be a URL.");
+        }
+
+        if (normalized.Contains("\\", StringComparison.Ordinal)
+            || normalized.StartsWith("/", StringComparison.Ordinal)
+            || normalized.Contains("//", StringComparison.Ordinal)
+            || normalized.Split('/').Any(segment => segment is "." or "..")
+            || !SafeStorageKeyPattern.IsMatch(normalized))
+        {
+            throw new DomainException("StorageKey contains invalid characters.");
+        }
+
+        return normalized;
     }
 
     private static int ValidateNonNegative(int value, string fieldName)

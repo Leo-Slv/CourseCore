@@ -53,6 +53,30 @@ public class RequestVideoPlaybackUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenUserIsInactive_ShouldThrowForbiddenException()
+    {
+        var fixture = CreateFixture(grantAccess: true, userActive: false);
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => fixture.UseCase.ExecuteAsync(new RequestVideoPlaybackInput
+        {
+            UserId = fixture.UserId,
+            VideoId = fixture.Video.Id
+        }));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenVideoIsNotReady_ShouldThrowConflictException()
+    {
+        var fixture = CreateFixture(grantAccess: true, videoReady: false);
+
+        await Assert.ThrowsAsync<ConflictException>(() => fixture.UseCase.ExecuteAsync(new RequestVideoPlaybackInput
+        {
+            UserId = fixture.UserId,
+            VideoId = fixture.Video.Id
+        }));
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenUserHasAccess_ShouldReturnPlaybackUrl()
     {
         var fixture = CreateFixture(grantAccess: true);
@@ -64,11 +88,16 @@ public class RequestVideoPlaybackUseCaseTests
         });
 
         Assert.Equal(fixture.Storage.PlaybackUrl, output.PlaybackUrl);
+        Assert.Equal(fixture.Storage.ExpiresAt, output.ExpiresAt);
         Assert.Equal(fixture.Video.Id, output.VideoId);
         Assert.Equal(fixture.Lesson.Id, output.LessonId);
     }
 
-    private static RequestVideoPlaybackFixture CreateFixture(bool grantAccess, bool addCourse = true)
+    private static RequestVideoPlaybackFixture CreateFixture(
+        bool grantAccess,
+        bool addCourse = true,
+        bool userActive = true,
+        bool videoReady = true)
     {
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
@@ -77,7 +106,7 @@ public class RequestVideoPlaybackUseCaseTests
         var lessons = new FakeLessonRepository();
         var videos = new FakeVideoRepository();
         var storage = new FakeVideoStorageService();
-        var user = TestEntityFactory.User();
+        var user = TestEntityFactory.User(active: userActive);
         var area = TestEntityFactory.Area();
         var (course, lesson) = CreatePublishedCourseWithLesson(area.Id);
         var video = Video.Create(
@@ -88,7 +117,10 @@ public class RequestVideoPlaybackUseCaseTests
             "video-key",
             durationSeconds: 120,
             sizeBytes: 1024);
-        video.MarkAsReady("stored-playback-url");
+        if (videoReady)
+        {
+            video.MarkAsReady();
+        }
 
         users.Add(user);
         areas.Areas.Add(area);
@@ -106,7 +138,7 @@ public class RequestVideoPlaybackUseCaseTests
         }
 
         var courseAccessService = new CourseAccessService(users, roles, areas, courses);
-        var useCase = new RequestVideoPlaybackUseCase(videos, lessons, courses, courseAccessService, storage);
+        var useCase = new RequestVideoPlaybackUseCase(users, videos, lessons, courses, courseAccessService, storage);
 
         return new RequestVideoPlaybackFixture(useCase, courses, storage, user.Id, video, lesson);
     }

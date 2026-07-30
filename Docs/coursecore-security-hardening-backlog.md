@@ -420,6 +420,7 @@ Tests/CourseCore.Api.Tests/
 **Origem:** H-06  
 **Severidade:** Alta  
 **Bloqueia produção:** Sim se vídeos forem privados
+**Status:** Implementado no Security Hardening 07.
 
 ### Problema
 

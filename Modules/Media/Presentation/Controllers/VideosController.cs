@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Requests;
@@ -16,15 +17,18 @@ namespace CourseCore.Api.Modules.Media.Presentation.Controllers;
 public class VideosController : ControllerBase
 {
     private readonly CreateVideoUseCase _createVideoUseCase;
+    private readonly MarkVideoReadyUseCase _markVideoReadyUseCase;
     private readonly RequestVideoPlaybackUseCase _requestVideoPlaybackUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public VideosController(
         CreateVideoUseCase createVideoUseCase,
+        MarkVideoReadyUseCase markVideoReadyUseCase,
         RequestVideoPlaybackUseCase requestVideoPlaybackUseCase,
         ICurrentUserService currentUserService)
     {
         _createVideoUseCase = createVideoUseCase;
+        _markVideoReadyUseCase = markVideoReadyUseCase;
         _requestVideoPlaybackUseCase = requestVideoPlaybackUseCase;
         _currentUserService = currentUserService;
     }
@@ -48,6 +52,26 @@ public class VideosController : ControllerBase
         var response = VideoPresenter.ToResponse(output);
 
         return Created($"/api/videos/{response.Id}", response);
+    }
+
+    [HttpPost("{id:guid}/ready")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(VideoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<VideoResponse>> MarkReadyAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var output = await _markVideoReadyUseCase.ExecuteAsync(
+            new MarkVideoReadyInput { VideoId = id },
+            cancellationToken);
+
+        return Ok(VideoPresenter.ToResponse(output));
     }
 
     [HttpPost("playback")]

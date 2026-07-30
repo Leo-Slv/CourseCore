@@ -216,4 +216,33 @@ public class SensitiveActionAuditTests
         Assert.Equal(lesson.Id.ToString(), auditLog.Metadata["lessonId"]);
         Assert.DoesNotContain("storage", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task MarkVideoReady_ShouldRecordSafeAuditLog()
+    {
+        var video = CourseCore.Api.Modules.Media.Domain.Entities.Video.Create(
+            Guid.NewGuid(),
+            "Video",
+            "Video description",
+            CourseCore.Api.Modules.Media.Domain.Enums.VideoStorageProvider.Local,
+            "videos/video.mp4",
+            durationSeconds: 120,
+            sizeBytes: 1024);
+        var videos = new FakeVideoRepository();
+        videos.Videos.Add(video);
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new MarkVideoReadyUseCase(videos, new FakeUnitOfWork(), auditLogs);
+
+        await useCase.ExecuteAsync(new MarkVideoReadyInput { VideoId = video.Id });
+
+        var auditLog = Assert.Single(auditLogs.Entries);
+        Assert.Equal(AuditLogActionNames.VideoMarkedReady, auditLog.Action);
+        Assert.Equal("Video", auditLog.EntityName);
+        Assert.Equal(video.Id, auditLog.EntityId);
+        Assert.Equal(video.LessonId.ToString(), auditLog.Metadata["lessonId"]);
+        Assert.Equal("Local", auditLog.Metadata["storageProvider"]);
+        Assert.Equal("Ready", auditLog.Metadata["status"]);
+        Assert.DoesNotContain("key", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("url", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
+    }
 }

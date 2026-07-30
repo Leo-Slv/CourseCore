@@ -379,7 +379,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Description = "Integration test video",
             StorageProvider = VideoStorageProvider.Local.ToString(),
             StorageKey = $"videos/{Guid.NewGuid():N}.mp4",
-            PlaybackUrl = status == VideoStatus.Ready ? $"https://media.coursecore.local/{Guid.NewGuid():N}.mp4" : null,
+            PlaybackUrl = null,
             DurationSeconds = durationSeconds,
             SizeBytes = 1024,
             Status = status.ToString(),
@@ -452,6 +452,10 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["RateLimiting:Logout:WindowSeconds"] = "60",
                 ["RateLimiting:Logout:QueueLimit"] = "0",
                 ["Progress:LessonCompletionThresholdPercent"] = "90",
+                ["Media:Playback:SignedUrlExpirationMinutes"] = "10",
+                ["Media:Playback:SigningSecret"] = "integration-test-media-signing-secret-32-characters-minimum",
+                ["Media:Playback:BaseUrl"] = "/media",
+                ["Media:Playback:AllowedStorageProviders:0"] = "Local",
                 ["Cors:AllowedOrigins:0"] = "https://localhost",
                 ["Seed:Admin:Enabled"] = "false"
             };

@@ -66,7 +66,7 @@ builder.Services.AddAuthModule(builder.Configuration);
 builder.Services.AddUsersModule();
 builder.Services.AddAccessModule();
 builder.Services.AddCoursesModule();
-builder.Services.AddMediaModule();
+builder.Services.AddMediaModule(builder.Configuration, builder.Environment);
 builder.Services.AddProgressModule(builder.Configuration);
 builder.Services.AddAuditLogsModule();
 

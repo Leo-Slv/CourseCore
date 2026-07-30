@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Tests.Integration.Infrastructure;
 
 namespace CourseCore.Api.Tests.Integration.Media;
@@ -23,6 +24,10 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         var response = await client.PostAsJsonAsync("/api/videos", CreateVideoRequest(course.LessonId));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.NotNull(body);
+        Assert.Equal("Processing", body.Status);
+        Assert.Null(body.PlaybackUrl);
     }
 
     [Fact]
@@ -62,6 +67,68 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<VideoPlaybackResponse>();
+        Assert.NotNull(body);
+        Assert.Contains($"/videos/{video.VideoId}/playback", body.PlaybackUrl);
+        Assert.Contains("expires=", body.PlaybackUrl);
+        Assert.Contains("signature=", body.PlaybackUrl);
+        Assert.True(body.ExpiresAt > DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async Task CreateVideo_WhenPlaybackUrlIsArbitrary_ShouldNotUseItAsPlayback()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/videos", CreateVideoRequest(course.LessonId));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.NotNull(body);
+        Assert.Equal("Processing", body.Status);
+        Assert.Null(body.PlaybackUrl);
+    }
+
+    [Fact]
+    public async Task MarkReady_WhenAdminPostsExistingVideo_ShouldMarkVideoReadyWithoutPlaybackUrl()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var create = await client.PostAsJsonAsync("/api/videos", CreateVideoRequest(course.LessonId));
+        var created = await create.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.NotNull(created);
+
+        var response = await client.PostAsync($"/api/videos/{created.Id}/ready", content: null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.NotNull(body);
+        Assert.Equal("Ready", body.Status);
+        Assert.Null(body.PlaybackUrl);
+    }
+
+    [Fact]
+    public async Task RequestPlayback_WhenVideoIsNotReady_ShouldReturnConflict()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+        var create = await adminClient.PostAsJsonAsync("/api/videos", CreateVideoRequest(course.LessonId));
+        var created = await create.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.NotNull(created);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/videos/playback", new
+        {
+            videoId = created.Id
+        });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]

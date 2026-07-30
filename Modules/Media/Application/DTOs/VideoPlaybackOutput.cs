@@ -10,6 +10,8 @@ public class VideoPlaybackOutput
 
     public string PlaybackUrl { get; init; } = string.Empty;
 
+    public DateTime ExpiresAt { get; init; }
+
     public int DurationSeconds { get; init; }
 
     public string Status { get; init; } = string.Empty;

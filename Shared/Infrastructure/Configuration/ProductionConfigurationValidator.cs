@@ -17,6 +17,18 @@ public static class ProductionConfigurationValidator
         ValidateRequired(configuration["Jwt:Issuer"], "Jwt:Issuer");
         ValidateRequired(configuration["Jwt:Audience"], "Jwt:Audience");
         ValidateSecret(configuration["Jwt:SecretKey"], "Jwt:SecretKey");
+        ValidateSecret(configuration["Media:Playback:SigningSecret"], "Media:Playback:SigningSecret");
+        ValidateRequired(configuration["Media:Playback:BaseUrl"], "Media:Playback:BaseUrl");
+        ValidatePlaybackExpiration(configuration["Media:Playback:SignedUrlExpirationMinutes"]);
+
+        var allowedStorageProviders = configuration
+            .GetSection("Media:Playback:AllowedStorageProviders")
+            .Get<string[]>() ?? [];
+
+        if (allowedStorageProviders.Length == 0 || allowedStorageProviders.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new InvalidOperationException("Media:Playback:AllowedStorageProviders must contain at least one provider in Production.");
+        }
 
         var allowedOrigins = configuration
             .GetSection("Cors:AllowedOrigins")
@@ -49,6 +61,18 @@ public static class ProductionConfigurationValidator
     private static bool IsPlaceholder(string value)
     {
         return PlaceholderValues.Any(placeholder =>
-            string.Equals(value.Trim(), placeholder, StringComparison.OrdinalIgnoreCase));
+            string.Equals(value.Trim(), placeholder, StringComparison.OrdinalIgnoreCase))
+            || string.Equals(
+                value.Trim(),
+                "CHANGE_ME_USE_A_SEPARATE_MEDIA_SIGNING_SECRET",
+                StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void ValidatePlaybackExpiration(string? value)
+    {
+        if (!int.TryParse(value, out var expirationMinutes) || expirationMinutes is < 1 or > 60)
+        {
+            throw new InvalidOperationException("Media:Playback:SignedUrlExpirationMinutes must be between 1 and 60 in Production.");
+        }
     }
 }

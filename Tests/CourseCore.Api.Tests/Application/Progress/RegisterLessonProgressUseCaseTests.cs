@@ -324,7 +324,7 @@ public class RegisterLessonProgressUseCaseTests
     private static Video CreateReadyVideo(Guid lessonId, int durationSeconds)
     {
         var video = CreateProcessingVideo(lessonId, durationSeconds);
-        video.MarkAsReady($"https://media.coursecore.local/{Guid.NewGuid():N}.mp4");
+        video.MarkAsReady();
 
         return video;
     }

@@ -59,6 +59,7 @@ public static class VideoPresenter
             LessonId = output.LessonId,
             Title = output.Title,
             PlaybackUrl = output.PlaybackUrl,
+            ExpiresAt = output.ExpiresAt,
             DurationSeconds = output.DurationSeconds,
             Status = output.Status
         };
