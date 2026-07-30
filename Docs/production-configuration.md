@@ -42,6 +42,7 @@ RateLimiting__Refresh__QueueLimit=0
 RateLimiting__Logout__PermitLimit=30
 RateLimiting__Logout__WindowSeconds=60
 RateLimiting__Logout__QueueLimit=0
+Progress__LessonCompletionThresholdPercent=90
 Cors__AllowedOrigins__0=https://your-frontend-domain.com
 Seed__Admin__Enabled=false
 ```
@@ -59,6 +60,8 @@ Seed__Admin__Enabled=false
 `Auth__RefreshTokenCookie__Secure` must be `true` in Production. The application forces refresh token cookies to `Secure` in Production. `SameSite=Lax` is the default same-site posture; use `SameSite=None` only with `Secure=true` when a cross-site frontend/API deployment explicitly requires it.
 
 `RateLimiting__Login`, `RateLimiting__Refresh`, and `RateLimiting__Logout` configure fixed-window limits for the public authentication endpoints. Defaults are 5 login attempts, 20 refresh attempts, and 30 logout attempts per minute per remote IP. Exceeded limits return `429 Too Many Requests` and may include `Retry-After`.
+
+`Progress__LessonCompletionThresholdPercent` configures the minimum watched percentage required for server-side lesson completion. The default is 90 and valid values are 1 through 100. The API ignores client-controlled `markAsCompleted`, keeps watched seconds monotonic, and clamps watched seconds to the video duration when the lesson has a known video duration.
 
 ## Production Startup Validation
 

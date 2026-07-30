@@ -119,6 +119,12 @@ Para frontends web/PWA, mantenha o access token apenas em memoria no cliente. O 
 
 Se frontend e API forem cross-site, sera necessario avaliar CORS com credentials, origem explicita e `SameSite=None; Secure`. Esta etapa nao habilita `AllowCredentials` nem abre CORS. Protecao CSRF completa fica como pendencia futura para fluxos com cookie.
 
+## Progresso
+
+A request `Progress / Register Lesson Progress` deve enviar `watchedSeconds` suficiente para atingir o threshold configurado no servidor. Por padrao, a aula conclui ao atingir 90% de `Video.DurationSeconds`.
+
+O campo `markAsCompleted` pode existir em clientes antigos, mas esta deprecated e e ignorado. A collection nao depende mais dele; conclusao de aula e curso e calculada pela API.
+
 ## Correlation id
 
 A collection possui um pre-request script global que gera um novo GUID por request e salva em:

@@ -96,6 +96,7 @@ RateLimiting__Refresh__PermitLimit
 RateLimiting__Refresh__WindowSeconds
 RateLimiting__Logout__PermitLimit
 RateLimiting__Logout__WindowSeconds
+Progress__LessonCompletionThresholdPercent
 Cors__AllowedOrigins__0
 Seed__Admin__Enabled
 Seed__Admin__Name
@@ -314,6 +315,14 @@ Rate limiting reduz brute force, credential stuffing e abuso operacional, mas na
 Validacao de `token_version` consulta o banco em requests autenticadas. Otimizacoes futuras podem usar cache curto por `userId/tokenVersion`, cache distribuido ou validacao mais seletiva em endpoints sensiveis.
 
 Veja `Docs/observability.md`.
+
+## Progresso de aulas
+
+O cliente registra apenas `watchedSeconds`. A API calcula a conclusao da aula no servidor usando a duracao real do video e o threshold configurado em `Progress:LessonCompletionThresholdPercent`, com default de 90%.
+
+`WatchedSeconds` e monotonico: uma chamada posterior com valor menor nao reduz o progresso ja salvo. Quando existe video com duracao conhecida, o valor salvo tambem e limitado a `Video.DurationSeconds`.
+
+O campo `markAsCompleted` ainda e aceito temporariamente no request para compatibilidade, mas esta deprecated e e ignorado pelo servidor. A aula so e concluida quando o video esta `Ready`, possui `DurationSeconds > 0` e o progresso assistido atinge o percentual minimo configurado. Curso concluido e percentual do curso sao recalculados somente a partir de aulas concluidas por essa regra do servidor.
 
 ## Audit logs
 

@@ -361,7 +361,12 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task<TestVideoData> SeedReadyVideoAsync(Guid lessonId)
+    public async Task<TestVideoData> SeedReadyVideoAsync(Guid lessonId, int durationSeconds = 120)
+    {
+        return await SeedVideoAsync(lessonId, durationSeconds, VideoStatus.Ready);
+    }
+
+    public async Task<TestVideoData> SeedVideoAsync(Guid lessonId, int durationSeconds, VideoStatus status)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
@@ -374,10 +379,10 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Description = "Integration test video",
             StorageProvider = VideoStorageProvider.Local.ToString(),
             StorageKey = $"videos/{Guid.NewGuid():N}.mp4",
-            PlaybackUrl = $"https://media.coursecore.local/{Guid.NewGuid():N}.mp4",
-            DurationSeconds = 120,
+            PlaybackUrl = status == VideoStatus.Ready ? $"https://media.coursecore.local/{Guid.NewGuid():N}.mp4" : null,
+            DurationSeconds = durationSeconds,
             SizeBytes = 1024,
-            Status = VideoStatus.Ready.ToString(),
+            Status = status.ToString(),
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -386,6 +391,33 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         await dbContext.SaveChangesAsync();
 
         return new TestVideoData(video.Id, video.LessonId);
+    }
+
+    public async Task<TestLessonProgressData?> GetLessonProgressAsync(Guid userId, Guid lessonId)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+
+        return await dbContext.UserLessonProgress
+            .Where(progress => progress.UserId == userId && progress.LessonId == lessonId)
+            .Select(progress => new TestLessonProgressData(
+                progress.Completed,
+                progress.WatchedSeconds,
+                progress.CompletedAt))
+            .SingleOrDefaultAsync();
+    }
+
+    public async Task<TestCourseProgressData?> GetCourseProgressAsync(Guid userId, Guid courseId)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+
+        return await dbContext.UserCourseProgress
+            .Where(progress => progress.UserId == userId && progress.CourseId == courseId)
+            .Select(progress => new TestCourseProgressData(
+                progress.ProgressPercent,
+                progress.CompletedAt))
+            .SingleOrDefaultAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -419,6 +451,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["RateLimiting:Logout:PermitLimit"] = "100",
                 ["RateLimiting:Logout:WindowSeconds"] = "60",
                 ["RateLimiting:Logout:QueueLimit"] = "0",
+                ["Progress:LessonCompletionThresholdPercent"] = "90",
                 ["Cors:AllowedOrigins:0"] = "https://localhost",
                 ["Seed:Admin:Enabled"] = "false"
             };
@@ -571,3 +604,7 @@ public sealed record TestUser(Guid Id, string Email, string Password);
 public sealed record TestCourseData(Guid AreaId, Guid CourseId, Guid ModuleId, Guid LessonId);
 
 public sealed record TestVideoData(Guid VideoId, Guid LessonId);
+
+public sealed record TestLessonProgressData(bool Completed, int WatchedSeconds, DateTime? CompletedAt);
+
+public sealed record TestCourseProgressData(decimal ProgressPercent, DateTime? CompletedAt);

@@ -58,23 +58,40 @@ public class UserLessonProgress : EntityBase
         };
     }
 
-    public void RegisterWatch(int watchedSeconds)
+    public void RegisterWatch(int watchedSeconds, int? maxWatchedSeconds = null)
     {
         var validatedWatchedSeconds = ValidateWatchedSeconds(watchedSeconds);
+        var monotonicWatchedSeconds = Math.Max(WatchedSeconds, validatedWatchedSeconds);
+        var effectiveWatchedSeconds = maxWatchedSeconds.HasValue
+            ? Math.Min(monotonicWatchedSeconds, ValidateWatchedSeconds(maxWatchedSeconds.Value))
+            : monotonicWatchedSeconds;
 
-        if (validatedWatchedSeconds > WatchedSeconds)
+        if (effectiveWatchedSeconds != WatchedSeconds)
         {
-            WatchedSeconds = validatedWatchedSeconds;
+            WatchedSeconds = effectiveWatchedSeconds;
         }
 
         LastWatchedAt = DateTime.UtcNow;
         MarkAsUpdated();
     }
 
-    public void MarkAsCompleted()
+    public void RecalculateCompletion(bool completed)
     {
-        Completed = true;
-        CompletedAt = DateTime.UtcNow;
+        if (completed)
+        {
+            if (!Completed)
+            {
+                CompletedAt = DateTime.UtcNow;
+            }
+
+            Completed = true;
+        }
+        else
+        {
+            Completed = false;
+            CompletedAt = null;
+        }
+
         MarkAsUpdated();
     }
 

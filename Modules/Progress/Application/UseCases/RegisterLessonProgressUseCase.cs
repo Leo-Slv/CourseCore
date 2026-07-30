@@ -1,12 +1,17 @@
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
+using CourseCore.Api.Modules.Media.Domain.Entities;
+using CourseCore.Api.Modules.Media.Domain.Enums;
+using CourseCore.Api.Modules.Media.Domain.Repositories;
 using CourseCore.Api.Modules.Progress.Application.DTOs;
+using CourseCore.Api.Modules.Progress.Application.Options;
 using CourseCore.Api.Modules.Progress.Domain.Entities;
 using CourseCore.Api.Modules.Progress.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
+using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Progress.Application.UseCases;
 
@@ -15,24 +20,31 @@ public class RegisterLessonProgressUseCase
     private readonly IUserRepository _users;
     private readonly ILessonRepository _lessons;
     private readonly ICourseRepository _courses;
+    private readonly IVideoRepository _videos;
     private readonly IProgressRepository _progress;
     private readonly CourseAccessService _courseAccessService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ProgressOptions _options;
 
     public RegisterLessonProgressUseCase(
         IUserRepository users,
         ILessonRepository lessons,
         ICourseRepository courses,
+        IVideoRepository videos,
         IProgressRepository progress,
         CourseAccessService courseAccessService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IOptions<ProgressOptions> options)
     {
         _users = users;
         _lessons = lessons;
         _courses = courses;
+        _videos = videos;
         _progress = progress;
         _courseAccessService = courseAccessService;
         _unitOfWork = unitOfWork;
+        _options = options.Value;
+        ProgressOptions.Validate(_options);
     }
 
     public Task<LessonProgressOutput> ExecuteAsync(
@@ -84,12 +96,13 @@ public class RegisterLessonProgressUseCase
                 input.LessonId,
                 cancellationToken) ?? UserLessonProgress.Create(input.UserId, input.LessonId);
 
-            lessonProgress.RegisterWatch(input.WatchedSeconds);
+            var video = await _videos.FindByLessonIdAsync(input.LessonId, cancellationToken);
+            var maxWatchedSeconds = video is not null && video.DurationSeconds >= 0
+                ? video.DurationSeconds
+                : (int?)null;
 
-            if (input.MarkAsCompleted)
-            {
-                lessonProgress.MarkAsCompleted();
-            }
+            lessonProgress.RegisterWatch(input.WatchedSeconds, maxWatchedSeconds);
+            lessonProgress.RecalculateCompletion(IsLessonCompletedByServer(video, lessonProgress.WatchedSeconds));
 
             await _progress.SaveLessonProgressAsync(lessonProgress, cancellationToken);
 
@@ -116,6 +129,19 @@ public class RegisterLessonProgressUseCase
 
             return LessonProgressOutput.FromProgress(lessonProgress);
         }, cancellationToken);
+    }
+
+    private bool IsLessonCompletedByServer(Video? video, int watchedSeconds)
+    {
+        if (video is null || video.Status != VideoStatus.Ready || video.DurationSeconds <= 0)
+        {
+            return false;
+        }
+
+        var completionThresholdSeconds = (int)Math.Ceiling(
+            video.DurationSeconds * (_options.LessonCompletionThresholdPercent / 100m));
+
+        return watchedSeconds >= completionThresholdSeconds;
     }
 
     private static decimal CalculateProgressPercent(

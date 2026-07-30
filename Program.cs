@@ -67,7 +67,7 @@ builder.Services.AddUsersModule();
 builder.Services.AddAccessModule();
 builder.Services.AddCoursesModule();
 builder.Services.AddMediaModule();
-builder.Services.AddProgressModule();
+builder.Services.AddProgressModule(builder.Configuration);
 builder.Services.AddAuditLogsModule();
 
 var app = builder.Build();

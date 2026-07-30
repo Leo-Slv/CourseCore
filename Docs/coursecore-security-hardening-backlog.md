@@ -349,6 +349,7 @@ Sim.
 **Origem:** H-04  
 **Severidade:** Alta  
 **Bloqueia produção:** Sim se progresso gerar certificado, compliance ou benefício
+**Status:** Implementado no Security Hardening 06.
 
 ### Problema
 
