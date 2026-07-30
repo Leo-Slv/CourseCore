@@ -33,6 +33,8 @@ O correlation id e adicionado ao logging scope com a propriedade `CorrelationId`
 
 Os logs de autenticacao registram eventos operacionais, como login bem-sucedido, credenciais invalidas e rotacao de refresh token, sem expor dados sensiveis.
 
+Login, refresh token e logout possuem rate limiting. Requisicoes acima do limite retornam `429 Too Many Requests` antes do controller, usando resposta segura com `traceId` e `correlationId` quando disponivel. O login de usuario inexistente executa uma verificacao BCrypt ficticia para reduzir enumeracao por tempo, mantendo a mensagem publica generica.
+
 Nao devem ser logados:
 
 ```text
@@ -43,7 +45,11 @@ senha
 JWT secret
 connection string
 segredos de ambiente
+header Cookie
+header Authorization
 ```
+
+Rate limiting ajuda a conter volume e custo de BCrypt, mas nao substitui MFA, CAPTCHA, lockout progressivo ou monitoramento antifraude.
 
 ## Depuracao
 

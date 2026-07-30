@@ -68,11 +68,15 @@ public class LoginUseCaseTests
     {
         var fixture = CreateFixture();
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync(new LoginInput
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync(new LoginInput
         {
             Email = "user@coursecore.local",
             Password = "wrong"
         }));
+
+        Assert.Equal("Invalid credentials.", exception.Message);
+        Assert.Equal(1, fixture.PasswordHasher.VerifyCalls);
+        Assert.Equal(0, fixture.PasswordHasher.VerifyDummyCalls);
     }
 
     [Fact]
@@ -80,11 +84,15 @@ public class LoginUseCaseTests
     {
         var fixture = CreateFixture(addUser: false);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync(new LoginInput
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync(new LoginInput
         {
             Email = "missing@coursecore.local",
             Password = "password"
         }));
+
+        Assert.Equal("Invalid credentials.", exception.Message);
+        Assert.Equal(0, fixture.PasswordHasher.VerifyCalls);
+        Assert.Equal(1, fixture.PasswordHasher.VerifyDummyCalls);
     }
 
     [Fact]
@@ -114,10 +122,11 @@ public class LoginUseCaseTests
             roles.AddForUser(user.Id, TestEntityFactory.Role(name: "Admin"));
         }
 
+        var passwordHasher = new FakePasswordHasher();
         var useCase = new LoginUseCase(
             users,
             roles,
-            new FakePasswordHasher(),
+            passwordHasher,
             new FakeTokenService(),
             refreshTokens,
             new FakeRefreshTokenHasher(),
@@ -131,12 +140,13 @@ public class LoginUseCaseTests
             }),
             NullLogger<LoginUseCase>.Instance);
 
-        return new LoginFixture(useCase, refreshTokens, unitOfWork, auditLogs);
+        return new LoginFixture(useCase, refreshTokens, unitOfWork, auditLogs, passwordHasher);
     }
 
     private sealed record LoginFixture(
         LoginUseCase UseCase,
         FakeRefreshTokenRepository RefreshTokens,
         FakeUnitOfWork UnitOfWork,
-        FakeAuditLogService AuditLogs);
+        FakeAuditLogService AuditLogs,
+        FakePasswordHasher PasswordHasher);
 }

@@ -372,6 +372,15 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["Auth:RefreshTokenCookie:SameSite"] = "Lax",
                 ["Auth:RefreshTokenCookie:Secure"] = "false",
                 ["Auth:RefreshTokenCookie:MaxAgeDays"] = "7",
+                ["RateLimiting:Login:PermitLimit"] = "100",
+                ["RateLimiting:Login:WindowSeconds"] = "60",
+                ["RateLimiting:Login:QueueLimit"] = "0",
+                ["RateLimiting:Refresh:PermitLimit"] = "100",
+                ["RateLimiting:Refresh:WindowSeconds"] = "60",
+                ["RateLimiting:Refresh:QueueLimit"] = "0",
+                ["RateLimiting:Logout:PermitLimit"] = "100",
+                ["RateLimiting:Logout:WindowSeconds"] = "60",
+                ["RateLimiting:Logout:QueueLimit"] = "0",
                 ["Cors:AllowedOrigins:0"] = "https://localhost",
                 ["Seed:Admin:Enabled"] = "false"
             };

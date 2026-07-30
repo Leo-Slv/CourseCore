@@ -6,8 +6,10 @@ using CourseCore.Api.Modules.Auth.Presentation.Presenters;
 using CourseCore.Api.Modules.Auth.Presentation.Requests;
 using CourseCore.Api.Modules.Auth.Presentation.Responses;
 using CourseCore.Api.Shared.Presentation.Responses;
+using CourseCore.Api.Shared.Presentation.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Auth.Presentation.Controllers;
@@ -41,6 +43,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicyNames.AuthLogin)]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -58,6 +61,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicyNames.AuthRefresh)]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -78,6 +82,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicyNames.AuthLogout)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> LogoutAsync(

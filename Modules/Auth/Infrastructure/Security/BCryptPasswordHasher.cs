@@ -4,6 +4,8 @@ namespace CourseCore.Api.Modules.Auth.Infrastructure.Security;
 
 public class BCryptPasswordHasher : IPasswordHasher
 {
+    private const string DummyPasswordHash = "$2a$11$5BB7RpUF4J1JQciQtEKN6OfJAfQSZHcBPDR4hyPdyteTP7X.ZBRhm";
+
     public string Hash(string password)
     {
         if (string.IsNullOrWhiteSpace(password))
@@ -27,5 +29,10 @@ public class BCryptPasswordHasher : IPasswordHasher
         }
 
         return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+    }
+
+    public bool VerifyDummy(string password)
+    {
+        return Verify(password, DummyPasswordHash);
     }
 }

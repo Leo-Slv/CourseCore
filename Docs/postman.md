@@ -111,6 +111,8 @@ Login, refresh token e logout sao publicos e nao usam Bearer.
 
 Login, refresh token e logout usam cookie `HttpOnly` para o refresh token. Se voce estiver testando um cliente mobile ou uma ferramenta sem cookie jar, o fallback por body pode ser habilitado por configuracao local com `Auth__AllowRefreshTokenInBodyFallback=true`. Em producao, mantenha o fallback desabilitado salvo decisao operacional explicita.
 
+Esses endpoints possuem rate limiting por IP. Excesso de tentativas retorna `429 Too Many Requests`, possivelmente com `Retry-After`. Se uma runner da collection executar muitas chamadas rapidamente, aguarde a janela configurada ou ajuste apenas a configuracao local de rate limit.
+
 Para frontends web/PWA, mantenha o access token apenas em memoria no cliente. O navegador envia o cookie automaticamente para `/api/auth`.
 
 Se frontend e API forem cross-site, sera necessario avaliar CORS com credentials, origem explicita e `SameSite=None; Secure`. Esta etapa nao habilita `AllowCredentials` nem abre CORS. Protecao CSRF completa fica como pendencia futura para fluxos com cookie.
@@ -140,3 +142,4 @@ As respostas tambem devem devolver esse header.
 - Nao copiar valores reais de `.env` para a collection.
 - Docker Compose nao aplica migrations automaticamente.
 - `/health/ready` pode falhar enquanto o schema do banco nao estiver aplicado.
+- Rate limiting nao substitui MFA, CAPTCHA ou lockout futuro.

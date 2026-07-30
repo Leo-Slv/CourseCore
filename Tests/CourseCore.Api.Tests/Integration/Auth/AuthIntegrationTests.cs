@@ -273,6 +273,52 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task Login_WhenInvalidCredentialsExceedRateLimit_ShouldReturnTooManyRequests()
+    {
+        using var factory = CreateRateLimitedFactory(loginLimit: 2);
+        using var client = CreateClient(factory);
+
+        var first = await PostInvalidLoginAsync(client);
+        var second = await PostInvalidLoginAsync(client);
+        var third = await PostInvalidLoginAsync(client);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, second.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, third.StatusCode);
+        Assert.True(third.Headers.RetryAfter?.Delta is not null || third.Headers.RetryAfter?.Date is not null);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WhenInvalidRequestsExceedRateLimit_ShouldReturnTooManyRequests()
+    {
+        using var factory = CreateRateLimitedFactory(refreshLimit: 2);
+        using var client = CreateClient(factory);
+
+        var first = await RefreshAsync(client, "invalid-refresh-token");
+        var second = await RefreshAsync(client, "invalid-refresh-token");
+        var third = await RefreshAsync(client, "invalid-refresh-token");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, second.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, third.StatusCode);
+    }
+
+    [Fact]
+    public async Task Logout_WhenRequestsExceedRateLimit_ShouldReturnTooManyRequests()
+    {
+        using var factory = CreateRateLimitedFactory(logoutLimit: 2);
+        using var client = CreateClient(factory);
+
+        var first = await LogoutAsync(client, "missing-refresh-token");
+        var second = await LogoutAsync(client, "missing-refresh-token");
+        var third = await LogoutAsync(client, "missing-refresh-token");
+
+        Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, second.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, third.StatusCode);
+    }
+
+    [Fact]
     public async Task RefreshToken_WhenSameTokenIsUsedConcurrently_ShouldAllowOnlyOneRotation()
     {
         using var factory = new CourseCoreApiFactory();
@@ -325,10 +371,34 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
 
     private HttpClient CreateClient()
     {
-        return _factory.CreateClient(new WebApplicationFactoryClientOptions
+        return CreateClient(_factory);
+    }
+
+    private static HttpClient CreateClient(CourseCoreApiFactory factory)
+    {
+        return factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             BaseAddress = new Uri("https://localhost"),
             AllowAutoRedirect = false
+        });
+    }
+
+    private static CourseCoreApiFactory CreateRateLimitedFactory(
+        int loginLimit = 100,
+        int refreshLimit = 100,
+        int logoutLimit = 100)
+    {
+        return CourseCoreApiFactory.Create("Development", new Dictionary<string, string?>
+        {
+            ["RateLimiting:Login:PermitLimit"] = loginLimit.ToString(),
+            ["RateLimiting:Login:WindowSeconds"] = "60",
+            ["RateLimiting:Login:QueueLimit"] = "0",
+            ["RateLimiting:Refresh:PermitLimit"] = refreshLimit.ToString(),
+            ["RateLimiting:Refresh:WindowSeconds"] = "60",
+            ["RateLimiting:Refresh:QueueLimit"] = "0",
+            ["RateLimiting:Logout:PermitLimit"] = logoutLimit.ToString(),
+            ["RateLimiting:Logout:WindowSeconds"] = "60",
+            ["RateLimiting:Logout:QueueLimit"] = "0"
         });
     }
 
@@ -341,6 +411,15 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         });
 
         return await ReadAuthTokenAsync(response);
+    }
+
+    private static Task<HttpResponseMessage> PostInvalidLoginAsync(HttpClient client)
+    {
+        return client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = $"missing-{Guid.NewGuid():N}@coursecore.local",
+            password = "WrongPassword123!"
+        });
     }
 
     private static async Task<AuthTokenResult> RefreshAsync(HttpClient client, string refreshToken)

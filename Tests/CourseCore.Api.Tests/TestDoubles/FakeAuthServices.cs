@@ -88,6 +88,10 @@ public sealed class FakeRefreshTokenRepository : IRefreshTokenRepository
 
 public sealed class FakePasswordHasher : IPasswordHasher
 {
+    public int VerifyCalls { get; private set; }
+
+    public int VerifyDummyCalls { get; private set; }
+
     public string Hash(string password)
     {
         return $"hashed:{password}";
@@ -95,7 +99,16 @@ public sealed class FakePasswordHasher : IPasswordHasher
 
     public bool Verify(string password, string passwordHash)
     {
+        VerifyCalls++;
+
         return passwordHash == Hash(password);
+    }
+
+    public bool VerifyDummy(string password)
+    {
+        VerifyDummyCalls++;
+
+        return false;
     }
 }
 

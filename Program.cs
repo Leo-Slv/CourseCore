@@ -11,6 +11,7 @@ using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
 using CourseCore.Api.Shared.Presentation.Health;
 using CourseCore.Api.Shared.Presentation.Middleware;
 using CourseCore.Api.Shared.Presentation.OpenApi;
+using CourseCore.Api.Shared.Presentation.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
@@ -60,6 +61,7 @@ builder.Services.AddOpenApi(options =>
     options.AddOperationTransformer<BearerSecurityOperationTransformer>();
 });
 builder.Services.AddSharedInfrastructure(builder.Configuration);
+builder.Services.AddCourseCoreRateLimiting(builder.Configuration);
 builder.Services.AddAuthModule(builder.Configuration);
 builder.Services.AddUsersModule();
 builder.Services.AddAccessModule();
@@ -92,7 +94,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
 app.UseCors(CorsPolicyName);
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 

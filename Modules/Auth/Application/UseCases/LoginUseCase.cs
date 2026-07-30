@@ -67,8 +67,11 @@ public class LoginUseCase
 
         var email = Email.Create(input.Email);
         var user = await _users.FindByEmailAsync(email, cancellationToken);
+        var passwordIsValid = user is null
+            ? _passwordHasher.VerifyDummy(input.Password)
+            : _passwordHasher.Verify(input.Password, user.PasswordHash);
 
-        if (user is null || !user.Active || !_passwordHasher.Verify(input.Password, user.PasswordHash))
+        if (user is null || !user.Active || !passwordIsValid)
         {
             _logger.LogWarning("Login attempt rejected with invalid credentials.");
             throw new UnauthorizedAccessException("Invalid credentials.");

@@ -223,6 +223,7 @@ Postman/
 **Origem:** H-03  
 **Severidade:** Alta  
 **Bloqueia produção:** Sim
+**Status:** Implementado no Security Hardening 04.
 
 ### Comportamento esperado
 
@@ -253,6 +254,7 @@ Docs/
 **Origem:** M-02  
 **Severidade:** Média  
 **Bloqueia produção:** Recomendado
+**Status:** Implementado no Security Hardening 04.
 
 ### Problema
 

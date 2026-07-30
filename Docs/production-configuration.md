@@ -33,6 +33,15 @@ Auth__RefreshTokenCookie__Path=/api/auth
 Auth__RefreshTokenCookie__SameSite=Lax
 Auth__RefreshTokenCookie__Secure=true
 Auth__RefreshTokenCookie__MaxAgeDays=7
+RateLimiting__Login__PermitLimit=5
+RateLimiting__Login__WindowSeconds=60
+RateLimiting__Login__QueueLimit=0
+RateLimiting__Refresh__PermitLimit=20
+RateLimiting__Refresh__WindowSeconds=60
+RateLimiting__Refresh__QueueLimit=0
+RateLimiting__Logout__PermitLimit=30
+RateLimiting__Logout__WindowSeconds=60
+RateLimiting__Logout__QueueLimit=0
 Cors__AllowedOrigins__0=https://your-frontend-domain.com
 Seed__Admin__Enabled=false
 ```
@@ -48,6 +57,8 @@ Seed__Admin__Enabled=false
 `Auth__AllowRefreshTokenInBodyFallback` should remain `false` for web/PWA production deployments. The preferred flow stores the refresh token in the `coursecore_refresh_token` cookie.
 
 `Auth__RefreshTokenCookie__Secure` must be `true` in Production. The application forces refresh token cookies to `Secure` in Production. `SameSite=Lax` is the default same-site posture; use `SameSite=None` only with `Secure=true` when a cross-site frontend/API deployment explicitly requires it.
+
+`RateLimiting__Login`, `RateLimiting__Refresh`, and `RateLimiting__Logout` configure fixed-window limits for the public authentication endpoints. Defaults are 5 login attempts, 20 refresh attempts, and 30 logout attempts per minute per remote IP. Exceeded limits return `429 Too Many Requests` and may include `Retry-After`.
 
 ## Production Startup Validation
 

@@ -90,6 +90,12 @@ Auth__RefreshTokenCookie__Path
 Auth__RefreshTokenCookie__SameSite
 Auth__RefreshTokenCookie__Secure
 Auth__RefreshTokenCookie__MaxAgeDays
+RateLimiting__Login__PermitLimit
+RateLimiting__Login__WindowSeconds
+RateLimiting__Refresh__PermitLimit
+RateLimiting__Refresh__WindowSeconds
+RateLimiting__Logout__PermitLimit
+RateLimiting__Logout__WindowSeconds
 Cors__AllowedOrigins__0
 Seed__Admin__Enabled
 Seed__Admin__Name
@@ -275,6 +281,8 @@ Scalar/OpenAPI nao sao expostos por padrao em `Production`.
 ## Autenticacao e autorizacao
 
 - Login emite JWT.
+- Login, refresh token e logout possuem rate limiting e retornam `429 Too Many Requests` quando o limite configurado e excedido.
+- Login de e-mail inexistente executa uma verificacao BCrypt ficticia para reduzir enumeracao por diferenca de tempo.
 - Refresh token e persistido somente como hash.
 - Refresh token e enviado para clientes web em cookie `HttpOnly`.
 - Refresh token possui expiracao, revogacao e rotacao atomica.
@@ -298,6 +306,8 @@ Se o cliente envia um GUID valido, a API preserva o valor. Caso contrario, a API
 Logs de aplicacao nao devem conter senha, access token, refresh token, hash, JWT secret, connection string ou secrets de ambiente.
 
 Cookies de refresh token usam `HttpOnly`, path `/api/auth` e `SameSite=Lax` por padrao. Em Production, o cookie e sempre `Secure`. Esta etapa nao habilita CORS com credentials nem protecao CSRF completa; para deployments cross-site, avalie CORS explicito com credentials, `SameSite=None; Secure` e CSRF token/custom header em etapa propria.
+
+Rate limiting reduz brute force, credential stuffing e abuso operacional, mas nao substitui MFA, CAPTCHA, lockout progressivo ou monitoramento antifraude em uma etapa futura.
 
 Veja `Docs/observability.md`.
 
