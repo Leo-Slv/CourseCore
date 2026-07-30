@@ -5,6 +5,8 @@ public static class AuditLogActionNames
     public const string LoginSucceeded = "LoginSucceeded";
     public const string RefreshTokenRotated = "RefreshTokenRotated";
     public const string RefreshTokenRejected = "RefreshTokenRejected";
+    public const string RefreshTokenReplayDetected = "RefreshTokenReplayDetected";
+    public const string LogoutSucceeded = "LogoutSucceeded";
     public const string UserCreated = "UserCreated";
     public const string UserUpdated = "UserUpdated";
     public const string UserAreaAccessGranted = "UserAreaAccessGranted";

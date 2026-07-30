@@ -12,6 +12,19 @@ public interface IRefreshTokenRepository
         RefreshToken refreshToken,
         CancellationToken cancellationToken = default);
 
+    Task<bool> TryRotateAsync(
+        Guid refreshTokenId,
+        string currentTokenHash,
+        string replacementTokenHash,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> TryRevokeAsync(
+        Guid refreshTokenId,
+        string currentTokenHash,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default);
+
     Task UpdateAsync(
         RefreshToken refreshToken,
         CancellationToken cancellationToken = default);

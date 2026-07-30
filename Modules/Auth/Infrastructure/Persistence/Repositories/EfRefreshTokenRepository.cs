@@ -35,6 +35,44 @@ public class EfRefreshTokenRepository : IRefreshTokenRepository
             cancellationToken);
     }
 
+    public async Task<bool> TryRotateAsync(
+        Guid refreshTokenId,
+        string currentTokenHash,
+        string replacementTokenHash,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default)
+    {
+        var affectedRows = await _dbContext.RefreshTokens
+            .Where(x => x.Id == refreshTokenId
+                && x.TokenHash == currentTokenHash
+                && x.RevokedAt == null
+                && x.ExpiresAt > revokedAt)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.RevokedAt, revokedAt)
+                .SetProperty(x => x.ReplacedByTokenHash, replacementTokenHash),
+                cancellationToken);
+
+        return affectedRows == 1;
+    }
+
+    public async Task<bool> TryRevokeAsync(
+        Guid refreshTokenId,
+        string currentTokenHash,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default)
+    {
+        var affectedRows = await _dbContext.RefreshTokens
+            .Where(x => x.Id == refreshTokenId
+                && x.TokenHash == currentTokenHash
+                && x.RevokedAt == null
+                && x.ExpiresAt > revokedAt)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.RevokedAt, revokedAt),
+                cancellationToken);
+
+        return affectedRows == 1;
+    }
+
     public async Task UpdateAsync(
         RefreshToken refreshToken,
         CancellationToken cancellationToken = default)

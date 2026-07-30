@@ -70,6 +70,7 @@ public class OpenApiIntegrationTests : IClassFixture<CourseCoreApiFactory>
     [Theory]
     [InlineData("/api/auth/login", "post")]
     [InlineData("/api/auth/refresh-token", "post")]
+    [InlineData("/api/auth/logout", "post")]
     public async Task GetOpenApiJson_WhenEndpointAllowsAnonymous_ShouldNotRequireBearer(
         string path,
         string method)

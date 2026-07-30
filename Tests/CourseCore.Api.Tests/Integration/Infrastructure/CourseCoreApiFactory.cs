@@ -27,7 +27,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
     private const string JwtAudience = "CourseCore.IntegrationTests";
     private const string JwtSecretKey = "integration-test-secret-key-32-characters-minimum";
 
-    private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly SqliteConnection _connection = new($"Data Source=CourseCoreTests-{Guid.NewGuid():N};Mode=Memory;Cache=Shared");
 
     public async Task<Guid> GetAdminRoleIdAsync()
     {
@@ -55,6 +55,19 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
     public async Task<TestUser> SeedUserAsync(string? permissionKey = null)
     {
         return await SeedUserWithRoleAsync(permissionKey);
+    }
+
+    public async Task<int> CountActiveRefreshTokensByEmailAsync(string email)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+
+        return await dbContext.RefreshTokens
+            .Where(refreshToken => refreshToken.RevokedAt == null
+                && refreshToken.ExpiresAt > now
+                && dbContext.Users.Any(user => user.Id == refreshToken.UserId && user.Email == email))
+            .CountAsync();
     }
 
     public async Task<TestUser> SeedUserWithRoleAsync(
@@ -342,7 +355,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IDbContextOptionsConfiguration<CourseCoreDbContext>>();
             services.AddDbContext<CourseCoreDbContext>(options =>
             {
-                options.UseSqlite(_connection);
+                options.UseSqlite(_connection.ConnectionString);
             });
             services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
             {

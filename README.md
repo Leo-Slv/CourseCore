@@ -269,8 +269,9 @@ Scalar/OpenAPI nao sao expostos por padrao em `Production`.
 
 - Login emite JWT.
 - Refresh token e persistido somente como hash.
-- Refresh token possui expiracao, revogacao e rotacao.
+- Refresh token possui expiracao, revogacao e rotacao atomica.
 - Reutilizacao de refresh token antigo e rejeitada.
+- Logout revoga o refresh token da sessao atual.
 - JWT inclui roles e permission claims.
 - Policies usam permissions com fallback para a role `Admin`.
 - Fluxos sensiveis usam o usuario autenticado pelo token, nao `userId` enviado pelo cliente.
@@ -296,6 +297,8 @@ Eventos sensiveis auditados:
 - `LoginSucceeded`
 - `RefreshTokenRotated`
 - `RefreshTokenRejected`
+- `RefreshTokenReplayDetected`
+- `LogoutSucceeded`
 - `UserCreated`
 - `UserUpdated`
 - `UserAreaAccessGranted`

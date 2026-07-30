@@ -20,6 +20,11 @@ public static class AuthPresenter
         return request.RefreshToken;
     }
 
+    public static string ToRefreshToken(LogoutRequest request)
+    {
+        return request.RefreshToken;
+    }
+
     public static AuthResponse ToResponse(AuthOutput output)
     {
         return new AuthResponse

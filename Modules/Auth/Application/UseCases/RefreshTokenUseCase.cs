@@ -68,7 +68,7 @@ public class RefreshTokenUseCase
 
         if (persistedRefreshToken is null || !persistedRefreshToken.IsActive)
         {
-            await AuditRefreshTokenRejectedAsync(persistedRefreshToken?.UserId, "invalid_or_inactive", cancellationToken);
+            await AuditInvalidRefreshTokenAsync(persistedRefreshToken, cancellationToken);
             _logger.LogWarning("Refresh token request rejected because the token is invalid or inactive.");
             throw new UnauthorizedAccessException("Invalid refresh token.");
         }
@@ -85,16 +85,30 @@ public class RefreshTokenUseCase
         var roles = await _roles.FindByUserIdAsync(user.Id, cancellationToken);
         var roleNames = roles.Select(role => role.Name).ToArray();
         var permissions = await _roles.FindPermissionKeysByUserIdAsync(user.Id, cancellationToken);
-        var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, permissions, cancellationToken);
         var newRefreshToken = _refreshTokenGenerator.Generate();
         var newRefreshTokenHash = _refreshTokenHasher.Hash(newRefreshToken);
         var now = DateTime.UtcNow;
 
-        await _unitOfWork.ExecuteAsync(async () =>
+        var rotated = await _unitOfWork.ExecuteAsync(async () =>
         {
-            persistedRefreshToken.Revoke(newRefreshTokenHash, now);
+            var rotationSucceeded = await _refreshTokens.TryRotateAsync(
+                persistedRefreshToken.Id,
+                refreshTokenHash,
+                newRefreshTokenHash,
+                now,
+                cancellationToken);
 
-            await _refreshTokens.UpdateAsync(persistedRefreshToken, cancellationToken);
+            if (!rotationSucceeded)
+            {
+                await RecordRefreshTokenReplayDetectedAsync(
+                    persistedRefreshToken.UserId,
+                    persistedRefreshToken.Id,
+                    "rotation_conflict_or_replay",
+                    cancellationToken);
+
+                return false;
+            }
+
             await _refreshTokens.AddAsync(
                 RefreshToken.Create(
                     user.Id,
@@ -109,7 +123,17 @@ public class RefreshTokenUseCase
                 new Dictionary<string, string?> { ["result"] = "rotated" },
                 user.Id,
                 cancellationToken);
+
+            return true;
         }, cancellationToken);
+
+        if (!rotated)
+        {
+            _logger.LogWarning("Refresh token request rejected because rotation did not win.");
+            throw new UnauthorizedAccessException("Invalid refresh token.");
+        }
+
+        var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, permissions, cancellationToken);
 
         _logger.LogInformation("Refresh token rotated successfully for user {UserId}.", user.Id);
 
@@ -141,6 +165,51 @@ public class RefreshTokenUseCase
                 new Dictionary<string, string?> { ["reason"] = reason },
                 userId,
                 cancellationToken),
+            cancellationToken);
+    }
+
+    private Task AuditInvalidRefreshTokenAsync(
+        RefreshToken? refreshToken,
+        CancellationToken cancellationToken)
+    {
+        if (refreshToken is not null && refreshToken.IsRevoked)
+        {
+            return AuditRefreshTokenReplayDetectedAsync(
+                refreshToken.UserId,
+                refreshToken.Id,
+                "revoked_token_reused",
+                cancellationToken);
+        }
+
+        return AuditRefreshTokenRejectedAsync(
+            refreshToken?.UserId,
+            refreshToken is null ? "invalid_or_inactive" : "expired_or_inactive",
+            cancellationToken);
+    }
+
+    private Task AuditRefreshTokenReplayDetectedAsync(
+        Guid? userId,
+        Guid? refreshTokenId,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        return _unitOfWork.ExecuteAsync(
+            () => RecordRefreshTokenReplayDetectedAsync(userId, refreshTokenId, reason, cancellationToken),
+            cancellationToken);
+    }
+
+    private Task RecordRefreshTokenReplayDetectedAsync(
+        Guid? userId,
+        Guid? refreshTokenId,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        return _auditLogs.RecordAsync(
+            AuditLogActionNames.RefreshTokenReplayDetected,
+            "RefreshToken",
+            refreshTokenId,
+            new Dictionary<string, string?> { ["reason"] = reason },
+            userId,
             cancellationToken);
     }
 }

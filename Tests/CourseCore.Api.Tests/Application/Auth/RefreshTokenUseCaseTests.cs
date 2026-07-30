@@ -23,7 +23,7 @@ public class RefreshTokenUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenRefreshTokenIsValid_ShouldRevokeOldToken()
+    public async Task ExecuteAsync_WhenRefreshTokenIsValid_ShouldRotateOldTokenAtomically()
     {
         var fixture = CreateFixture();
 
@@ -31,7 +31,7 @@ public class RefreshTokenUseCaseTests
 
         Assert.True(fixture.ExistingRefreshToken.IsRevoked);
         Assert.Equal("hash:new-refresh-token", fixture.ExistingRefreshToken.ReplacedByTokenHash);
-        Assert.Single(fixture.RefreshTokens.Updated);
+        Assert.Empty(fixture.RefreshTokens.Updated);
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public class RefreshTokenUseCaseTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync("old-refresh-token"));
 
         var auditLog = Assert.Single(fixture.AuditLogs.Entries);
-        Assert.Equal(AuditLogActionNames.RefreshTokenRejected, auditLog.Action);
-        Assert.Equal("invalid_or_inactive", auditLog.Metadata["reason"]);
+        Assert.Equal(AuditLogActionNames.RefreshTokenReplayDetected, auditLog.Action);
+        Assert.Equal("revoked_token_reused", auditLog.Metadata["reason"]);
     }
 
     [Fact]
@@ -106,6 +106,20 @@ public class RefreshTokenUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenAtomicRotationLoses_ShouldThrowWithoutPersistingOrGeneratingAccessToken()
+    {
+        var fixture = CreateFixture(forceRotateFailure: true);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.UseCase.ExecuteAsync("old-refresh-token"));
+
+        Assert.Empty(fixture.RefreshTokens.Added);
+        Assert.Equal(0, fixture.TokenService.Calls);
+        var auditLog = Assert.Single(fixture.AuditLogs.Entries);
+        Assert.Equal(AuditLogActionNames.RefreshTokenReplayDetected, auditLog.Action);
+        Assert.Equal("rotation_conflict_or_replay", auditLog.Metadata["reason"]);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenUserIsInactive_ShouldThrowUnauthorizedAccessException()
     {
         var fixture = CreateFixture(userActive: false);
@@ -117,7 +131,8 @@ public class RefreshTokenUseCaseTests
         bool addRefreshToken = true,
         bool userActive = true,
         DateTime? refreshTokenExpiresAt = null,
-        DateTime? revokedAt = null)
+        DateTime? revokedAt = null,
+        bool forceRotateFailure = false)
     {
         var userId = Guid.NewGuid();
         var users = new FakeUserRepository();
@@ -125,6 +140,7 @@ public class RefreshTokenUseCaseTests
         var refreshTokens = new FakeRefreshTokenRepository();
         var unitOfWork = new FakeUnitOfWork();
         var auditLogs = new FakeAuditLogService();
+        var tokenService = new FakeTokenService();
         var user = TestEntityFactory.User(userId, active: userActive);
         users.Add(user);
         roles.AddForUser(user.Id, TestEntityFactory.Role(name: "Admin"));
@@ -143,10 +159,12 @@ public class RefreshTokenUseCaseTests
             refreshTokens.AddExisting(existingRefreshToken);
         }
 
+        refreshTokens.ForceRotateFailure = forceRotateFailure;
+
         var useCase = new RefreshTokenUseCase(
             users,
             roles,
-            new FakeTokenService(),
+            tokenService,
             refreshTokens,
             new FakeRefreshTokenHasher(),
             new FakeRefreshTokenGenerator("new-refresh-token"),
@@ -159,7 +177,7 @@ public class RefreshTokenUseCaseTests
             }),
             NullLogger<RefreshTokenUseCase>.Instance);
 
-        return new RefreshTokenFixture(useCase, refreshTokens, unitOfWork, existingRefreshToken, user.Id, auditLogs);
+        return new RefreshTokenFixture(useCase, refreshTokens, unitOfWork, existingRefreshToken, user.Id, auditLogs, tokenService);
     }
 
     private sealed record RefreshTokenFixture(
@@ -168,5 +186,6 @@ public class RefreshTokenUseCaseTests
         FakeUnitOfWork UnitOfWork,
         RefreshToken ExistingRefreshToken,
         Guid UserId,
-        FakeAuditLogService AuditLogs);
+        FakeAuditLogService AuditLogs,
+        FakeTokenService TokenService);
 }

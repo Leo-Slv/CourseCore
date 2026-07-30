@@ -14,13 +14,16 @@ public class AuthController : ControllerBase
 {
     private readonly LoginUseCase _loginUseCase;
     private readonly RefreshTokenUseCase _refreshTokenUseCase;
+    private readonly LogoutUseCase _logoutUseCase;
 
     public AuthController(
         LoginUseCase loginUseCase,
-        RefreshTokenUseCase refreshTokenUseCase)
+        RefreshTokenUseCase refreshTokenUseCase,
+        LogoutUseCase logoutUseCase)
     {
         _loginUseCase = loginUseCase;
         _refreshTokenUseCase = refreshTokenUseCase;
+        _logoutUseCase = logoutUseCase;
     }
 
     [HttpPost("login")]
@@ -53,5 +56,20 @@ public class AuthController : ControllerBase
             cancellationToken);
 
         return Ok(AuthPresenter.ToResponse(output));
+    }
+
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> LogoutAsync(
+        LogoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _logoutUseCase.ExecuteAsync(
+            AuthPresenter.ToRefreshToken(request),
+            cancellationToken);
+
+        return NoContent();
     }
 }

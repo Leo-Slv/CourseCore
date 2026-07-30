@@ -202,6 +202,55 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, reuseResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task RefreshToken_WhenSameTokenIsUsedConcurrently_ShouldAllowOnlyOneRotation()
+    {
+        using var factory = new CourseCoreApiFactory();
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+        var login = await LoginAsync(client);
+
+        var refreshAttempts = await Task.WhenAll(
+            RefreshAsync(client, login.RefreshToken),
+            RefreshAsync(client, login.RefreshToken));
+        var statusCodes = refreshAttempts.Select(attempt => attempt.StatusCode).ToArray();
+        var activeRefreshTokens = await factory.CountActiveRefreshTokensByEmailAsync(CourseCoreApiFactory.AdminEmail);
+
+        Assert.Contains(HttpStatusCode.OK, statusCodes);
+        Assert.Contains(HttpStatusCode.Unauthorized, statusCodes);
+        Assert.Equal(1, activeRefreshTokens);
+        Assert.Single(refreshAttempts, attempt => !string.IsNullOrWhiteSpace(attempt.RefreshToken));
+    }
+
+    [Fact]
+    public async Task Logout_WhenRefreshTokenIsValid_ShouldReturnNoContentAndRevokeToken()
+    {
+        using var client = CreateClient();
+        var login = await LoginAsync(client);
+
+        var logout = await LogoutAsync(client, login.RefreshToken);
+        var refreshAfterLogout = await RefreshAsync(client, login.RefreshToken);
+
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, refreshAfterLogout.StatusCode);
+    }
+
+    [Fact]
+    public async Task Logout_WhenCalledTwiceWithSameRefreshToken_ShouldReturnNoContent()
+    {
+        using var client = CreateClient();
+        var login = await LoginAsync(client);
+
+        var firstLogout = await LogoutAsync(client, login.RefreshToken);
+        var secondLogout = await LogoutAsync(client, login.RefreshToken);
+
+        Assert.Equal(HttpStatusCode.NoContent, firstLogout.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, secondLogout.StatusCode);
+    }
+
     private HttpClient CreateClient()
     {
         return _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -230,6 +279,14 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         });
 
         return await ReadAuthTokenAsync(response);
+    }
+
+    private static async Task<HttpResponseMessage> LogoutAsync(HttpClient client, string refreshToken)
+    {
+        return await client.PostAsJsonAsync("/api/auth/logout", new
+        {
+            refreshToken
+        });
     }
 
     private static async Task<AuthTokenResult> ReadAuthTokenAsync(HttpResponseMessage response)

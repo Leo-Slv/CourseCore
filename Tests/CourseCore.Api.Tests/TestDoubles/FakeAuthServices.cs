@@ -13,6 +13,8 @@ public sealed class FakeRefreshTokenRepository : IRefreshTokenRepository
 
     public List<RefreshToken> Updated { get; } = [];
 
+    public bool ForceRotateFailure { get; set; }
+
     public void AddExisting(RefreshToken refreshToken)
     {
         _tokens[refreshToken.TokenHash] = refreshToken;
@@ -33,6 +35,46 @@ public sealed class FakeRefreshTokenRepository : IRefreshTokenRepository
         _tokens[refreshToken.TokenHash] = refreshToken;
 
         return Task.CompletedTask;
+    }
+
+    public Task<bool> TryRotateAsync(
+        Guid refreshTokenId,
+        string currentTokenHash,
+        string replacementTokenHash,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (ForceRotateFailure
+            || !_tokens.TryGetValue(currentTokenHash, out var refreshToken)
+            || refreshToken.Id != refreshTokenId
+            || !refreshToken.IsActive
+            || refreshToken.ExpiresAt <= revokedAt)
+        {
+            return Task.FromResult(false);
+        }
+
+        refreshToken.Revoke(replacementTokenHash, revokedAt);
+
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> TryRevokeAsync(
+        Guid refreshTokenId,
+        string currentTokenHash,
+        DateTime revokedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_tokens.TryGetValue(currentTokenHash, out var refreshToken)
+            || refreshToken.Id != refreshTokenId
+            || !refreshToken.IsActive
+            || refreshToken.ExpiresAt <= revokedAt)
+        {
+            return Task.FromResult(false);
+        }
+
+        refreshToken.Revoke(revokedAt: revokedAt);
+
+        return Task.FromResult(true);
     }
 
     public Task UpdateAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
@@ -83,6 +125,8 @@ public sealed class FakeRefreshTokenGenerator : IRefreshTokenGenerator
 public sealed class FakeTokenService : ITokenService
 {
     private int _calls;
+
+    public int Calls => _calls;
 
     public Task<string> GenerateAccessTokenAsync(
         User user,

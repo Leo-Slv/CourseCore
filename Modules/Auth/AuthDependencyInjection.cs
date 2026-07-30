@@ -28,6 +28,7 @@ public static class AuthDependencyInjection
         services.AddScoped<IRefreshTokenRepository, EfRefreshTokenRepository>();
         services.AddScoped<LoginUseCase>();
         services.AddScoped<RefreshTokenUseCase>();
+        services.AddScoped<LogoutUseCase>();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

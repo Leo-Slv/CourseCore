@@ -61,6 +61,7 @@ Veja tambem `Docs/database-seeding.md`.
 4. Execute `Auth / Login as Seed Admin`.
 5. Use os endpoints protegidos.
 6. Quando necessario, execute `Auth / Refresh Token` para renovar os tokens.
+7. Execute `Auth / Logout` para revogar o refresh token da sessao atual.
 
 A request de login salva automaticamente:
 
@@ -70,6 +71,8 @@ refreshToken
 ```
 
 A request de refresh token tambem atualiza os dois valores.
+
+A request de logout envia o `refreshToken` atual no body, espera `204 No Content` e limpa a variavel `refreshToken` do environment.
 
 ## Variaveis do environment
 
@@ -104,7 +107,7 @@ Os folders protegidos usam:
 Bearer {{accessToken}}
 ```
 
-Login e refresh token sao publicos e nao usam Bearer.
+Login, refresh token e logout sao publicos e nao usam Bearer.
 
 ## Correlation id
 
