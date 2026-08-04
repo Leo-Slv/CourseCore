@@ -48,6 +48,11 @@ public class GrantRoleAreaAccessUseCase
                 throw new NotFoundException("Area not found.");
             }
 
+            if (!role.Active)
+            {
+                throw new ConflictException("Access cannot be granted to an inactive role.");
+            }
+
             var access = RoleAreaAccess.Create(
                 input.RoleId,
                 input.AreaId,

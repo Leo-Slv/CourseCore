@@ -372,7 +372,33 @@
           }
         },
         {
-          "name": "Check Course Access",
+          "name": "Check Own Course Access",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/access/courses/{{courseId}}"
+          }
+        },
+        {
+          "name": "Check User Course Access (Administrative)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/access/users/{{createdUserId}}/courses/{{courseId}}"
+          }
+        },
+        {
+          "name": "Check Own Course Access (Deprecated)",
           "request": {
             "method": "POST",
             "header": [
@@ -389,7 +415,8 @@
               "mode": "raw",
               "raw": "{\n  \"courseId\": \"{{courseId}}\"\n}"
             },
-            "url": "{{baseUrl}}/api/access/course/check"
+            "url": "{{baseUrl}}/api/access/course/check",
+            "description": "Deprecated compatibility endpoint. It always checks the authenticated user's own access and never accepts a target userId."
           }
         }
       ]

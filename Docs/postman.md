@@ -121,6 +121,23 @@ Para frontends web/PWA, mantenha o access token apenas em memoria no cliente. O 
 
 Se frontend e API forem cross-site, sera necessario avaliar CORS com credentials, origem explicita e `SameSite=None; Secure`. Esta etapa nao habilita `AllowCredentials` nem abre CORS. Protecao CSRF completa fica como pendencia futura para fluxos com cookie.
 
+## Verificacao de acesso a cursos
+
+Use `Access / Check Own Course Access` (`GET /api/access/courses/{courseId}`) para consultar o acesso do usuario autenticado. Essa rota usa exclusivamente o `userId` do JWT e exige apenas autenticacao.
+
+Use `Access / Check User Course Access (Administrative)` (`GET /api/access/users/{userId}/courses/{courseId}`) para consultar outro usuario. Essa rota exige `users.manage`, `areas.manage`, `courses.manage` ou a role `Admin`.
+
+O endpoint `POST /api/access/course/check` permanece apenas para compatibilidade e esta deprecated. Ele nunca aceita `userId` alvo e sempre consulta o proprio usuario autenticado.
+
+Os grants usam policies separadas:
+
+```text
+POST /api/access/user-area -> users.manage ou Admin
+POST /api/access/role-area -> roles.manage ou Admin
+```
+
+Uma permissao nao autoriza o grant da outra categoria. Grants para roles inativas retornam `409 Conflict`.
+
 ## Progresso
 
 A request `Progress / Register Lesson Progress` deve enviar `watchedSeconds` suficiente para atingir o threshold configurado no servidor. Por padrao, a aula conclui ao atingir 90% de `Video.DurationSeconds`.

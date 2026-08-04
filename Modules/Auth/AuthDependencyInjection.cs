@@ -70,9 +70,22 @@ public static class AuthDependencyInjection
             AddPermissionPolicy(options, AuthPolicyNames.ManageUsers, AuthPermissionNames.ManageUsers);
             AddPermissionPolicy(
                 options,
-                AuthPolicyNames.ManageAccess,
-                AuthPermissionNames.ManageAreas,
+                AuthPolicyNames.ManageUserAreaAccess,
+                AuthPermissionNames.ManageUsers);
+            AddPermissionPolicy(
+                options,
+                AuthPolicyNames.ManageRoleAreaAccess,
                 AuthPermissionNames.ManageRoles);
+            options.AddPolicy(AuthPolicyNames.CheckOwnCourseAccess, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+            });
+            AddPermissionPolicy(
+                options,
+                AuthPolicyNames.CheckUserCourseAccess,
+                AuthPermissionNames.ManageUsers,
+                AuthPermissionNames.ManageAreas,
+                AuthPermissionNames.ManageCourses);
             AddPermissionPolicy(options, AuthPolicyNames.ManageCourses, AuthPermissionNames.ManageCourses);
             AddPermissionPolicy(options, AuthPolicyNames.ManageVideos, AuthPermissionNames.ManageVideos);
             AddPermissionPolicy(options, AuthPolicyNames.ReadProgress, AuthPermissionNames.ReadProgress);

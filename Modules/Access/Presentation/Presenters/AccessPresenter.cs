@@ -39,6 +39,15 @@ public static class AccessPresenter
         };
     }
 
+    public static CheckCourseAccessInput ToInput(Guid userId, Guid courseId)
+    {
+        return new CheckCourseAccessInput
+        {
+            UserId = userId,
+            CourseId = courseId
+        };
+    }
+
     public static AreaAccessResponse ToResponse(AreaAccessOutput output)
     {
         return new AreaAccessResponse

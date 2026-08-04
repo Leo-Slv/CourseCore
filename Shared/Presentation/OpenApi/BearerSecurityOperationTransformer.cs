@@ -14,6 +14,11 @@ public sealed class BearerSecurityOperationTransformer : IOpenApiOperationTransf
         OpenApiOperationTransformerContext context,
         CancellationToken cancellationToken)
     {
+        if (IsObsolete(context))
+        {
+            operation.Deprecated = true;
+        }
+
         if (AllowsAnonymous(context))
         {
             return Task.CompletedTask;
@@ -31,6 +36,12 @@ public sealed class BearerSecurityOperationTransformer : IOpenApiOperationTransf
         });
 
         return Task.CompletedTask;
+    }
+
+    private static bool IsObsolete(OpenApiOperationTransformerContext context)
+    {
+        return context.Description.ActionDescriptor is ControllerActionDescriptor actionDescriptor
+            && actionDescriptor.MethodInfo.GetCustomAttributes(inherit: true).OfType<ObsoleteAttribute>().Any();
     }
 
     private static bool AllowsAnonymous(OpenApiOperationTransformerContext context)

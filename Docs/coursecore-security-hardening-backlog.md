@@ -503,6 +503,8 @@ Docs/
 
 ## SEC-H01 — Separar policies de acesso
 
+**Status:** Implementado no Security Hardening 10.
+
 **Origem:** M-09  
 **Severidade:** Média/Alta
 

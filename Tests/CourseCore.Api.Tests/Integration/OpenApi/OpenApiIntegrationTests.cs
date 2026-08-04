@@ -87,6 +87,8 @@ public class OpenApiIntegrationTests : IClassFixture<CourseCoreApiFactory>
     [InlineData("/api/courses/available", "get")]
     [InlineData("/api/videos/playback", "post")]
     [InlineData("/api/progress/lessons", "post")]
+    [InlineData("/api/access/courses/{courseId}", "get")]
+    [InlineData("/api/access/users/{userId}/courses/{courseId}", "get")]
     public async Task GetOpenApiJson_WhenEndpointRequiresAuthorization_ShouldRequireBearer(
         string path,
         string method)
@@ -95,6 +97,17 @@ public class OpenApiIntegrationTests : IClassFixture<CourseCoreApiFactory>
 
         var operation = await GetOpenApiOperationAsync(client, path, method);
 
+        Assert.True(OperationRequiresBearer(operation));
+    }
+
+    [Fact]
+    public async Task GetOpenApiJson_WhenLegacyAccessEndpointIsExposed_ShouldMarkItDeprecated()
+    {
+        using var client = CreateClient();
+
+        var operation = await GetOpenApiOperationAsync(client, "/api/access/course/check", "post");
+
+        Assert.True(operation.GetProperty("deprecated").GetBoolean());
         Assert.True(OperationRequiresBearer(operation));
     }
 

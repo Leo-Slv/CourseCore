@@ -304,6 +304,17 @@ Scalar/OpenAPI nao sao expostos por padrao em `Production`.
 - Policies usam permissions com fallback para a role `Admin`.
 - Fluxos sensiveis usam o usuario autenticado pelo token, nao `userId` enviado pelo cliente.
 
+Policies de acesso sao separadas por operacao:
+
+```text
+ManageUserAreaAccess -> users.manage ou Admin
+ManageRoleAreaAccess -> roles.manage ou Admin
+CheckOwnCourseAccess -> qualquer usuario autenticado
+CheckUserCourseAccess -> users.manage, areas.manage, courses.manage ou Admin
+```
+
+`GET /api/access/courses/{courseId}` consulta somente o acesso do usuario autenticado. `GET /api/access/users/{userId}/courses/{courseId}` e a consulta administrativa explicita de um usuario alvo. O antigo `POST /api/access/course/check` permanece deprecated para compatibilidade e continua limitado ao usuario do token. Grants para roles inativas sao rejeitados com conflito conhecido.
+
 ## Observabilidade
 
 A API usa o header:
