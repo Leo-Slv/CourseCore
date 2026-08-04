@@ -40,6 +40,8 @@ adminPassword=CHANGE_ME_LOCAL_ONLY
 
 Antes de usar a collection, configure `adminPassword` no environment com a senha local que voce definiu para o seed. Nao salve senha real em arquivo versionado.
 
+A senha deve ter ao menos 12 caracteres e no maximo 72 bytes UTF-8, limite seguro do BCrypt. Ela nao pode ser vazia nem uma senha comum basica. A mesma politica vale para usuarios criados por `Users / Create User`.
+
 O seed admin e opt-in, roda somente em `Development` e exige schema atualizado. Para habilitar localmente:
 
 ```powershell
@@ -148,6 +150,8 @@ X-Correlation-ID: {{correlationId}}
 As respostas tambem devem devolver esse header.
 
 ## Cuidados
+
+Payloads administrativos possuem limites de tamanho. Create Course aceita no maximo 50 areas, 50 modulos e 100 aulas por modulo; URLs de thumbnail devem ser HTTP(S) absolutas. O corpo HTTP e limitado a 1 MiB. Payload invalido retorna `400`, sem detalhes internos.
 
 - Nao versionar senha real.
 - Nao versionar JWT real.

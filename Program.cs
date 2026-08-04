@@ -8,6 +8,7 @@ using CourseCore.Api.Modules.Users;
 using CourseCore.Api.Shared;
 using CourseCore.Api.Shared.Infrastructure.Configuration;
 using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
+using CourseCore.Api.Shared.Application.Validation;
 using CourseCore.Api.Shared.Presentation.Health;
 using CourseCore.Api.Shared.Presentation.Middleware;
 using CourseCore.Api.Shared.Presentation.OpenApi;
@@ -18,6 +19,11 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 const string CorsPolicyName = "CourseCoreCorsPolicy";
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = ApplicationValidationLimits.MaxRequestBodySizeBytes;
+});
 
 if (builder.Environment.IsProduction())
 {

@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
+using CourseCore.Api.Modules.Courses.Application.Validation;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
@@ -29,8 +30,7 @@ public class CreateCourseUseCase
         CreateCourseInput input,
         CancellationToken cancellationToken = default)
     {
-        ValidateRequired(input.Title, nameof(input.Title));
-        ValidateRequired(input.Description, nameof(input.Description));
+        CourseInputValidator.Validate(input);
 
         var slug = Slug.Create(input.Slug);
 
@@ -71,8 +71,6 @@ public class CreateCourseUseCase
 
     private static CourseModule CreateModule(Guid courseId, CreateCourseModuleInput input)
     {
-        ValidateRequired(input.Title, nameof(input.Title));
-
         var module = CourseModule.Create(courseId, input.Title, input.Description, input.DisplayOrder);
 
         foreach (var lessonInput in input.Lessons)
@@ -85,8 +83,6 @@ public class CreateCourseUseCase
 
     private static Lesson CreateLesson(Guid moduleId, CreateLessonInput input)
     {
-        ValidateRequired(input.Title, nameof(input.Title));
-
         var lesson = Lesson.Create(moduleId, input.Title, input.Description, input.DisplayOrder);
 
         if (input.FreePreview)
@@ -105,11 +101,4 @@ public class CreateCourseUseCase
             .ToList();
     }
 
-    private static void ValidateRequired(string value, string fieldName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new ArgumentException($"{fieldName} is required.");
-        }
-    }
 }

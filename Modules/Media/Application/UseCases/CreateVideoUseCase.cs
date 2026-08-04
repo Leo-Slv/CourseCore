@@ -2,6 +2,7 @@ using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Application.DTOs;
+using CourseCore.Api.Modules.Media.Application.Validation;
 using CourseCore.Api.Modules.Media.Domain.Entities;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
@@ -33,7 +34,7 @@ public class CreateVideoUseCase
         CreateVideoInput input,
         CancellationToken cancellationToken = default)
     {
-        ValidateInput(input);
+        MediaInputValidator.Validate(input);
         var storageProvider = ParseStorageProvider(input.StorageProvider);
 
         return _unitOfWork.ExecuteAsync(async () =>
@@ -76,39 +77,6 @@ public class CreateVideoUseCase
 
             return VideoOutput.FromVideo(video);
         }, cancellationToken);
-    }
-
-    private static void ValidateInput(CreateVideoInput input)
-    {
-        if (input.LessonId == Guid.Empty)
-        {
-            throw new ArgumentException("LessonId is required.", nameof(input));
-        }
-
-        if (string.IsNullOrWhiteSpace(input.Title))
-        {
-            throw new ArgumentException("Title is required.", nameof(input));
-        }
-
-        if (string.IsNullOrWhiteSpace(input.StorageProvider))
-        {
-            throw new ArgumentException("StorageProvider is required.", nameof(input));
-        }
-
-        if (string.IsNullOrWhiteSpace(input.StorageKey))
-        {
-            throw new ArgumentException("StorageKey is required.", nameof(input));
-        }
-
-        if (input.DurationSeconds < 0)
-        {
-            throw new ArgumentException("DurationSeconds cannot be negative.", nameof(input));
-        }
-
-        if (input.SizeBytes < 0)
-        {
-            throw new ArgumentException("SizeBytes cannot be negative.", nameof(input));
-        }
     }
 
     private static VideoStorageProvider ParseStorageProvider(string storageProvider)

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Tests.Integration.Infrastructure;
+using CourseCore.Api.Modules.Courses.Application.Validation;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace CourseCore.Api.Tests.Integration.Courses;
@@ -88,6 +89,82 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
             description = "Invalid integration course",
             displayOrder = 0,
             areaIds = Array.Empty<Guid>()
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateCourse_WhenTitleIsTooLong_ShouldReturnBadRequest()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/courses", new
+        {
+            title = new string('T', CourseValidationLimits.TitleMaxLength + 1),
+            slug = $"large-title-{Guid.NewGuid():N}",
+            description = "Description",
+            areaIds = Array.Empty<Guid>(),
+            modules = Array.Empty<object>()
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateCourse_WhenModulesExceedLimit_ShouldReturnBadRequest()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var modules = Enumerable.Range(0, CourseValidationLimits.MaxModules + 1)
+            .Select(index => new { title = $"Module {index}", description = "Description", lessons = Array.Empty<object>() });
+
+        var response = await client.PostAsJsonAsync("/api/courses", new
+        {
+            title = "Oversized Course",
+            slug = $"oversized-{Guid.NewGuid():N}",
+            description = "Description",
+            areaIds = Array.Empty<Guid>(),
+            modules
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateCourse_WhenAreaIdsExceedLimit_ShouldReturnBadRequest()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/courses", new
+        {
+            title = "Oversized Areas Course",
+            slug = $"oversized-areas-{Guid.NewGuid():N}",
+            description = "Description",
+            areaIds = Enumerable.Range(0, CourseValidationLimits.MaxAreaIds + 1).Select(_ => Guid.NewGuid()),
+            modules = Array.Empty<object>()
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateCourse_WhenModuleHasTooManyLessons_ShouldReturnBadRequest()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var lessons = Enumerable.Range(0, CourseValidationLimits.MaxLessonsPerModule + 1)
+            .Select(index => new { title = $"Lesson {index}", description = "Description" });
+
+        var response = await client.PostAsJsonAsync("/api/courses", new
+        {
+            title = "Oversized Lessons Course",
+            slug = $"oversized-lessons-{Guid.NewGuid():N}",
+            description = "Description",
+            areaIds = Array.Empty<Guid>(),
+            modules = new[] { new { title = "Module", description = "Description", lessons } }
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

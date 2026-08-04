@@ -316,6 +316,14 @@ Se o cliente envia um GUID valido, a API preserva o valor. Caso contrario, a API
 
 Logs de aplicacao nao devem conter senha, access token, refresh token, hash, JWT secret, connection string ou secrets de ambiente.
 
+## Validacao de requests
+
+Criacao de usuario e seed administrativo usam uma politica central de senha: minimo de 12 caracteres e maximo de 72 bytes UTF-8, alinhado ao limite seguro do BCrypt, sem valores vazios ou senhas comuns basicas. A senha nunca e retornada, auditada ou registrada em logs.
+
+Campos administrativos sao validados antes da persistencia conforme os limites do banco. Create Course aceita ate 50 areas, 50 modulos e 100 aulas por modulo; thumbnails devem ser URLs HTTP(S) absolutas. Videos limitam titulo, descricao, storage key, duracao e tamanho declarado. O corpo HTTP no Kestrel e limitado a 1 MiB.
+
+Erros de validacao conhecidos retornam `400`. Excecoes operacionais inesperadas retornam `500`; fora de Development, mensagens internas nao sao expostas. Respostas de erro preservam `traceId` e `correlationId`.
+
 Cookies de refresh token usam `HttpOnly`, path `/api/auth` e `SameSite=Lax` por padrao. Em Production, o cookie e sempre `Secure`. Esta etapa nao habilita CORS com credentials nem protecao CSRF completa; para deployments cross-site, avalie CORS explicito com credentials, `SameSite=None; Secure` e CSRF token/custom header em etapa propria.
 
 Rate limiting reduz brute force, credential stuffing e abuso operacional, mas nao substitui MFA, CAPTCHA, lockout progressivo ou monitoramento antifraude em uma etapa futura.

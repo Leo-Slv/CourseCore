@@ -277,6 +277,8 @@ Tests/CourseCore.Api.Tests/
 
 ## SEC-C03 — Política forte de senha
 
+**Status:** Implementado no Security Hardening 09.
+
 **Origem:** M-01  
 **Severidade:** Média  
 **Bloqueia produção:** Sim para aplicação pública
@@ -459,6 +461,8 @@ Docs/
 
 ## SEC-G01 — Limites de payload e strings
 
+**Status:** Implementado no Security Hardening 09.
+
 **Origem:** M-07  
 **Severidade:** Média  
 **Bloqueia produção:** Recomendado
@@ -480,6 +484,8 @@ Docs/
 - Limites estão alinhados com banco/domínio.
 
 ## SEC-G02 — Tratamento seguro de InvalidOperationException
+
+**Status:** Implementado no Security Hardening 09.
 
 **Origem:** M-08  
 **Severidade:** Média

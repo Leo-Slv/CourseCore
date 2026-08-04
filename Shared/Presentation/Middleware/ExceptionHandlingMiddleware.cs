@@ -99,9 +99,6 @@ public sealed class ExceptionHandlingMiddleware
             ArgumentException => new ErrorDescriptor(
                 StatusCodes.Status400BadRequest,
                 "Bad Request"),
-            InvalidOperationException => new ErrorDescriptor(
-                StatusCodes.Status400BadRequest,
-                "Bad Request"),
             UnauthorizedAccessException => new ErrorDescriptor(
                 StatusCodes.Status401Unauthorized,
                 "Unauthorized"),

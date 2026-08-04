@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
+using CourseCore.Api.Modules.Courses.Application.Validation;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
@@ -33,8 +34,7 @@ public class UpdateCourseUseCase
             throw new ArgumentException("CourseId is required.", nameof(input));
         }
 
-        ValidateRequired(input.Title, nameof(input.Title));
-        ValidateRequired(input.Description, nameof(input.Description));
+        CourseInputValidator.Validate(input);
 
         var slug = Slug.Create(input.Slug);
 
@@ -100,11 +100,4 @@ public class UpdateCourseUseCase
             .ToList();
     }
 
-    private static void ValidateRequired(string value, string fieldName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new ArgumentException($"{fieldName} is required.");
-        }
-    }
 }

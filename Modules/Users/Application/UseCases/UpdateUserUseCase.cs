@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Application.DTOs;
+using CourseCore.Api.Modules.Users.Application.Validation;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
@@ -36,6 +37,16 @@ public class UpdateUserUseCase
         if (input.UserId == Guid.Empty)
         {
             throw new ArgumentException("UserId is required.", nameof(input));
+        }
+
+        if (string.IsNullOrWhiteSpace(input.Name) || input.Name.Trim().Length > UserValidationLimits.NameMaxLength)
+        {
+            throw new ApplicationValidationException("Name is invalid.");
+        }
+
+        if (string.IsNullOrWhiteSpace(input.Email) || input.Email.Trim().Length > UserValidationLimits.EmailMaxLength)
+        {
+            throw new ApplicationValidationException("Email is invalid.");
         }
 
         var email = Email.Create(input.Email);

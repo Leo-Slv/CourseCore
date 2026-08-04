@@ -125,6 +125,16 @@ The database seed remains Development-only and opt-in. It runs only when the app
 
 Do not enable seed in Production unless a controlled operational procedure explicitly requires it.
 
+The same centralized password policy is applied to administrative user creation and to the optional local admin seed. Passwords must contain at least 12 characters and at most 72 UTF-8 bytes, matching BCrypt's safe input boundary. They cannot be blank or match the built-in short list of common passwords. Password values are never included in validation responses, logs, audit metadata, or API responses.
+
+## Request Validation and Size Limits
+
+Kestrel limits request bodies to 1 MiB. Application validation rejects oversized user, course, module, lesson, and video fields before persistence. Limits match the existing database column sizes: user name 200, email 320, course/module/lesson/video titles 200, course description 2000, module/lesson/video descriptions 1000, URL and storage key fields 1000.
+
+Course creation accepts at most 50 area IDs, 50 modules, and 100 lessons per module. Video duration is limited to 24 hours and declared size to 100 GiB. Thumbnail URLs must be absolute HTTP or HTTPS URLs. Invalid payloads return a safe `400 Bad Request` response.
+
+Reverse proxies and load balancers should enforce an equal or smaller body limit so oversized requests are rejected before reaching Kestrel.
+
 ## Migrations
 
 The application does not apply migrations during startup.

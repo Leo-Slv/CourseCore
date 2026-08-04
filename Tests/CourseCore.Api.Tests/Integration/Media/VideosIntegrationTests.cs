@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Application.Validation;
 using CourseCore.Api.Tests.Integration.Infrastructure;
 
 namespace CourseCore.Api.Tests.Integration.Media;
@@ -50,6 +51,51 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         var response = await client.PostAsJsonAsync("/api/videos", CreateVideoRequest(Guid.NewGuid()));
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("not-a-url")]
+    [InlineData("ftp://example.com/image.png")]
+    public async Task CreateVideo_WhenThumbnailUrlIsInvalid_ShouldReturnBadRequest(string thumbnailUrl)
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/videos", new
+        {
+            lessonId = course.LessonId,
+            title = "Video",
+            description = "Description",
+            storageProvider = "Local",
+            storageKey = "videos/video.mp4",
+            thumbnailUrl,
+            durationSeconds = 120,
+            sizeBytes = 1024
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateVideo_WhenTitleIsTooLong_ShouldReturnBadRequest()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/videos", new
+        {
+            lessonId = course.LessonId,
+            title = new string('V', MediaValidationLimits.TitleMaxLength + 1),
+            description = "Description",
+            storageProvider = "Local",
+            storageKey = "videos/video.mp4",
+            durationSeconds = 120,
+            sizeBytes = 1024
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

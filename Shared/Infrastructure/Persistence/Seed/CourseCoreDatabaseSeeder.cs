@@ -29,17 +29,20 @@ public sealed class CourseCoreDatabaseSeeder
 
     private readonly CourseCoreDbContext _dbContext;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IPasswordPolicy _passwordPolicy;
     private readonly AdminSeedOptions _options;
     private readonly ILogger<CourseCoreDatabaseSeeder> _logger;
 
     public CourseCoreDatabaseSeeder(
         CourseCoreDbContext dbContext,
         IPasswordHasher passwordHasher,
+        IPasswordPolicy passwordPolicy,
         IOptions<AdminSeedOptions> options,
         ILogger<CourseCoreDatabaseSeeder> logger)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
+        _passwordPolicy = passwordPolicy;
         _options = options.Value;
         _logger = logger;
     }
@@ -55,6 +58,7 @@ public sealed class CourseCoreDatabaseSeeder
         var adminName = ValidateName(_options.Name);
         var adminEmail = ValidateEmail(_options.Email);
         var adminPassword = ValidatePassword(_options.Password);
+        _passwordPolicy.Validate(adminPassword);
         var now = DateTime.UtcNow;
 
         var adminRole = await EnsureAdminRoleAsync(now, cancellationToken);

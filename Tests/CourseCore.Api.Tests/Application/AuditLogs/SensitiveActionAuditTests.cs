@@ -2,6 +2,7 @@ using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
+using CourseCore.Api.Modules.Auth.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Media.Application.DTOs;
@@ -20,13 +21,18 @@ public class SensitiveActionAuditTests
     {
         var users = new FakeUserRepository();
         var auditLogs = new FakeAuditLogService();
-        var useCase = new CreateUserUseCase(users, new FakePasswordHasher(), new FakeUnitOfWork(), auditLogs);
+        var useCase = new CreateUserUseCase(
+            users,
+            new FakePasswordHasher(),
+            new PasswordPolicy(),
+            new FakeUnitOfWork(),
+            auditLogs);
 
         var output = await useCase.ExecuteAsync(new CreateUserInput
         {
             Name = "New User",
             Email = "new.user@coursecore.local",
-            Password = "password"
+            Password = "StrongTestPassword123!"
         });
 
         var auditLog = Assert.Single(auditLogs.Entries);

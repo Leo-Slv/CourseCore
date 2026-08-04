@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Users.Application.Validation;
 using CourseCore.Api.Tests.Integration.Infrastructure;
 
 namespace CourseCore.Api.Tests.Integration.Users;
@@ -41,12 +42,15 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
     {
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        const string password = "IntegrationUser123!";
 
-        var response = await client.PostAsJsonAsync("/api/users", CreateUserRequest());
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var response = await client.PostAsJsonAsync("/api/users", CreateUserRequest(password));
+        var content = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(content);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.True(json.RootElement.GetProperty("id").GetGuid() != Guid.Empty);
+        Assert.DoesNotContain(password, content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -100,6 +104,57 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task CreateUser_WhenNameIsTooLong_ShouldReturnBadRequest()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/users", new
+        {
+            name = new string('N', UserValidationLimits.NameMaxLength + 1),
+            email = $"large-{Guid.NewGuid():N}@coursecore.local",
+            password = "StrongIntegrationPassword123!"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("short")]
+    [InlineData("            ")]
+    [InlineData("password123")]
+    public async Task CreateUser_WhenPasswordIsWeak_ShouldReturnBadRequest(string password)
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/users", new
+        {
+            name = "Weak Password User",
+            email = $"weak-{Guid.NewGuid():N}@coursecore.local",
+            password
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateUser_WhenEmailIsTooLong_ShouldReturnBadRequest()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/users", new
+        {
+            name = "Large Email User",
+            email = $"{new string('e', UserValidationLimits.EmailMaxLength)}@example.com",
+            password = "StrongIntegrationPassword123!"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task UpdateUser_WhenAdminPostsValidRequest_ShouldReturnOk()
     {
         using var client = IntegrationAuth.CreateClient(_factory);
@@ -132,13 +187,13 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private static object CreateUserRequest()
+    private static object CreateUserRequest(string password = "IntegrationUser123!")
     {
         return new
         {
             name = "Created Integration User",
             email = $"created-{Guid.NewGuid():N}@coursecore.local",
-            password = "IntegrationUser123!"
+            password
         };
     }
 }

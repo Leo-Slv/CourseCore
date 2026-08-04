@@ -27,6 +27,8 @@ correlationId
 
 Use o `correlationId` para procurar os logs da requisicao. Use o `traceId` como identificador tecnico adicional do ASP.NET para diagnostico interno.
 
+Erros conhecidos de validacao retornam `400 Bad Request` com mensagem publica controlada. Uma `InvalidOperationException` inesperada e tratada como `500 Internal Server Error`; fora de Development, sua mensagem interna nao aparece no response. O detalhe tecnico permanece no log junto de `traceId` e `correlationId`.
+
 ## Logs Seguros
 
 O correlation id e adicionado ao logging scope com a propriedade `CorrelationId`, permitindo que logs emitidos durante a request sejam relacionados sem precisar repetir o valor manualmente em cada mensagem.
