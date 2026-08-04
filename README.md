@@ -249,6 +249,8 @@ dotnet test --configuration Release
 
 Os testes de integracao HTTP usam SQLite in-memory via `WebApplicationFactory`. Eles nao dependem de PostgreSQL real, nao executam migrations e nao rodam seed real.
 
+Os testes de seguranca exercitam o pipeline HTTP real para rotacao concorrente e replay de refresh token, logout, revogacao por `TokenVersion`, rate limiting, policies e validacao de requests. Limites menores de rate limiting sao aplicados apenas por configuracao isolada da factory de teste. Nao sao necessarios Docker, PostgreSQL ou servicos externos. A revogacao dinamica de roles nao e exercitada porque a API ainda nao possui operacao publica de remocao/desativacao de role atribuida.
+
 ## Postman
 
 O projeto inclui uma collection Postman importavel e um environment local com placeholders:

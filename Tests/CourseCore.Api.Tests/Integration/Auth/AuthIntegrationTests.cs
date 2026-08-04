@@ -183,6 +183,39 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task Login_WhenCredentialsAreInvalid_ShouldNotRevealAccountState()
+    {
+        using var factory = new CourseCoreApiFactory();
+        var inactiveUser = await factory.SeedUserWithRoleAsync(userActive: false);
+        using var client = CreateClient(factory);
+
+        var existing = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = CourseCoreApiFactory.AdminEmail,
+            password = "WrongPassword123!"
+        });
+        var missing = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = $"missing-{Guid.NewGuid():N}@coursecore.local",
+            password = "WrongPassword123!"
+        });
+        var inactive = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = inactiveUser.Email,
+            password = inactiveUser.Password
+        });
+        var bodies = await Task.WhenAll(
+            existing.Content.ReadAsStringAsync(),
+            missing.Content.ReadAsStringAsync(),
+            inactive.Content.ReadAsStringAsync());
+
+        Assert.All(new[] { existing, missing, inactive }, response =>
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode));
+        Assert.Equal(ReadPublicError(bodies[0]), ReadPublicError(bodies[1]));
+        Assert.Equal(ReadPublicError(bodies[0]), ReadPublicError(bodies[2]));
+    }
+
+    [Fact]
     public async Task GetUsers_WhenAdminTokenIsValid_ShouldReturnOk()
     {
         using var client = CreateClient();
@@ -276,6 +309,23 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task RefreshToken_AfterReplayAttempt_ShouldKeepSuccessorUsable()
+    {
+        using var client = CreateClient();
+        var login = await LoginAsync(client);
+        var firstRotation = await RefreshWithCookieAsync(client, login.RefreshToken);
+        using var replayClient = CreateClient();
+        var replay = await PostWithRefreshCookieAsync(replayClient, "/api/auth/refresh-token", login.RefreshToken);
+        using var successorClient = CreateClient();
+        var successor = await RefreshWithCookieAsync(successorClient, firstRotation.RefreshToken);
+
+        Assert.Equal(HttpStatusCode.OK, firstRotation.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, successor.StatusCode);
+        Assert.NotEqual(firstRotation.RefreshToken, successor.RefreshToken);
+    }
+
+    [Fact]
     public async Task RefreshToken_WhenBodyFallbackIsEnabled_ShouldReturnNewTokens()
     {
         using var client = CreateClient();
@@ -326,6 +376,29 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, second.StatusCode);
         Assert.Equal(HttpStatusCode.TooManyRequests, third.StatusCode);
         Assert.True(third.Headers.RetryAfter?.Delta is not null || third.Headers.RetryAfter?.Date is not null);
+    }
+
+    [Fact]
+    public async Task Login_RateLimit_ShouldNotBeBypassedByAlternatingExistingAndMissingUsers()
+    {
+        using var factory = CreateRateLimitedFactory(loginLimit: 2);
+        using var client = CreateClient(factory);
+
+        var existing = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = CourseCoreApiFactory.AdminEmail,
+            password = "WrongPassword123!"
+        });
+        var missing = await PostInvalidLoginAsync(client);
+        var exceeded = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = CourseCoreApiFactory.AdminEmail,
+            password = "WrongPassword123!"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, existing.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, missing.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, exceeded.StatusCode);
     }
 
     [Fact]
@@ -684,6 +757,18 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         var value = jwt.Claims.Single(claim => claim.Type == AuthClaimTypes.TokenVersion).Value;
 
         return int.Parse(value, CultureInfo.InvariantCulture);
+    }
+
+    private static (int StatusCode, string Error, string Message, bool HasTraceId, bool HasCorrelationId) ReadPublicError(string content)
+    {
+        using var json = JsonDocument.Parse(content);
+        var root = json.RootElement;
+        return (
+            root.GetProperty("statusCode").GetInt32(),
+            root.GetProperty("error").GetString() ?? string.Empty,
+            root.GetProperty("message").GetString() ?? string.Empty,
+            root.TryGetProperty("traceId", out _),
+            root.TryGetProperty("correlationId", out _));
     }
 
     private sealed record AuthTokenResult(
