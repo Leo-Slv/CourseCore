@@ -2,13 +2,13 @@
 
 ## Objective
 
-This setup runs CourseCore API and PostgreSQL with reproducible local or staging-like containers. It does not embed secrets, does not apply migrations automatically, and keeps seed disabled by default.
+This setup runs CourseCore API and PostgreSQL with reproducible local containers. It does not embed secrets, does not apply migrations automatically, and keeps seed disabled by default. It is not a production deployment definition.
 
 ## Files
 
 `Dockerfile` builds and publishes the API with a multi-stage .NET 10 build. The final image uses the ASP.NET runtime image and listens on HTTP port `8080`.
 
-`docker-compose.yml` defines:
+`docker-compose.yml` defines the internal API/database network without publishing PostgreSQL. `docker-compose.override.yml` is loaded automatically for local commands and publishes PostgreSQL for tools such as DBeaver or pgAdmin.
 
 ```text
 coursecore-api
@@ -34,18 +34,21 @@ Copy `.env.example` to `.env` and replace placeholder values locally. Do not com
 
 The compose file reads `.env` automatically through Docker Compose interpolation. The API itself does not load `.env`; it receives configuration through container environment variables.
 
-Minimum local values:
+Required local values (Compose fails before startup when one is absent):
 
 ```text
 POSTGRES_DB=coursecore
 POSTGRES_USER=coursecore_user
-POSTGRES_PASSWORD=CHANGE_ME
+POSTGRES_PASSWORD=<local-random-password>
 COURSECORE_API_HTTP_PORT=8080
 POSTGRES_PORT=5432
-Jwt__SecretKey=CHANGE_ME_USE_A_LONG_RANDOM_SECRET
+ASPNETCORE_ENVIRONMENT=Development
+Jwt__SecretKey=<random-secret-at-least-32-characters>
+Media__Playback__SigningSecret=<different-random-secret-at-least-32-characters>
+Seed__Admin__Password=NOT_USED_WHILE_SEED_IS_DISABLED
 ```
 
-Use a long random `Jwt__SecretKey` with at least 32 characters outside throwaway local runs.
+Generate separate random JWT and media secrets, for example with `openssl rand -base64 48`. Never commit `.env`. The seed password variable is required to prevent an implicit known default, but is not used while `Seed__Admin__Enabled=false`.
 
 ## Start
 
@@ -58,6 +61,8 @@ Run in the background:
 ```bash
 docker compose up --build -d
 ```
+
+These local commands load `docker-compose.override.yml` and publish PostgreSQL on `POSTGRES_PORT`. To validate or run the safer base definition without a host database port, use `docker compose -f docker-compose.yml config` or `docker compose -f docker-compose.yml up --build`.
 
 ## Stop
 
@@ -88,7 +93,7 @@ http://localhost:8080/health/ready
 http://localhost:8080/health
 ```
 
-`/health/live` checks the API process. `/health/ready` checks database connectivity.
+`/health/live` is public and returns only aggregate status. `/health/ready` checks database connectivity and `/health` aggregates checks. Development returns component details for the latter two; non-Development environments return only aggregate status. In production, expose only `/health/live` publicly and restrict `/health/ready` and `/health` at the private network or reverse proxy.
 
 ## API and Scalar
 
@@ -153,4 +158,4 @@ Keep seed disabled for staging and production unless a controlled operational pr
 
 Do not version real passwords, JWT secrets, tokens, or production connection strings. Provide production values through the hosting platform, CI/CD secrets, or a secret manager.
 
-The compose file is a local/staging convenience base. Production deployments should define their own network, TLS/reverse proxy, migration strategy, secret management, logging, backup, and PostgreSQL persistence policies.
+Production deployments should use `docker-compose.yml` without the local override (or a platform-specific deployment), keep PostgreSQL private, terminate HTTPS at a trusted reverse proxy, and define migration, secret management, logging, backup, and persistence policies. The runtime image uses the built-in non-root .NET user (`APP_UID`).

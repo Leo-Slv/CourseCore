@@ -64,6 +64,10 @@ Para depurar um erro:
 3. Use o traceId como apoio quando for necessario correlacionar com detalhes internos do ASP.NET.
 ```
 
+## Health checks
+
+`/health/live` pode ser publicado e retorna apenas o status agregado. `/health/ready` e `/health` sao operacionais internos: restrinja-os por rede ou reverse proxy em homologacao e producao. Esses endpoints mostram nomes de componentes e duracoes somente em `Development`; fora dele, retornam apenas o status agregado.
+
 ## Pendencias Futuras
 
 Esta etapa usa o logging padrao do ASP.NET Core. Para as proximas etapas, podem ser avaliados:

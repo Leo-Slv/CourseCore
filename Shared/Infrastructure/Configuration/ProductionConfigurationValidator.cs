@@ -6,7 +6,9 @@ public static class ProductionConfigurationValidator
     [
         "CHANGE_ME",
         "SET_BY_ENVIRONMENT",
-        "CHANGE_ME_USE_A_LONG_RANDOM_SECRET"
+        "CHANGE_ME_USE_A_LONG_RANDOM_SECRET",
+        "REPLACE_WITH_RANDOM_JWT_SECRET_AT_LEAST_32_CHARACTERS",
+        "REPLACE_WITH_DIFFERENT_RANDOM_MEDIA_SECRET_AT_LEAST_32_CHARACTERS"
     ];
 
     public static void ValidateProductionConfiguration(this IConfiguration configuration)
@@ -18,6 +20,10 @@ public static class ProductionConfigurationValidator
         ValidateRequired(configuration["Jwt:Audience"], "Jwt:Audience");
         ValidateSecret(configuration["Jwt:SecretKey"], "Jwt:SecretKey");
         ValidateSecret(configuration["Media:Playback:SigningSecret"], "Media:Playback:SigningSecret");
+        ValidateSecretsAreDistinct(
+            configuration["Jwt:SecretKey"]!,
+            configuration["Media:Playback:SigningSecret"]!);
+        ValidateRefreshTokenCookie(configuration);
         ValidateRequired(configuration["Media:Playback:BaseUrl"], "Media:Playback:BaseUrl");
         ValidatePlaybackExpiration(configuration["Media:Playback:SignedUrlExpirationMinutes"]);
 
@@ -37,6 +43,30 @@ public static class ProductionConfigurationValidator
         if (allowedOrigins.Length == 0 || allowedOrigins.Any(string.IsNullOrWhiteSpace))
         {
             throw new InvalidOperationException("Cors:AllowedOrigins must contain at least one origin in Production.");
+        }
+    }
+
+    private static void ValidateSecretsAreDistinct(string jwtSecret, string mediaSigningSecret)
+    {
+        if (string.Equals(jwtSecret.Trim(), mediaSigningSecret.Trim(), StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Media:Playback:SigningSecret must be different from Jwt:SecretKey in Production.");
+        }
+    }
+
+    private static void ValidateRefreshTokenCookie(IConfiguration configuration)
+    {
+        var secure = configuration.GetValue<bool>("Auth:RefreshTokenCookie:Secure");
+        var sameSite = configuration["Auth:RefreshTokenCookie:SameSite"];
+
+        if (string.Equals(sameSite?.Trim(), "None", StringComparison.OrdinalIgnoreCase) && !secure)
+        {
+            throw new InvalidOperationException("Auth:RefreshTokenCookie SameSite=None requires Secure=true in Production.");
+        }
+
+        if (!secure)
+        {
+            throw new InvalidOperationException("Auth:RefreshTokenCookie:Secure must be true in Production.");
         }
     }
 

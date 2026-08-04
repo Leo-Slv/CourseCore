@@ -7,7 +7,17 @@ public static class HealthCheckResponseWriter
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public static Task WriteAsync(HttpContext context, HealthReport report)
+    public static Task WriteMinimalAsync(HttpContext context, HealthReport report)
+    {
+        context.Response.ContentType = "application/json";
+
+        return context.Response.WriteAsync(JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString()
+        }, JsonOptions));
+    }
+
+    public static Task WriteDetailedAsync(HttpContext context, HealthReport report)
     {
         context.Response.ContentType = "application/json";
 

@@ -108,16 +108,20 @@ app.MapControllers();
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live"),
-    ResponseWriter = HealthCheckResponseWriter.WriteAsync
+    ResponseWriter = HealthCheckResponseWriter.WriteMinimalAsync
 });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready"),
-    ResponseWriter = HealthCheckResponseWriter.WriteAsync
+    ResponseWriter = app.Environment.IsDevelopment()
+        ? HealthCheckResponseWriter.WriteDetailedAsync
+        : HealthCheckResponseWriter.WriteMinimalAsync
 });
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
-    ResponseWriter = HealthCheckResponseWriter.WriteAsync
+    ResponseWriter = app.Environment.IsDevelopment()
+        ? HealthCheckResponseWriter.WriteDetailedAsync
+        : HealthCheckResponseWriter.WriteMinimalAsync
 });
 
 app.Run();

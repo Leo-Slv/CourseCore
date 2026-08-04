@@ -85,7 +85,10 @@ Media:Playback:BaseUrl
 Media:Playback:SignedUrlExpirationMinutes
 Media:Playback:AllowedStorageProviders
 Cors:AllowedOrigins
+Auth:RefreshTokenCookie:Secure
 ```
+
+Production also rejects equal JWT/media signing secrets and rejects a non-secure refresh-token cookie. `SameSite=None` is valid only with `Secure=true`.
 
 The validator does not log secrets or print the full connection string.
 
@@ -160,7 +163,7 @@ Authenticated requests now query the current user to reject inactive users and s
 
 ## Docker
 
-The repository includes a Dockerfile and docker-compose file for local or staging-like execution. They use environment variables and placeholders only.
+The base Compose file requires environment, PostgreSQL password, JWT secret, media signing secret, and seed password explicitly and does not publish PostgreSQL. The automatically loaded override publishes PostgreSQL for local tooling only; do not apply that override in production. The API image runs as the built-in non-root .NET user.
 
 Do not copy `.env` into images or commit real Docker secrets. For local container instructions, see `Docs/docker.md`.
 
@@ -174,4 +177,4 @@ The API exposes:
 /health
 ```
 
-`/health/live` validates the process. `/health/ready` validates database connectivity. The health response does not include secrets.
+`/health/live` is the only endpoint intended for public exposure and always returns aggregate status only. `/health/ready` validates database connectivity and `/health` aggregates checks; both must be restricted by the private network or reverse proxy. They return component names and durations only in Development, and aggregate status only in Production.

@@ -18,7 +18,9 @@ public class ProductionConfigurationValidatorTests
             ["Media:Playback:BaseUrl"] = "https://media.coursecore.local",
             ["Media:Playback:SignedUrlExpirationMinutes"] = "10",
             ["Media:Playback:AllowedStorageProviders:0"] = "Local",
-            ["Cors:AllowedOrigins:0"] = "https://coursecore.local"
+            ["Cors:AllowedOrigins:0"] = "https://coursecore.local",
+            ["Auth:RefreshTokenCookie:Secure"] = "true",
+            ["Auth:RefreshTokenCookie:SameSite"] = "Lax"
         });
 
         var exception = Record.Exception(configuration.ValidateProductionConfiguration);
@@ -46,6 +48,7 @@ public class ProductionConfigurationValidatorTests
     [InlineData("CHANGE_ME")]
     [InlineData("SET_BY_ENVIRONMENT")]
     [InlineData("CHANGE_ME_USE_A_LONG_RANDOM_SECRET")]
+    [InlineData("REPLACE_WITH_RANDOM_JWT_SECRET_AT_LEAST_32_CHARACTERS")]
     public void ValidateProductionConfiguration_WhenSecretUsesPlaceholder_ShouldThrow(string secret)
     {
         var values = ValidValues();
@@ -55,14 +58,44 @@ public class ProductionConfigurationValidatorTests
         Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
     }
 
-    [Fact]
-    public void ValidateProductionConfiguration_WhenMediaSigningSecretUsesPlaceholder_ShouldThrow()
+    [Theory]
+    [InlineData("CHANGE_ME_USE_A_SEPARATE_MEDIA_SIGNING_SECRET")]
+    [InlineData("REPLACE_WITH_DIFFERENT_RANDOM_MEDIA_SECRET_AT_LEAST_32_CHARACTERS")]
+    public void ValidateProductionConfiguration_WhenMediaSigningSecretUsesPlaceholder_ShouldThrow(string secret)
     {
         var values = ValidValues();
-        values["Media:Playback:SigningSecret"] = "CHANGE_ME_USE_A_SEPARATE_MEDIA_SIGNING_SECRET";
+        values["Media:Playback:SigningSecret"] = secret;
         var configuration = CreateConfiguration(values);
 
         Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
+    }
+
+    [Fact]
+    public void ValidateProductionConfiguration_WhenMediaSigningSecretEqualsJwtSecret_ShouldThrow()
+    {
+        var values = ValidValues();
+        values["Media:Playback:SigningSecret"] = values["Jwt:SecretKey"];
+
+        Assert.Throws<InvalidOperationException>(CreateConfiguration(values).ValidateProductionConfiguration);
+    }
+
+    [Fact]
+    public void ValidateProductionConfiguration_WhenRefreshCookieIsNotSecure_ShouldThrow()
+    {
+        var values = ValidValues();
+        values["Auth:RefreshTokenCookie:Secure"] = "false";
+
+        Assert.Throws<InvalidOperationException>(CreateConfiguration(values).ValidateProductionConfiguration);
+    }
+
+    [Fact]
+    public void ValidateProductionConfiguration_WhenSameSiteNoneIsNotSecure_ShouldThrow()
+    {
+        var values = ValidValues();
+        values["Auth:RefreshTokenCookie:SameSite"] = "None";
+        values["Auth:RefreshTokenCookie:Secure"] = "false";
+
+        Assert.Throws<InvalidOperationException>(CreateConfiguration(values).ValidateProductionConfiguration);
     }
 
     [Fact]
@@ -109,7 +142,9 @@ public class ProductionConfigurationValidatorTests
             ["Media:Playback:BaseUrl"] = "https://media.coursecore.local",
             ["Media:Playback:SignedUrlExpirationMinutes"] = "10",
             ["Media:Playback:AllowedStorageProviders:0"] = "Local",
-            ["Cors:AllowedOrigins:0"] = "https://coursecore.local"
+            ["Cors:AllowedOrigins:0"] = "https://coursecore.local",
+            ["Auth:RefreshTokenCookie:Secure"] = "true",
+            ["Auth:RefreshTokenCookie:SameSite"] = "Lax"
         };
     }
 

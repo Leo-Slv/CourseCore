@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace CourseCore.Api.Tests.Integration.Auth;
 
+[Collection("Production environment")]
 public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
 {
     private const string RefreshTokenCookieName = "coursecore_refresh_token";
@@ -640,6 +641,7 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Media__Playback__SignedUrlExpirationMinutes", "10");
         Environment.SetEnvironmentVariable("Media__Playback__AllowedStorageProviders__0", "Local");
         Environment.SetEnvironmentVariable("Cors__AllowedOrigins__0", "https://localhost");
+        Environment.SetEnvironmentVariable("Auth__RefreshTokenCookie__Secure", "true");
     }
 
     private static void ClearProductionEnvironmentVariables()
@@ -653,6 +655,7 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Media__Playback__SignedUrlExpirationMinutes", null);
         Environment.SetEnvironmentVariable("Media__Playback__AllowedStorageProviders__0", null);
         Environment.SetEnvironmentVariable("Cors__AllowedOrigins__0", null);
+        Environment.SetEnvironmentVariable("Auth__RefreshTokenCookie__Secure", null);
     }
 
     private static IReadOnlyCollection<string> ReadPermissionClaims(string accessToken)

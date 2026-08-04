@@ -186,6 +186,8 @@ Aviso: `docker compose down -v` remove o volume local do PostgreSQL e apaga os d
 
 O Docker Compose nao aplica migrations automaticamente e nao roda seed por padrao. `Seed__Admin__Enabled=false` e o default. Enquanto o schema nao tiver sido aplicado, `/health/live` pode responder, mas `/health/ready` pode falhar.
 
+O compose exige ambiente, senha do PostgreSQL, JWT secret, media signing secret e senha de seed explicitamente no `.env`. O override local publica o PostgreSQL; use somente o arquivo base em producao para manter o banco privado. A imagem da API roda com o usuario nao-root nativo do runtime .NET. Veja `Docs/docker.md`.
+
 ## Banco de dados e migrations
 
 Migrations nao rodam automaticamente no startup da API. Aplique localmente apenas quando apropriado:
@@ -269,6 +271,8 @@ GET /health
 - `/health/live`: valida o processo da API e nao depende do banco.
 - `/health/ready`: valida conectividade/preparo do banco.
 - `/health`: agrega os checks configurados.
+
+`/health/live` sempre retorna somente o status agregado. Em `Development`, ready e health incluem detalhes uteis; em producao retornam somente o status e devem permanecer internos, protegidos pela rede ou reverse proxy.
 
 ## Scalar/OpenAPI
 
