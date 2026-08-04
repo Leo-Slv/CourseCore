@@ -1,6 +1,8 @@
 using CourseCore.Api.Modules.Users.Application.DTOs;
 using CourseCore.Api.Modules.Users.Presentation.Requests;
 using CourseCore.Api.Modules.Users.Presentation.Responses;
+using CourseCore.Api.Shared.Application.DTOs;
+using CourseCore.Api.Shared.Presentation.Responses;
 
 namespace CourseCore.Api.Modules.Users.Presentation.Presenters;
 
@@ -27,6 +29,12 @@ public static class UserPresenter
         };
     }
 
+    public static ListUsersInput ToInput(ListUsersRequest request) => new()
+    {
+        Page = request.Page,
+        PageSize = request.PageSize
+    };
+
     public static UserResponse ToResponse(UserOutput output)
     {
         return new UserResponse
@@ -45,4 +53,13 @@ public static class UserPresenter
     {
         return outputs.Select(ToResponse).ToList();
     }
+
+    public static PagedResponse<UserResponse> ToResponse(PagedResult<UserOutput> output) => new()
+    {
+        Items = output.Items.Select(ToResponse).ToList(),
+        Page = output.Page,
+        PageSize = output.PageSize,
+        TotalItems = output.TotalItems,
+        TotalPages = output.TotalPages
+    };
 }

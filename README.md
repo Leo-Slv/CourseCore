@@ -6,6 +6,8 @@ CourseCore API e um backend modular em ASP.NET Core para uma plataforma de curso
 
 O projeto ja inclui hardening de configuracao para producao, refresh token persistido com hash e rotacao, permission claims, health checks, observabilidade com correlation id, audit logs de acoes sensiveis, Docker/Docker Compose, CI e testes automatizados.
 
+`GET /api/users` usa paginacao com `page=1`, `pageSize=50` e maximo 100. Cursos disponiveis resolvem acessos de area em lote, e grants repetidos atualizam a concessao existente.
+
 ## Stack
 
 - .NET 10

@@ -1,5 +1,9 @@
 # Postman
 
+`GET /api/users` aceita `page` (padrão 1) e `pageSize` (padrão 50, máximo 100), retornando `items`, `page`, `pageSize`, `totalItems` e `totalPages`. Valores fora dos limites retornam 400.
+
+`GET /api/courses/available` calcula os acessos de área em lote, sem validar curso a curso. Grants repetidos de usuário-área e role-área atualizam a concessão existente.
+
 Este guia explica como usar a colecao Postman da CourseCore API para testar os endpoints HTTP principais.
 
 ## Arquivos

@@ -252,7 +252,7 @@
                 "value": "{{correlationId}}"
               }
             ],
-            "url": "{{baseUrl}}/api/users"
+            "url": "{{baseUrl}}/api/users?page=1&pageSize=50"
           }
         },
         {

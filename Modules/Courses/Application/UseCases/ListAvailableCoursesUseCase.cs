@@ -6,14 +6,12 @@ namespace CourseCore.Api.Modules.Courses.Application.UseCases;
 
 public class ListAvailableCoursesUseCase
 {
-    private readonly ICourseRepository _courses;
     private readonly CourseAccessService _courseAccessService;
 
     public ListAvailableCoursesUseCase(
         ICourseRepository courses,
         CourseAccessService courseAccessService)
     {
-        _courses = courses;
         _courseAccessService = courseAccessService;
     }
 
@@ -26,22 +24,7 @@ public class ListAvailableCoursesUseCase
             throw new ArgumentException("UserId is required.", nameof(input));
         }
 
-        var publishedCourses = await _courses.ListPublishedAsync(cancellationToken);
-        var availableCourses = new List<CourseListItemOutput>();
-
-        foreach (var course in publishedCourses.OrderBy(course => course.DisplayOrder))
-        {
-            var access = await _courseAccessService.CanUserAccessCourseAsync(
-                input.UserId,
-                course.Id,
-                cancellationToken);
-
-            if (access.CanAccess)
-            {
-                availableCourses.Add(CourseListItemOutput.FromCourse(course));
-            }
-        }
-
-        return availableCourses;
+        var courses = await _courseAccessService.ListAvailableCoursesAsync(input.UserId, cancellationToken);
+        return courses.OrderBy(course => course.DisplayOrder).Select(CourseListItemOutput.FromCourse).ToList();
     }
 }

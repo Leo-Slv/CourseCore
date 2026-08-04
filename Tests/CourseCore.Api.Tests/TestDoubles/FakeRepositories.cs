@@ -40,6 +40,12 @@ public sealed class FakeUserRepository : IUserRepository
         return Task.FromResult<IReadOnlyCollection<User>>(_usersById.Values.ToArray());
     }
 
+    public Task<(IReadOnlyCollection<User> Items, int TotalCount)> ListPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var ordered = _usersById.Values.OrderBy(user => user.Name).ThenBy(user => user.Id).ToArray();
+        return Task.FromResult(((IReadOnlyCollection<User>)ordered.Skip((page - 1) * pageSize).Take(pageSize).ToArray(), ordered.Length));
+    }
+
     public Task CreateAsync(User user, CancellationToken cancellationToken = default)
     {
         Add(user);
@@ -185,6 +191,16 @@ public sealed class FakeAreaRepository : IAreaRepository
         return Task.CompletedTask;
     }
 
+    public Task<UserAreaAccess?> FindUserAreaAccessAsync(Guid userId, Guid areaId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(UserAreaAccesses.FirstOrDefault(x => x.UserId == userId && x.AreaId == areaId));
+
+    public Task<RoleAreaAccess?> FindRoleAreaAccessAsync(Guid roleId, Guid areaId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(RoleAreaAccesses.FirstOrDefault(x => x.RoleId == roleId && x.AreaId == areaId));
+
+    public Task UpdateUserAreaAccessAsync(UserAreaAccess access, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task UpdateRoleAreaAccessAsync(RoleAreaAccess access, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
     public Task<IReadOnlyCollection<UserAreaAccess>> ListUserAreaAccessesAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -258,7 +274,7 @@ public sealed class FakeCourseRepository : ICourseRepository
         var areaIdSet = areaIds.ToHashSet();
 
         return Task.FromResult<IReadOnlyCollection<Course>>(
-            Courses.Where(course => course.AreaIds.Any(areaIdSet.Contains)).ToArray());
+            Courses.Where(course => course.Published && course.AreaIds.Any(areaIdSet.Contains)).ToArray());
     }
 
     public Task CreateAsync(Course course, CancellationToken cancellationToken = default)

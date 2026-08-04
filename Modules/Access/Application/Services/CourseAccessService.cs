@@ -25,6 +25,34 @@ public class CourseAccessService
         _courses = courses;
     }
 
+    public async Task<IReadOnlyCollection<CourseCore.Api.Modules.Courses.Domain.Entities.Course>> ListAvailableCoursesAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _users.FindByIdAsync(userId, cancellationToken);
+        if (user is null || !user.Active)
+        {
+            return [];
+        }
+
+        var activeAreaIds = (await _areas.ListAsync(cancellationToken))
+            .Where(area => area.Active).Select(area => area.Id).ToHashSet();
+        var now = DateTime.UtcNow;
+        var accessibleAreaIds = (await _areas.ListUserAreaAccessesAsync(userId, cancellationToken))
+            .Where(access => activeAreaIds.Contains(access.AreaId) && access.IsValidAt(now))
+            .Select(access => access.AreaId).ToHashSet();
+        var roleIds = (await _roles.FindByUserIdAsync(userId, cancellationToken)).Select(role => role.Id).ToArray();
+        foreach (var access in await _areas.ListRoleAreaAccessesAsync(roleIds, cancellationToken))
+        {
+            if (activeAreaIds.Contains(access.AreaId) && HasPermission(access))
+            {
+                accessibleAreaIds.Add(access.AreaId);
+            }
+        }
+
+        return await _courses.ListByAreaIdsAsync(accessibleAreaIds, cancellationToken);
+    }
+
     public async Task<CourseAccessOutput> CanUserAccessCourseAsync(
         Guid userId,
         Guid courseId,

@@ -66,14 +66,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyCollection<UserResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResponse<UserResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyCollection<UserResponse>>> ListAsync(
+    public async Task<ActionResult<PagedResponse<UserResponse>>> ListAsync(
+        [FromQuery] ListUsersRequest request,
         CancellationToken cancellationToken)
     {
-        var output = await _listUsersUseCase.ExecuteAsync(cancellationToken);
+        var output = await _listUsersUseCase.ExecuteAsync(UserPresenter.ToInput(request), cancellationToken);
 
         return Ok(UserPresenter.ToResponse(output));
     }

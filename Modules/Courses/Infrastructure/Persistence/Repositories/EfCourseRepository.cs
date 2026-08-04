@@ -89,7 +89,7 @@ public class EfCourseRepository : ICourseRepository
 
         var models = await CourseQuery()
             .AsNoTracking()
-            .Where(x => x.CourseAreas.Any(courseArea => areaIds.Contains(courseArea.AreaId)))
+            .Where(x => x.Published && x.CourseAreas.Any(courseArea => areaIds.Contains(courseArea.AreaId)))
             .OrderBy(x => x.DisplayOrder)
             .ThenBy(x => x.Title)
             .ToListAsync(cancellationToken);

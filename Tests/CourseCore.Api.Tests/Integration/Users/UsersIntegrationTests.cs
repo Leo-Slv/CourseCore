@@ -38,6 +38,42 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task GetUsers_WithoutQuery_ShouldReturnDefaultPaginationMetadata()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var json = await client.GetFromJsonAsync<JsonElement>("/api/users");
+        Assert.Equal(1, json.GetProperty("page").GetInt32());
+        Assert.Equal(50, json.GetProperty("pageSize").GetInt32());
+        Assert.Equal(JsonValueKind.Array, json.GetProperty("items").ValueKind);
+        Assert.True(json.TryGetProperty("totalItems", out _));
+        Assert.True(json.TryGetProperty("totalPages", out _));
+    }
+
+    [Fact]
+    public async Task GetUsers_WithPageSizeTwo_ShouldReturnPaginationMetadata()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var json = await client.GetFromJsonAsync<JsonElement>("/api/users?page=1&pageSize=2");
+        Assert.Equal(1, json.GetProperty("page").GetInt32());
+        Assert.Equal(2, json.GetProperty("pageSize").GetInt32());
+        Assert.True(json.GetProperty("items").GetArrayLength() <= 2);
+    }
+
+    [Theory]
+    [InlineData("page=0&pageSize=2")]
+    [InlineData("page=1&pageSize=0")]
+    [InlineData("page=1&pageSize=101")]
+    public async Task GetUsers_WithInvalidPagination_ShouldReturnBadRequest(string query)
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var response = await client.GetAsync($"/api/users?{query}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CreateUser_WhenAdminPostsValidRequest_ShouldReturnCreated()
     {
         using var client = IntegrationAuth.CreateClient(_factory);

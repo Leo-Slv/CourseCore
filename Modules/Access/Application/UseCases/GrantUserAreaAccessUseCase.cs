@@ -49,15 +49,19 @@ public class GrantUserAreaAccessUseCase
                 throw new NotFoundException("Area not found.");
             }
 
-            var access = UserAreaAccess.Create(
-                input.UserId,
-                input.AreaId,
-                input.CanView,
-                input.CanManage,
-                input.StartsAt,
-                input.ExpiresAt);
-
-            await _areas.CreateUserAreaAccessAsync(access, cancellationToken);
+            var access = await _areas.FindUserAreaAccessAsync(input.UserId, input.AreaId, cancellationToken);
+            var operation = access is null ? "created" : "updated";
+            if (access is null)
+            {
+                access = UserAreaAccess.Create(input.UserId, input.AreaId, input.CanView, input.CanManage, input.StartsAt, input.ExpiresAt);
+                await _areas.CreateUserAreaAccessAsync(access, cancellationToken);
+            }
+            else
+            {
+                access.ChangePermissions(input.CanView, input.CanManage);
+                access.ChangePeriod(input.StartsAt, input.ExpiresAt);
+                await _areas.UpdateUserAreaAccessAsync(access, cancellationToken);
+            }
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.UserAreaAccessGranted,
                 "UserAreaAccess",
@@ -68,6 +72,7 @@ public class GrantUserAreaAccessUseCase
                     ["areaId"] = access.AreaId.ToString(),
                     ["canView"] = access.CanView.ToString(),
                     ["canManage"] = access.CanManage.ToString()
+                    , ["operation"] = operation
                 },
                 cancellationToken: cancellationToken);
 

@@ -53,13 +53,18 @@ public class GrantRoleAreaAccessUseCase
                 throw new ConflictException("Access cannot be granted to an inactive role.");
             }
 
-            var access = RoleAreaAccess.Create(
-                input.RoleId,
-                input.AreaId,
-                input.CanView,
-                input.CanManage);
-
-            await _areas.CreateRoleAreaAccessAsync(access, cancellationToken);
+            var access = await _areas.FindRoleAreaAccessAsync(input.RoleId, input.AreaId, cancellationToken);
+            var operation = access is null ? "created" : "updated";
+            if (access is null)
+            {
+                access = RoleAreaAccess.Create(input.RoleId, input.AreaId, input.CanView, input.CanManage);
+                await _areas.CreateRoleAreaAccessAsync(access, cancellationToken);
+            }
+            else
+            {
+                access.ChangePermissions(input.CanView, input.CanManage);
+                await _areas.UpdateRoleAreaAccessAsync(access, cancellationToken);
+            }
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.RoleAreaAccessGranted,
                 "RoleAreaAccess",
@@ -70,6 +75,7 @@ public class GrantRoleAreaAccessUseCase
                     ["areaId"] = access.AreaId.ToString(),
                     ["canView"] = access.CanView.ToString(),
                     ["canManage"] = access.CanManage.ToString()
+                    , ["operation"] = operation
                 },
                 cancellationToken: cancellationToken);
 

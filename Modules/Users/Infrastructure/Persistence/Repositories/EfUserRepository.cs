@@ -44,6 +44,23 @@ public class EfUserRepository : IUserRepository
         return models.Select(UserMapper.ToDomain).ToList();
     }
 
+    public async Task<(IReadOnlyCollection<User> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Users.AsNoTracking();
+        var totalCount = await query.CountAsync(cancellationToken);
+        var models = await query
+            .OrderBy(x => x.Name)
+            .ThenBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (models.Select(UserMapper.ToDomain).ToList(), totalCount);
+    }
+
     public async Task CreateAsync(User user, CancellationToken cancellationToken = default)
     {
         await _dbContext.Users.AddAsync(UserMapper.ToPersistence(user), cancellationToken);

@@ -21,6 +21,14 @@ public interface IAreaRepository
 
     Task CreateRoleAreaAccessAsync(RoleAreaAccess access, CancellationToken cancellationToken = default);
 
+    Task<UserAreaAccess?> FindUserAreaAccessAsync(Guid userId, Guid areaId, CancellationToken cancellationToken = default);
+
+    Task<RoleAreaAccess?> FindRoleAreaAccessAsync(Guid roleId, Guid areaId, CancellationToken cancellationToken = default);
+
+    Task UpdateUserAreaAccessAsync(UserAreaAccess access, CancellationToken cancellationToken = default);
+
+    Task UpdateRoleAreaAccessAsync(RoleAreaAccess access, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<UserAreaAccess>> ListUserAreaAccessesAsync(
         Guid userId,
         CancellationToken cancellationToken = default);

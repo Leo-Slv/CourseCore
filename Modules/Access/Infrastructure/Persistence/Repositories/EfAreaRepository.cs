@@ -85,6 +85,32 @@ public class EfAreaRepository : IAreaRepository
         await _dbContext.RoleAreaAccesses.AddAsync(RoleAreaAccessMapper.ToPersistence(access), cancellationToken);
     }
 
+    public async Task<UserAreaAccess?> FindUserAreaAccessAsync(Guid userId, Guid areaId, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.UserAreaAccesses.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.AreaId == areaId, cancellationToken);
+        return model is null ? null : UserAreaAccessMapper.ToDomain(model);
+    }
+
+    public async Task<RoleAreaAccess?> FindRoleAreaAccessAsync(Guid roleId, Guid areaId, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.RoleAreaAccesses.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.RoleId == roleId && x.AreaId == areaId, cancellationToken);
+        return model is null ? null : RoleAreaAccessMapper.ToDomain(model);
+    }
+
+    public async Task UpdateUserAreaAccessAsync(UserAreaAccess access, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.UserAreaAccesses.FirstAsync(x => x.Id == access.Id, cancellationToken);
+        UserAreaAccessMapper.ApplyChanges(access, model);
+    }
+
+    public async Task UpdateRoleAreaAccessAsync(RoleAreaAccess access, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.RoleAreaAccesses.FirstAsync(x => x.Id == access.Id, cancellationToken);
+        RoleAreaAccessMapper.ApplyChanges(access, model);
+    }
+
     public async Task<IReadOnlyCollection<UserAreaAccess>> ListUserAreaAccessesAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
