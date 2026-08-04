@@ -1,191 +1,151 @@
 # Postman
 
-`GET /api/users` aceita `page` (padrão 1) e `pageSize` (padrão 50, máximo 100), retornando `items`, `page`, `pageSize`, `totalItems` e `totalPages`. Valores fora dos limites retornam 400.
+A collection do CourseCore cobre os 24 endpoints executáveis da API: 21 actions de controllers e 3 health checks. Ela também inclui 2 requests de diagnóstico disponíveis apenas em `Development` e 7 cenários negativos manuais.
 
-`GET /api/courses/available` calcula os acessos de área em lote, sem validar curso a curso. Grants repetidos de usuário-área e role-área atualizam a concessão existente.
+## Importação e configuração
 
-Este guia explica como usar a colecao Postman da CourseCore API para testar os endpoints HTTP principais.
-
-A collection esta sincronizada com o documento OpenAPI exposto em `/openapi/v1.json`: cobre todas as 21 operacoes exibidas pelo Scalar e inclui adicionalmente `/health/live`, `/health/ready`, `/health`, o JSON OpenAPI e a interface Scalar.
-
-## Arquivos
-
-Importe estes arquivos no Postman:
+Importe e selecione:
 
 ```text
 Postman/CourseCore.postman_collection.json
 Postman/CourseCore.local.postman_environment.json
 ```
 
-Selecione o environment `CourseCore Local` antes de executar as requests.
-
-## Base URL
-
-O environment usa Docker por padrao:
+O environment versionado contém somente placeholders. Ajuste `baseUrl` para a URL efetiva da API, sem barra final. O valor inicial é:
 
 ```text
-baseUrl=http://localhost:8080
+http://localhost:5000
 ```
 
-Para rodar sem Docker, troque `baseUrl` para a porta usada pelo profile local da API. Em geral, ela aparece em `Properties/launchSettings.json` ou no console do `dotnet run`, por exemplo:
+Em Docker, use normalmente `http://localhost:8080`. Sem Docker, consulte `Properties/launchSettings.json` ou a saída de `dotnet run`.
 
-```text
-http://localhost:5278
-```
+Preencha manualmente antes do fluxo correspondente:
 
-Scalar e OpenAPI ficam disponiveis apenas em `Development`.
+- `adminEmail` e `adminPassword`: credenciais administrativas locais;
+- `studentEmail` e `studentPassword`: credenciais sem permissões administrativas, usadas em fluxos de aluno e no cenário 403;
+- `areaId` e `roleId`: não há endpoint público para criar ou listar esses recursos;
+- `targetUserId`, `courseId`, `lessonId` e `videoId`: somente quando o recurso não puder ser obtido por um request anterior;
+- `videoStorageKey`: chave válida no provider configurado.
 
-## Seed admin
+Nunca salve credenciais reais, JWT, refresh token, cookie ou connection string nos arquivos versionados.
 
-A collection usa o admin esperado do seed:
+## Autenticação automática
 
-```text
-adminEmail=admin@coursecore.local
-adminPassword=CHANGE_ME_LOCAL_ONLY
-```
+A collection usa Bearer `{{accessToken}}` globalmente. Health, login, refresh, logout e diagnósticos sobrescrevem a autenticação com `No Auth`.
 
-Antes de usar a collection, configure `adminPassword` no environment com a senha local que voce definiu para o seed. Nao salve senha real em arquivo versionado.
+`Login Admin` envia `adminEmail`/`adminPassword`, lê o contrato real `token.accessToken`, salva o JWT em `accessToken` e salva `userId`. `Login Student` faz o mesmo em `studentAccessToken`, usado explicitamente pelo cenário negativo de autorização.
 
-A senha deve ter ao menos 12 caracteres e no maximo 72 bytes UTF-8, limite seguro do BCrypt. Ela nao pode ser vazia nem uma senha comum basica. A mesma politica vale para usuarios criados por `Users / Create User`.
+O refresh token não é salvo em variável. Login grava o refresh token em cookie `HttpOnly`; o cookie jar do Postman o envia automaticamente a `Refresh Token` e `Logout`. O body mantém `refreshToken` vazio apenas por compatibilidade com o contrato. `Refresh Token` salva o novo `token.accessToken` em `accessToken`. Após `200` ou `204`, `Logout` remove `accessToken` e `studentAccessToken` do environment; a API apaga o cookie.
 
-O seed admin e opt-in, roda somente em `Development` e exige schema atualizado. Para habilitar localmente:
+Login, refresh e logout têm rate limiting. Não há loop agressivo de 429 na collection.
 
-```powershell
-$env:Seed__Admin__Enabled="true"
-$env:Seed__Admin__Name="CourseCore Admin"
-$env:Seed__Admin__Email="admin@coursecore.local"
-$env:Seed__Admin__Password="CHANGE_ME_LOCAL_ONLY"
-$env:Seed__Admin__ResetPassword="false"
-dotnet run
-```
+## Ordem sugerida no Collection Runner
 
-Veja tambem `Docs/database-seeding.md`.
+As pastas numeradas expressam a ordem operacional:
 
-## Fluxo recomendado
+1. `00 - Health`;
+2. `01 - Auth` — execute `Login Admin`; `Login Student` é opcional;
+3. `02 - Users`;
+4. `03 - Access`;
+5. `04 - Courses`;
+6. `05 - Media / Videos`;
+7. `06 - Progress`;
+8. `90 - Deprecated` apenas quando necessário;
+9. `95 - Negative Scenarios` individualmente, após preparar suas dependências;
+10. `98 - Session Cleanup`;
+11. `99 - Diagnostics` apenas em `Development`.
 
-1. Suba a API com PostgreSQL e migrations aplicadas.
-2. Importe a collection e o environment.
-3. Preencha `adminPassword`.
-4. Execute `Auth / Login as Seed Admin`.
-5. Use os endpoints protegidos.
-6. Quando necessario, execute `Auth / Refresh Token` para renovar o access token usando o cookie jar do Postman.
-7. Execute `Auth / Logout` para revogar o refresh token da sessao atual e limpar o cookie.
+O Runner não cria areas ou roles, pois a API não expõe endpoints para isso. Fluxos de criação de curso dependem de `areaId` existente. Publicar curso, playback e progresso podem depender de um conjunto coerente de area, curso, módulo, aula, vídeo e grants.
 
-A request de login salva automaticamente:
+## Variáveis automáticas
 
-```text
-accessToken
-```
+Os scripts preenchem:
 
-O refresh token nao e salvo no environment. A API envia o refresh token em cookie `HttpOnly`, e o Postman usa o cookie jar automaticamente nas requests seguintes.
+| Variável | Origem |
+|---|---|
+| `accessToken` | Login Admin e Refresh Token |
+| `studentAccessToken` | Login Student |
+| `userId` | Login Admin ou Student |
+| `targetUserId` | Create User ou primeiro item de List Users |
+| `courseId`, `courseSlug` | Create Course, List Available Courses ou Get Course Details |
+| `moduleId`, `lessonId` | primeiro módulo/aula de Get Course Details |
+| `videoId` | Create Video |
+| `progressId` | Register Lesson Progress ou Get Course Progress |
+| `uniqueEmail` | pre-request de Create/Update User |
+| `uniqueCourseSlug` | pre-request de Create/Update Course |
+| `correlationId` | pre-request global, renovado em cada request |
 
-A request de refresh token atualiza o `accessToken` e recebe um novo cookie de refresh token.
+`Logout` remove os dois access tokens. URLs temporárias de playback e refresh tokens nunca são persistidos.
 
-A request de logout usa o cookie do Postman, espera `204 No Content` e limpa o cookie no servidor.
+## Inventário dos endpoints
 
-## Variaveis do environment
+Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de aplicação usam `ApiErrorResponse`; endpoints protegidos também podem retornar 401 e, quando há policy/permissão, 403.
 
-Variaveis preenchidas pela collection:
+| Módulo | Método e rota | Auth / policy | Entrada | Resposta principal | Status principais | Postman |
+|---|---|---|---|---|---|---|
+| Health | `GET /health` | Público | — | health agregado | 200, 503 | Health |
+| Health | `GET /health/live` | Público | — | health mínimo | 200 | Live |
+| Health | `GET /health/ready` | Público | — | health/readiness | 200, 503 | Ready |
+| Auth | `POST /api/auth/login` | Público | body: `email`, `password` | `AuthResponse` | 200, 400, 401, 429, 500 | Login Admin/Student |
+| Auth | `POST /api/auth/refresh-token` | Público | cookie HttpOnly; body fallback `refreshToken` | `AuthResponse` | 200, 400, 401, 429, 500 | Refresh Token |
+| Auth | `POST /api/auth/logout` | Público | cookie HttpOnly; body fallback `refreshToken` | sem conteúdo | 204, 429, 500 | Logout |
+| Users | `POST /api/users` | Bearer; `ManageUsers` | body: `name`, `email`, `password` | `UserResponse` | 201, 400, 401, 403, 409, 500 | Create User |
+| Users | `PUT /api/users/{userId}` | Bearer; `ManageUsers` | path `userId`; body: `name`, `email`, `active` | `UserResponse` | 200, 400, 401, 403, 404, 409, 500 | Update User |
+| Users | `GET /api/users` | Bearer; `ManageUsers` | query `page`, `pageSize` | `PagedResponse<UserResponse>` | 200, 400, 401, 403, 500 | List Users - Paged |
+| Access | `POST /api/access/user-area` | Bearer; `ManageUserAreaAccess` | body: user/area/grant fields | `AreaAccessResponse` | 200, 400, 401, 403, 404, 500 | Grant User Area Access |
+| Access | `POST /api/access/role-area` | Bearer; `ManageRoleAreaAccess` | body: role/area/grant fields | `AreaAccessResponse` | 200, 400, 401, 403, 404, 500 | Grant Role Area Access |
+| Access | `POST /api/access/course/check` | Bearer; `CheckOwnCourseAccess`; deprecated | body `courseId` | `CourseAccessResponse` | 200, 400, 401, 403, 500 | Deprecated folder |
+| Access | `GET /api/access/courses/{courseId}` | Bearer; `CheckOwnCourseAccess` | path `courseId` | `CourseAccessResponse` | 200, 400, 401, 500 | Check Own Course Access |
+| Access | `GET /api/access/users/{userId}/courses/{courseId}` | Bearer; `CheckUserCourseAccess` | paths `userId`, `courseId` | `CourseAccessResponse` | 200, 400, 401, 403, 500 | Check User Course Access - Admin |
+| Courses | `POST /api/courses` | Bearer; `ManageCourses` | `CreateCourseRequest` | `CourseResponse` | 201, 400, 401, 403, 404, 409, 500 | Create Course |
+| Courses | `PUT /api/courses/{courseId}` | Bearer; `ManageCourses` | path `courseId`; `UpdateCourseRequest` | `CourseResponse` | 200, 400, 401, 403, 404, 409, 500 | Update Course |
+| Courses | `POST /api/courses/{courseId}/publish` | Bearer; `ManageCourses` | path `courseId` | `CourseResponse` | 200, 400, 401, 403, 404, 500 | Publish Course |
+| Courses | `GET /api/courses/{courseId}` | Bearer | path `courseId` | `CourseDetailsResponse` | 200, 400, 401, 403, 404, 500 | Get Course Details |
+| Courses | `GET /api/courses/available` | Bearer | — | array de `CourseListItemResponse` | 200, 400, 401, 403, 500 | List Available Courses |
+| Videos | `POST /api/videos` | Bearer; `ManageVideos` | `CreateVideoRequest` | `VideoResponse` | 201, 400, 401, 403, 404, 409, 500 | Create Video |
+| Videos | `POST /api/videos/{id}/ready` | Bearer; `ManageVideos` | path `id` | `VideoResponse` | 200, 400, 401, 403, 404, 409, 500 | Mark Video Ready |
+| Videos | `POST /api/videos/playback` | Bearer | body `videoId` | `VideoPlaybackResponse` | 200, 400, 401, 403, 404, 409, 500 | Get Playback Url |
+| Progress | `POST /api/progress/lessons` | Bearer | body `lessonId`, `watchedSeconds`; `markAsCompleted` é legado | `LessonProgressResponse` | 200, 400, 401, 403, 404, 500 | Register Lesson Progress |
+| Progress | `POST /api/progress/courses` | Bearer | body `courseId` | `CourseProgressResponse` | 200, 400, 401, 403, 404, 500 | Get Course Progress |
 
-```text
-accessToken
-correlationId
-page
-pageSize
-createdUserId
-courseId
-moduleId
-lessonId
-videoId
-```
+Não há endpoint `me/current user`, controller de Audit Logs nem endpoints públicos de CRUD para areas, roles, módulos ou aulas nesta versão. O módulo Audit Logs registra eventos internamente, mas não expõe listagem HTTP. Não foram inventadas requests para rotas inexistentes.
 
-Variaveis que normalmente precisam ser preenchidas manualmente ou obtidas por seed/banco:
+As policies resolvem assim:
 
-```text
-adminPassword
-areaId
-roleId
-```
+- `ManageUsers`: `users.manage` ou Admin;
+- `ManageUserAreaAccess`: `users.manage` ou Admin;
+- `ManageRoleAreaAccess`: `roles.manage` ou Admin;
+- `CheckOwnCourseAccess`: usuário autenticado;
+- `CheckUserCourseAccess`: `users.manage`, `areas.manage`, `courses.manage` ou Admin;
+- `ManageCourses`: `courses.manage` ou Admin;
+- `ManageVideos`: `videos.manage` ou Admin.
 
-`areaId` e necessario para criar cursos e conceder acesso por area. `roleId` e necessario para conceder acesso por role. Se voce criar um curso pela collection, rode depois `Courses / Get Course Details` para tentar salvar `moduleId` e `lessonId` a partir da resposta.
+`AdminOnly` e `ReadProgress` existem na configuração, mas nenhum endpoint atual os referencia.
 
-`page` inicia em `1` e `pageSize` em `50`; altere essas variaveis no environment para exercitar a paginacao sem editar a request.
+## Endpoint deprecated
 
-## Authorization
+`POST /api/access/course/check` está marcado `[Obsolete]`. Ele consulta somente o usuário autenticado e foi movido para `90 - Deprecated`. Use `GET /api/access/courses/{courseId}`.
 
-Os folders protegidos usam:
+O campo de request `markAsCompleted` de progresso e o campo `playbackUrl` de criação de vídeo ainda existem nos contratos por compatibilidade, mas a collection não depende deles. Eles não são endpoints deprecated.
 
-```text
-Bearer {{accessToken}}
-```
+## Cenários negativos
 
-O access token inclui a claim `token_version`. Se o usuario for desativado ou sofrer atualizacao critica, tokens antigos passam a receber `401 Unauthorized`; faca login novamente com um usuario ativo.
+`95 - Negative Scenarios` contém:
 
-Login, refresh token e logout sao publicos e nao usam Bearer.
+- login com credenciais inválidas: 401;
+- criação de usuário com senha fraca: 400;
+- paginação de usuários inválida: 400;
+- criação de curso com payload inválido: 400;
+- consulta administrativa com token de aluno: 403;
+- criação de vídeo com `storageKey` inválida: 400;
+- progresso com `watchedSeconds` negativo: 400.
 
-Login, refresh token e logout usam cookie `HttpOnly` para o refresh token. Se voce estiver testando um cliente mobile ou uma ferramenta sem cookie jar, o fallback por body pode ser habilitado por configuracao local com `Auth__AllowRefreshTokenInBodyFallback=true`. Em producao, mantenha o fallback desabilitado salvo decisao operacional explicita.
+Execute-os individualmente. O cenário 403 requer `Login Student` e um aluno sem as permissões administrativas. Vídeo/progresso exigem IDs sintaticamente válidos; para evitar que 404 esconda a validação pretendida, prefira IDs obtidos no fluxo positivo.
 
-Esses endpoints possuem rate limiting por IP. Excesso de tentativas retorna `429 Too Many Requests`, possivelmente com `Retry-After`. Se uma runner da collection executar muitas chamadas rapidamente, aguarde a janela configurada ou ajuste apenas a configuracao local de rate limit.
+## Dependências e diagnósticos
 
-Para frontends web/PWA, mantenha o access token apenas em memoria no cliente. O navegador envia o cookie automaticamente para `/api/auth`.
+`/openapi/v1.json` e `/scalar` só existem em `Development`; os testes aceitam 404 quando estão ocultos. `/health/ready` e `/health` podem retornar 503 enquanto o banco ou schema não estiver pronto.
 
-Se frontend e API forem cross-site, sera necessario avaliar CORS com credentials, origem explicita e `SameSite=None; Secure`. Esta etapa nao habilita `AllowCredentials` nem abre CORS. Protecao CSRF completa fica como pendencia futura para fluxos com cookie.
+`Create Course` depende de `areaId`. `Get Course Details` depende de acesso ao curso. `Create Video` depende de `lessonId`; playback depende de vídeo pronto e acesso ao curso. Progress depende de aula/vídeo elegíveis. Grants dependem de users/roles/areas existentes.
 
-## Verificacao de acesso a cursos
-
-Use `Access / Check Own Course Access` (`GET /api/access/courses/{courseId}`) para consultar o acesso do usuario autenticado. Essa rota usa exclusivamente o `userId` do JWT e exige apenas autenticacao.
-
-Use `Access / Check User Course Access (Administrative)` (`GET /api/access/users/{userId}/courses/{courseId}`) para consultar outro usuario. Essa rota exige `users.manage`, `areas.manage`, `courses.manage` ou a role `Admin`.
-
-O endpoint `POST /api/access/course/check` permanece apenas para compatibilidade e esta deprecated. Ele nunca aceita `userId` alvo e sempre consulta o proprio usuario autenticado.
-
-Os grants usam policies separadas:
-
-```text
-POST /api/access/user-area -> users.manage ou Admin
-POST /api/access/role-area -> roles.manage ou Admin
-```
-
-Uma permissao nao autoriza o grant da outra categoria. Grants para roles inativas retornam `409 Conflict`.
-
-## Progresso
-
-A request `Progress / Register Lesson Progress` deve enviar `watchedSeconds` suficiente para atingir o threshold configurado no servidor. Por padrao, a aula conclui ao atingir 90% de `Video.DurationSeconds`.
-
-O campo `markAsCompleted` pode existir em clientes antigos, mas esta deprecated e e ignorado. A collection nao depende mais dele; conclusao de aula e curso e calculada pela API.
-
-## Videos
-
-A request `Media / Videos / Create Video` nao envia mais `playbackUrl`. O campo ainda e aceito por compatibilidade em clientes antigos, mas esta deprecated e e ignorado pela API.
-
-Depois de criar um video, execute `Media / Videos / Mark Video Ready` para alterar o status para `Ready` sem informar URL. `Request Video Playback` retorna uma URL temporaria assinada e `expiresAt`; nao salve essa URL como variavel permanente.
-
-## Correlation id
-
-A collection possui um pre-request script global que gera um novo GUID por request e salva em:
-
-```text
-correlationId
-```
-
-Todas as requests enviam:
-
-```text
-X-Correlation-ID: {{correlationId}}
-```
-
-As respostas tambem devem devolver esse header.
-
-## Cuidados
-
-Payloads administrativos possuem limites de tamanho. Create Course aceita no maximo 50 areas, 50 modulos e 100 aulas por modulo; URLs de thumbnail devem ser HTTP(S) absolutas. O corpo HTTP e limitado a 1 MiB. Payload invalido retorna `400`, sem detalhes internos.
-
-- Nao versionar senha real.
-- Nao versionar JWT real.
-- Nao versionar refresh token real.
-- Nao versionar connection string real.
-- Nao copiar valores reais de `.env` para a collection.
-- Docker Compose nao aplica migrations automaticamente.
-- `/health/ready` pode falhar enquanto o schema do banco nao estiver aplicado.
-- Rate limiting nao substitui MFA, CAPTCHA ou lockout futuro.
-- JWT antigo pode ser rejeitado imediatamente apos mudancas criticas de usuario.
+Cada request envia um novo `X-Correlation-ID`; o teste global confirma o header na resposta. A collection valida `baseUrl` no pre-request e falha cedo se nenhum environment adequado estiver selecionado.

@@ -253,14 +253,14 @@ Os testes de seguranca exercitam o pipeline HTTP real para rotacao concorrente e
 
 ## Postman
 
-O projeto inclui uma collection Postman importavel e um environment local com placeholders:
+O projeto inclui uma collection Postman completa para os 24 endpoints executaveis, com Bearer automatico, refresh por cookie HttpOnly, encadeamento de IDs, cenarios negativos e um environment local somente com placeholders:
 
 ```text
 Postman/CourseCore.postman_collection.json
 Postman/CourseCore.local.postman_environment.json
 ```
 
-Use `Docs/postman.md` para configurar `adminPassword`, executar login, renovar refresh token e preencher variaveis como `areaId`, `roleId`, `courseId`, `lessonId` e `videoId`.
+Use `Docs/postman.md` para configurar `baseUrl` e credenciais locais, executar o fluxo numerado no Collection Runner, renovar o access token por cookie e entender quais IDs sao automaticos ou dependem de dados existentes. A API nao expoe atualmente endpoint `me` nem listagem HTTP de audit logs.
 
 ## Health checks
 
