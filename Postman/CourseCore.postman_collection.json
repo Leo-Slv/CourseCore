@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "0c28d830-56c0-4d48-8ff1-140e9289d344",
     "name": "CourseCore API",
-    "description": "Colecao para testar os endpoints HTTP da CourseCore API. Importe tambem o environment CourseCore Local e rode Auth/Login antes dos endpoints protegidos.",
+    "description": "Colecao sincronizada com o OpenAPI / Scalar da CourseCore API. Contem todas as 21 operacoes publicadas em /openapi/v1.json, alem dos endpoints operacionais de health e documentacao. Importe tambem o environment CourseCore Local e rode Auth/Login antes dos endpoints protegidos.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -252,7 +252,16 @@
                 "value": "{{correlationId}}"
               }
             ],
-            "url": "{{baseUrl}}/api/users?page=1&pageSize=50"
+            "description": "Lista usuarios com paginacao. page deve ser maior ou igual a 1; pageSize deve estar entre 1 e 100.",
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page={{page}}&pageSize={{pageSize}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page", "value": "{{page}}" },
+                { "key": "pageSize", "value": "{{pageSize}}" }
+              ]
+            }
           }
         },
         {

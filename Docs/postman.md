@@ -6,6 +6,8 @@
 
 Este guia explica como usar a colecao Postman da CourseCore API para testar os endpoints HTTP principais.
 
+A collection esta sincronizada com o documento OpenAPI exposto em `/openapi/v1.json`: cobre todas as 21 operacoes exibidas pelo Scalar e inclui adicionalmente `/health/live`, `/health/ready`, `/health`, o JSON OpenAPI e a interface Scalar.
+
 ## Arquivos
 
 Importe estes arquivos no Postman:
@@ -88,6 +90,8 @@ Variaveis preenchidas pela collection:
 ```text
 accessToken
 correlationId
+page
+pageSize
 createdUserId
 courseId
 moduleId
@@ -104,6 +108,8 @@ roleId
 ```
 
 `areaId` e necessario para criar cursos e conceder acesso por area. `roleId` e necessario para conceder acesso por role. Se voce criar um curso pela collection, rode depois `Courses / Get Course Details` para tentar salvar `moduleId` e `lessonId` a partir da resposta.
+
+`page` inicia em `1` e `pageSize` em `50`; altere essas variaveis no environment para exercitar a paginacao sem editar a request.
 
 ## Authorization
 
