@@ -186,7 +186,7 @@ docker compose down
 
 Aviso: `docker compose down -v` remove o volume local do PostgreSQL e apaga os dados locais do banco.
 
-O Docker Compose nao aplica migrations automaticamente e nao roda seed por padrao. `Seed__Admin__Enabled=false` e o default. Enquanto o schema nao tiver sido aplicado, `/health/live` pode responder, mas `/health/ready` pode falhar.
+O Docker Compose executa o servico one-shot `coursecore-migrations` antes da API. O EF Core consulta `__EFMigrationsHistory`, ignora migrations ja aplicadas e executa somente as pendentes; se houver falha, a API nao inicia. O seed continua desabilitado por padrao (`Seed__Admin__Enabled=false`). Para staging/producao, prefira scripts SQL revisados conforme `Docs/deployment-migrations.md`.
 
 O compose exige ambiente, senha do PostgreSQL, JWT secret, media signing secret e senha de seed explicitamente no `.env`. O override local publica o PostgreSQL; use somente o arquivo base em producao para manter o banco privado. A imagem da API roda com o usuario nao-root nativo do runtime .NET. Veja `Docs/docker.md`.
 

@@ -2,7 +2,7 @@
 
 ## Objective
 
-This setup runs CourseCore API and PostgreSQL with reproducible local containers. It does not embed secrets, does not apply migrations automatically, and keeps seed disabled by default. It is not a production deployment definition.
+This setup runs CourseCore API and PostgreSQL with reproducible local containers. A one-shot service applies pending EF Core migrations before the API starts, while seed remains disabled by default. It is not a production deployment definition.
 
 ## Files
 
@@ -12,6 +12,7 @@ This setup runs CourseCore API and PostgreSQL with reproducible local containers
 
 ```text
 coursecore-api
+coursecore-migrations
 coursecore-postgres
 ```
 
@@ -111,16 +112,15 @@ http://localhost:8080/scalar
 
 ## Migrations
 
-Migrations are not applied automatically during container startup.
+The one-shot `coursecore-migrations` service starts after PostgreSQL is healthy and executes `dotnet ef database update`. The API starts only after the migration service exits successfully.
 
-`docker-compose.yml` starts PostgreSQL and the API only. It does not run `dotnet ef database update`, does not run `Database.Migrate()`, and does not execute SQL migration scripts automatically.
+EF Core records applied migrations in `__EFMigrationsHistory`. On subsequent Compose runs, already applied migrations are skipped and only pending migrations are executed. If migration execution fails, the API is not started.
 
-The API can start before the database has the expected schema. In that case, `/health/live` can still report the process as healthy, while `/health/ready` or endpoints that query the database can fail until migrations are applied through a controlled process.
+Inspect the one-shot service with:
 
-For local development, apply migrations manually through a controlled command when needed. From the host machine with the .NET SDK installed and the PostgreSQL container running:
-
-```bash
-dotnet ef database update --context CourseCoreDbContext
+```text
+docker compose ps --all
+docker compose logs coursecore-migrations
 ```
 
 For staging or production, prefer a reviewed SQL script generated from EF Core migrations:
@@ -135,7 +135,7 @@ or on Windows:
 ./scripts/generate-migration-script.ps1
 ```
 
-The generated SQL goes to `artifacts/migrations/`, which is ignored by Git. Review and apply it with credentials supplied outside the repository. Do not apply migrations as part of normal API startup.
+The generated SQL goes to `artifacts/migrations/`, which is ignored by Git. Review and apply it with credentials supplied outside the repository. For staging or production, prefer this reviewed script process over the local Compose migration service.
 
 ## Seed
 
