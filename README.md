@@ -253,7 +253,7 @@ Os testes de seguranca exercitam o pipeline HTTP real para rotacao concorrente e
 
 ## Postman
 
-O projeto inclui uma collection Postman completa para os 24 endpoints executaveis, com Bearer automatico, refresh por cookie HttpOnly, encadeamento de IDs, cenarios negativos e um environment local somente com placeholders:
+O projeto inclui uma collection Postman completa para os 28 endpoints executaveis, com Bearer automatico, refresh por cookie HttpOnly, encadeamento de IDs, cenarios negativos e um environment local somente com placeholders:
 
 ```text
 Postman/CourseCore.postman_collection.json
@@ -313,11 +313,14 @@ Policies de acesso sao separadas por operacao:
 ```text
 ManageUserAreaAccess -> users.manage ou Admin
 ManageRoleAreaAccess -> roles.manage ou Admin
+ManageAreas -> areas.manage ou Admin
 CheckOwnCourseAccess -> qualquer usuario autenticado
 CheckUserCourseAccess -> users.manage, areas.manage, courses.manage ou Admin
 ```
 
 `GET /api/access/courses/{courseId}` consulta somente o acesso do usuario autenticado. `GET /api/access/users/{userId}/courses/{courseId}` e a consulta administrativa explicita de um usuario alvo. O antigo `POST /api/access/course/check` permanece deprecated para compatibilidade e continua limitado ao usuario do token. Grants para roles inativas sao rejeitados com conflito conhecido.
+
+CRUD administrativo de areas (`POST/PUT/GET /api/areas`, `GET /api/areas/{areaId}`) fica em um controller separado de `/api/access`, protegido por `ManageAreas`. Nao ha remocao fisica: `active=false` via `PUT` e a forma suportada de retirar uma area de uso, e derruba imediatamente o acesso a cursos vinculados a ela.
 
 ## Observabilidade
 
@@ -429,6 +432,7 @@ CourseCore/
 - `Docs/observability.md`
 - `Docs/ci.md`
 - `Docs/postman.md`
+- `Docs/specs/` — specs e implementation plans por feature (WHAT/WHY na spec, HOW no plan)
 
 ## Cuidados de producao
 
