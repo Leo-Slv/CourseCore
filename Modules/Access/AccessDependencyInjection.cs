@@ -15,6 +15,10 @@ public static class AccessDependencyInjection
         services.AddScoped<GrantUserAreaAccessUseCase>();
         services.AddScoped<GrantRoleAreaAccessUseCase>();
         services.AddScoped<CheckCourseAccessUseCase>();
+        services.AddScoped<CreateAreaUseCase>();
+        services.AddScoped<UpdateAreaUseCase>();
+        services.AddScoped<GetAreaByIdUseCase>();
+        services.AddScoped<ListAreasUseCase>();
 
         return services;
     }

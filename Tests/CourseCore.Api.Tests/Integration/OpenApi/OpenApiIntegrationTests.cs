@@ -89,6 +89,10 @@ public class OpenApiIntegrationTests : IClassFixture<CourseCoreApiFactory>
     [InlineData("/api/progress/lessons", "post")]
     [InlineData("/api/access/courses/{courseId}", "get")]
     [InlineData("/api/access/users/{userId}/courses/{courseId}", "get")]
+    [InlineData("/api/areas", "get")]
+    [InlineData("/api/areas", "post")]
+    [InlineData("/api/areas/{areaId}", "get")]
+    [InlineData("/api/areas/{areaId}", "put")]
     public async Task GetOpenApiJson_WhenEndpointRequiresAuthorization_ShouldRequireBearer(
         string path,
         string method)
