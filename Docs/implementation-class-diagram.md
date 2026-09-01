@@ -19,9 +19,17 @@ classDiagram
         }
 
         class AreasController {
+            +GrantUserAreaAccessAsync(GrantUserAreaAccessRequest request) Task~AreaAccessResponse~
+            +GrantRoleAreaAccessAsync(GrantRoleAreaAccessRequest request) Task~AreaAccessResponse~
+            +CheckOwnCourseAccessAsync(Guid courseId) Task~CourseAccessResponse~
+            +CheckUserCourseAccessAsync(Guid userId, Guid courseId) Task~CourseAccessResponse~
+        }
+
+        class AreaManagementController {
             +CreateAsync(CreateAreaRequest request) Task~AreaResponse~
-            +UpdateAsync(Guid id, UpdateAreaRequest request) Task~AreaResponse~
-            +ListAsync() Task~IReadOnlyList~AreaResponse~~
+            +UpdateAsync(Guid areaId, UpdateAreaRequest request) Task~AreaResponse~
+            +GetByIdAsync(Guid areaId) Task~AreaResponse~
+            +ListAsync(ListAreasRequest request) Task~IReadOnlyList~AreaResponse~~
         }
 
         class CoursesController {
@@ -63,6 +71,14 @@ classDiagram
             +int DisplayOrder
         }
 
+        class UpdateAreaRequest {
+            +string Name
+            +string Slug
+            +string Description
+            +int DisplayOrder
+            +bool Active
+        }
+
         class CreateCourseRequest {
             +string Title
             +string Slug
@@ -91,7 +107,10 @@ classDiagram
         }
 
         class AreaPresenter {
-            +ToResponse(Area area) AreaResponse
+            +ToInput(CreateAreaRequest request) CreateAreaInput
+            +ToInput(Guid areaId, UpdateAreaRequest request) UpdateAreaInput
+            +ToInput(ListAreasRequest request) ListAreasInput
+            +ToResponse(AreaOutput output) AreaResponse
         }
 
         class CoursePresenter {
@@ -161,6 +180,28 @@ classDiagram
         class CheckCourseAccessUseCase {
             -ICourseAccessService accessService
             +ExecuteAsync(Guid userId, Guid courseId) Task~bool~
+        }
+
+        class CreateAreaUseCase {
+            -IAreaRepository areas
+            -IUnitOfWork unitOfWork
+            +ExecuteAsync(CreateAreaInput input) Task~AreaOutput~
+        }
+
+        class UpdateAreaUseCase {
+            -IAreaRepository areas
+            -IUnitOfWork unitOfWork
+            +ExecuteAsync(UpdateAreaInput input) Task~AreaOutput~
+        }
+
+        class GetAreaByIdUseCase {
+            -IAreaRepository areas
+            +ExecuteAsync(Guid areaId) Task~AreaOutput~
+        }
+
+        class ListAreasUseCase {
+            -IAreaRepository areas
+            +ExecuteAsync(ListAreasInput input) Task~IReadOnlyList~AreaOutput~~
         }
     }
 
@@ -867,6 +908,11 @@ classDiagram
     UsersController --> ListUsersUseCase
     AreasController --> GrantUserAreaAccessUseCase
     AreasController --> GrantRoleAreaAccessUseCase
+    AreasController --> CheckCourseAccessUseCase
+    AreaManagementController --> CreateAreaUseCase
+    AreaManagementController --> UpdateAreaUseCase
+    AreaManagementController --> GetAreaByIdUseCase
+    AreaManagementController --> ListAreasUseCase
     CoursesController --> CreateCourseUseCase
     CoursesController --> PublishCourseUseCase
     CoursesController --> GetCourseDetailsUseCase
@@ -882,6 +928,13 @@ classDiagram
     LoginUseCase --> IUserRepository
     LoginUseCase --> IPasswordHasher
     LoginUseCase --> ITokenService
+
+    CreateAreaUseCase --> IAreaRepository
+    CreateAreaUseCase --> IUnitOfWork
+    UpdateAreaUseCase --> IAreaRepository
+    UpdateAreaUseCase --> IUnitOfWork
+    GetAreaByIdUseCase --> IAreaRepository
+    ListAreasUseCase --> IAreaRepository
 
     CreateCourseUseCase --> IUnitOfWork
     CreateCourseUseCase --> ICourseRepository
