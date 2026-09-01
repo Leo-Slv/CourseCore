@@ -6,6 +6,7 @@ public static class AuthPolicyNames
     public const string ManageUsers = "ManageUsers";
     public const string ManageUserAreaAccess = "ManageUserAreaAccess";
     public const string ManageRoleAreaAccess = "ManageRoleAreaAccess";
+    public const string ManageAreas = "ManageAreas";
     public const string CheckOwnCourseAccess = "CheckOwnCourseAccess";
     public const string CheckUserCourseAccess = "CheckUserCourseAccess";
     public const string ManageCourses = "ManageCourses";

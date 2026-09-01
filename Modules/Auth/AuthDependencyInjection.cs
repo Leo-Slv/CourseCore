@@ -76,6 +76,10 @@ public static class AuthDependencyInjection
                 options,
                 AuthPolicyNames.ManageRoleAreaAccess,
                 AuthPermissionNames.ManageRoles);
+            AddPermissionPolicy(
+                options,
+                AuthPolicyNames.ManageAreas,
+                AuthPermissionNames.ManageAreas);
             options.AddPolicy(AuthPolicyNames.CheckOwnCourseAccess, policy =>
             {
                 policy.RequireAuthenticatedUser();
