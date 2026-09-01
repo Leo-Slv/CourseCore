@@ -1,6 +1,6 @@
 # Postman
 
-A collection do CourseCore cobre os 24 endpoints executáveis da API: 21 actions de controllers e 3 health checks. Ela também inclui 2 requests de diagnóstico disponíveis apenas em `Development` e 7 cenários negativos manuais.
+A collection do CourseCore cobre os 28 endpoints executáveis da API: 25 actions de controllers e 3 health checks. Ela também inclui 2 requests de diagnóstico disponíveis apenas em `Development` e 8 cenários negativos manuais.
 
 ## Importação e configuração
 
@@ -23,7 +23,8 @@ Preencha manualmente antes do fluxo correspondente:
 
 - `adminEmail` e `adminPassword`: credenciais administrativas locais;
 - `studentEmail` e `studentPassword`: credenciais sem permissões administrativas, usadas em fluxos de aluno e no cenário 403;
-- `areaId` e `roleId`: não há endpoint público para criar ou listar esses recursos;
+- `roleId`: não há endpoint público para criar ou listar roles;
+- `areaId`: só é necessário preencher manualmente se `03 - Areas` não for executado antes; `List Areas` e `Create Area` o preenchem automaticamente;
 - `targetUserId`, `courseId`, `lessonId` e `videoId`: somente quando o recurso não puder ser obtido por um request anterior;
 - `videoStorageKey`: chave válida no provider configurado.
 
@@ -47,15 +48,16 @@ As pastas numeradas expressam a ordem operacional:
 2. `01 - Auth` — execute `Login Admin`; `Login Student` é opcional;
 3. `02 - Users`;
 4. `03 - Access`;
-5. `04 - Courses`;
-6. `05 - Media / Videos`;
-7. `06 - Progress`;
-8. `90 - Deprecated` apenas quando necessário;
-9. `95 - Negative Scenarios` individualmente, após preparar suas dependências;
-10. `98 - Session Cleanup`;
-11. `99 - Diagnostics` apenas em `Development`.
+5. `03 - Areas` — `List Areas` e `Create Area` preenchem `areaId` para as pastas seguintes;
+6. `04 - Courses`;
+7. `05 - Media / Videos`;
+8. `06 - Progress`;
+9. `90 - Deprecated` apenas quando necessário;
+10. `95 - Negative Scenarios` individualmente, após preparar suas dependências;
+11. `98 - Session Cleanup`;
+12. `99 - Diagnostics` apenas em `Development`.
 
-O Runner não cria areas ou roles, pois a API não expõe endpoints para isso. Fluxos de criação de curso dependem de `areaId` existente. Publicar curso, playback e progresso podem depender de um conjunto coerente de area, curso, módulo, aula, vídeo e grants.
+O Runner cria areas via `03 - Areas`, mas não cria roles, pois a API não expõe endpoint para isso. Fluxos de criação de curso dependem de `areaId`, agora preenchido automaticamente quando `03 - Areas` roda antes. Publicar curso, playback e progresso podem depender de um conjunto coerente de area, curso, módulo, aula, vídeo e grants.
 
 ## Variáveis automáticas
 
@@ -67,11 +69,13 @@ Os scripts preenchem:
 | `studentAccessToken` | Login Student |
 | `userId` | Login Admin ou Student |
 | `targetUserId` | Create User ou primeiro item de List Users |
+| `areaId` | Create Area, ou primeiro item de List Areas |
 | `courseId`, `courseSlug` | Create Course, List Available Courses ou Get Course Details |
 | `moduleId`, `lessonId` | primeiro módulo/aula de Get Course Details |
 | `videoId` | Create Video |
 | `progressId` | Register Lesson Progress ou Get Course Progress |
 | `uniqueEmail` | pre-request de Create/Update User |
+| `uniqueAreaSlug` | pre-request de Create/Update Area |
 | `uniqueCourseSlug` | pre-request de Create/Update Course |
 | `correlationId` | pre-request global, renovado em cada request |
 
@@ -97,6 +101,10 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 | Access | `POST /api/access/course/check` | Bearer; `CheckOwnCourseAccess`; deprecated | body `courseId` | `CourseAccessResponse` | 200, 400, 401, 403, 500 | Deprecated folder |
 | Access | `GET /api/access/courses/{courseId}` | Bearer; `CheckOwnCourseAccess` | path `courseId` | `CourseAccessResponse` | 200, 400, 401, 500 | Check Own Course Access |
 | Access | `GET /api/access/users/{userId}/courses/{courseId}` | Bearer; `CheckUserCourseAccess` | paths `userId`, `courseId` | `CourseAccessResponse` | 200, 400, 401, 403, 500 | Check User Course Access - Admin |
+| Areas | `POST /api/areas` | Bearer; `ManageAreas` | body: `name`, `slug`, `description`, `displayOrder` | `AreaResponse` | 201, 400, 401, 403, 409, 500 | Create Area |
+| Areas | `PUT /api/areas/{areaId}` | Bearer; `ManageAreas` | path `areaId`; body: `name`, `slug`, `description`, `displayOrder`, `active` | `AreaResponse` | 200, 400, 401, 403, 404, 409, 500 | Update Area |
+| Areas | `GET /api/areas/{areaId}` | Bearer; `ManageAreas` | path `areaId` | `AreaResponse` | 200, 401, 403, 404, 500 | Get Area By Id |
+| Areas | `GET /api/areas` | Bearer; `ManageAreas` | query opcional `active` | array de `AreaResponse` | 200, 400, 401, 403, 500 | List Areas |
 | Courses | `POST /api/courses` | Bearer; `ManageCourses` | `CreateCourseRequest` | `CourseResponse` | 201, 400, 401, 403, 404, 409, 500 | Create Course |
 | Courses | `PUT /api/courses/{courseId}` | Bearer; `ManageCourses` | path `courseId`; `UpdateCourseRequest` | `CourseResponse` | 200, 400, 401, 403, 404, 409, 500 | Update Course |
 | Courses | `POST /api/courses/{courseId}/publish` | Bearer; `ManageCourses` | path `courseId` | `CourseResponse` | 200, 400, 401, 403, 404, 500 | Publish Course |
@@ -108,13 +116,14 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 | Progress | `POST /api/progress/lessons` | Bearer | body `lessonId`, `watchedSeconds`; `markAsCompleted` é legado | `LessonProgressResponse` | 200, 400, 401, 403, 404, 500 | Register Lesson Progress |
 | Progress | `POST /api/progress/courses` | Bearer | body `courseId` | `CourseProgressResponse` | 200, 400, 401, 403, 404, 500 | Get Course Progress |
 
-Não há endpoint `me/current user`, controller de Audit Logs nem endpoints públicos de CRUD para areas, roles, módulos ou aulas nesta versão. O módulo Audit Logs registra eventos internamente, mas não expõe listagem HTTP. Não foram inventadas requests para rotas inexistentes.
+Não há endpoint `me/current user`, controller de Audit Logs nem endpoints públicos de CRUD para roles, módulos ou aulas nesta versão. Areas têm CRUD administrativo completo desde `03 - Areas`; não há remoção física, apenas desativação via `PUT`. O módulo Audit Logs registra eventos internamente, mas não expõe listagem HTTP. Não foram inventadas requests para rotas inexistentes.
 
 As policies resolvem assim:
 
 - `ManageUsers`: `users.manage` ou Admin;
 - `ManageUserAreaAccess`: `users.manage` ou Admin;
 - `ManageRoleAreaAccess`: `roles.manage` ou Admin;
+- `ManageAreas`: `areas.manage` ou Admin;
 - `CheckOwnCourseAccess`: usuário autenticado;
 - `CheckUserCourseAccess`: `users.manage`, `areas.manage`, `courses.manage` ou Admin;
 - `ManageCourses`: `courses.manage` ou Admin;
@@ -138,14 +147,15 @@ O campo de request `markAsCompleted` de progresso e o campo `playbackUrl` de cri
 - criação de curso com payload inválido: 400;
 - consulta administrativa com token de aluno: 403;
 - criação de vídeo com `storageKey` inválida: 400;
-- progresso com `watchedSeconds` negativo: 400.
+- progresso com `watchedSeconds` negativo: 400;
+- criação de area com slug duplicado: 409.
 
-Execute-os individualmente. O cenário 403 requer `Login Student` e um aluno sem as permissões administrativas. Vídeo/progresso exigem IDs sintaticamente válidos; para evitar que 404 esconda a validação pretendida, prefira IDs obtidos no fluxo positivo.
+Execute-os individualmente. O cenário 403 requer `Login Student` e um aluno sem as permissões administrativas. Vídeo/progresso exigem IDs sintaticamente válidos; para evitar que 404 esconda a validação pretendida, prefira IDs obtidos no fluxo positivo. O cenário de slug duplicado reutiliza `uniqueAreaSlug`, deixado preenchido por `03 - Areas` (`Create Area` ou `Update Area`) na mesma execução.
 
 ## Dependências e diagnósticos
 
 `/openapi/v1.json` e `/scalar` só existem em `Development`; os testes aceitam 404 quando estão ocultos. `/health/ready` e `/health` podem retornar 503 enquanto o banco ou schema não estiver pronto.
 
-`Create Course` depende de `areaId`. `Get Course Details` depende de acesso ao curso. `Create Video` depende de `lessonId`; playback depende de vídeo pronto e acesso ao curso. Progress depende de aula/vídeo elegíveis. Grants dependem de users/roles/areas existentes.
+`Create Course` depende de `areaId`, obtido de `03 - Areas`. `Get Course Details` depende de acesso ao curso. `Create Video` depende de `lessonId`; playback depende de vídeo pronto e acesso ao curso. Progress depende de aula/vídeo elegíveis. Grants dependem de users/roles/areas existentes; areas já podem ser criadas pela própria collection, roles ainda não.
 
 Cada request envia um novo `X-Correlation-ID`; o teste global confirma o header na resposta. A collection valida `baseUrl` no pre-request e falha cedo se nenhum environment adequado estiver selecionado.

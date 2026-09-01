@@ -2,7 +2,7 @@
     "info":  {
                  "_postman_id":  "0c28d830-56c0-4d48-8ff1-140e9289d344",
                  "name":  "CourseCore API",
-                 "description":  "Complete operational collection for all 24 runtime endpoints (21 controller actions plus 3 health routes), plus Development-only diagnostics. Bearer authentication defaults to {{accessToken}}; public requests override it with noauth. Import CourseCore Local, fill manual identifiers/credentials, then run folders in numeric order.",
+                 "description":  "Complete operational collection for all 28 runtime endpoints (25 controller actions plus 3 health routes), plus Development-only diagnostics. Bearer authentication defaults to {{accessToken}}; public requests override it with noauth. Import CourseCore Local, fill manual identifiers/credentials, then run folders in numeric order.",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "auth":  {
@@ -578,6 +578,174 @@
                                                 ]
                                   }
                               ]
+                 },
+                 {
+                     "name":  "03 - Areas",
+                     "item":  [
+                                  {
+                                      "name":  "List Areas",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/areas",
+                                                      "description":  "Lists areas, optionally filtered by active state via ?active=true|false. Bearer required; policy ManageAreas (areas.manage or Admin). Response: AreaResponse array. Main statuses: 200, 400, 401, 403, 500. Saves the first returned id in areaId when available."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.eql(200); });",
+                                                                                    "const json = pm.response.json();",
+                                                                                    "pm.test(\"Response is an array\", function () { pm.expect(json).to.be.an(\"array\"); });",
+                                                                                    "if (Array.isArray(json) \u0026\u0026 json.length \u003e 0 \u0026\u0026 json[0].id) { pm.environment.set(\"areaId\", json[0].id); }"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Get Area By Id",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/areas/{{areaId}}",
+                                                      "description":  "Returns areaId details. Bearer required; policy ManageAreas (areas.manage or Admin). Path: areaId. Response: AreaResponse. Main statuses: 200, 401, 403, 404, 500."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.eql(200); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Create Area",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/areas",
+                                                      "description":  "Creates an area. Bearer required; policy ManageAreas (areas.manage or Admin). Uses uniqueAreaSlug generated immediately before the request. Body: name, slug, description, displayOrder. Response: AreaResponse. Main statuses: 201, 400, 401, 403, 409, 500. Saves id to areaId.",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"name\": \"Postman Area\",\n  \"slug\": \"{{uniqueAreaSlug}}\",\n  \"description\": \"Area created from Postman\",\n  \"displayOrder\": 0\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.environment.set(\"uniqueAreaSlug\", \"area-\" + Date.now());"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.eql(201); });",
+                                                                                    "const json = pm.response.json();",
+                                                                                    "if (json.id) { pm.environment.set(\"areaId\", json.id); }"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Update Area",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/areas/{{areaId}}",
+                                                      "description":  "Updates name, slug, description, display order and active state for areaId. Bearer required; policy ManageAreas. Path: areaId; uses uniqueAreaSlug. Response: AreaResponse. Main statuses: 200, 400, 401, 403, 404, 409, 500.",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"name\": \"Updated Postman Area\",\n  \"slug\": \"{{uniqueAreaSlug}}\",\n  \"description\": \"Updated from Postman\",\n  \"displayOrder\": 1,\n  \"active\": true\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.environment.set(\"uniqueAreaSlug\", \"updated-area-\" + Date.now());"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is successful\", function () {",
+                                                                                    "  pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                                                                                    "});",
+                                                                                    "if (pm.response.code !== 204) {",
+                                                                                    "  pm.test(\"Response is JSON\", function () {",
+                                                                                    "    pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"application/json\");",
+                                                                                    "  });",
+                                                                                    "}"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ],
+                     "description":  "Administrative CRUD for the Area catalog under /api/areas. Policy ManageAreas (areas.manage or Admin). Separate from 03 - Access, which owns grants and course-access checks."
                  },
                  {
                      "name":  "04 - Courses",
@@ -1318,6 +1486,46 @@
                                                                        "type":  "text/javascript"
                                                                    },
                                                         "listen":  "test"
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Create Area - Duplicate Slug",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/areas",
+                                                      "description":  "Negative ManageAreas validation. Reuses uniqueAreaSlug left set by 03 - Areas (Create Area or Update Area) and expects 409 because that slug is already persisted. Run the 03 - Areas folder first in the same session.",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"name\": \"Duplicate Area\",\n  \"slug\": \"{{uniqueAreaSlug}}\",\n  \"description\": \"Duplicate slug test\",\n  \"displayOrder\": 0\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is 409\", function () { pm.expect(pm.response.code).to.eql(409); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
                                                     }
                                                 ]
                                   }
