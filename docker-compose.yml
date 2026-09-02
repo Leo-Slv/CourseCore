@@ -31,6 +31,9 @@ services:
       Jwt__Issuer: ${Jwt__Issuer:-CourseCore}
       Jwt__Audience: ${Jwt__Audience:-CourseCore}
       Media__Playback__SigningSecret: ${Media__Playback__SigningSecret:?Media__Playback__SigningSecret is required}
+      Turnstile__SecretKey: ${Turnstile__SecretKey:?Turnstile__SecretKey is required}
+      Resend__ApiKey: ${Resend__ApiKey:?Resend__ApiKey is required}
+      Resend__FromAddress: ${Resend__FromAddress:?Resend__FromAddress is required}
     restart: "no"
 
   coursecore-api:
@@ -57,6 +60,10 @@ services:
       Seed__Admin__Name: ${Seed__Admin__Name:-CourseCore Admin}
       Seed__Admin__Email: ${Seed__Admin__Email:-admin@coursecore.local}
       Media__Playback__SigningSecret: ${Media__Playback__SigningSecret:?Media__Playback__SigningSecret is required}
+      Turnstile__SecretKey: ${Turnstile__SecretKey:?Turnstile__SecretKey is required}
+      Resend__ApiKey: ${Resend__ApiKey:?Resend__ApiKey is required}
+      Resend__FromAddress: ${Resend__FromAddress:?Resend__FromAddress is required}
+      Resend__FromName: ${Resend__FromName:-CourseCore}
       Seed__Admin__Password: ${Seed__Admin__Password:?Seed__Admin__Password is required; use a non-secret placeholder only while seed is disabled}
       Seed__Admin__ResetPassword: ${Seed__Admin__ResetPassword:-false}
     ports:
