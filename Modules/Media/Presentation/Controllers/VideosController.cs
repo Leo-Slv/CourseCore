@@ -74,7 +74,8 @@ public class VideosController : ControllerBase
         return Ok(VideoPresenter.ToResponse(output));
     }
 
-    [HttpPost("playback")]
+    [HttpGet("{videoId:guid}/playback")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(VideoPlaybackResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -83,11 +84,11 @@ public class VideosController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<VideoPlaybackResponse>> RequestPlaybackAsync(
-        RequestVideoPlaybackRequest request,
+        Guid videoId,
         CancellationToken cancellationToken)
     {
         var output = await _requestVideoPlaybackUseCase.ExecuteAsync(
-            VideoPresenter.ToInput(GetCurrentUserId(), request),
+            new RequestVideoPlaybackInput { UserId = GetCurrentUserId(), VideoId = videoId },
             cancellationToken);
 
         return Ok(VideoPresenter.ToResponse(output));

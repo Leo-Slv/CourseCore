@@ -107,12 +107,11 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAsync(client, user);
 
-        var response = await client.PostAsJsonAsync("/api/videos/playback", new
-        {
-            videoId = video.VideoId
-        });
+        var response = await client.GetAsync($"/api/videos/{video.VideoId}/playback");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(response.Headers.CacheControl);
+        Assert.True(response.Headers.CacheControl!.NoStore);
         var body = await response.Content.ReadFromJsonAsync<VideoPlaybackResponse>();
         Assert.NotNull(body);
         Assert.Contains($"/videos/{video.VideoId}/playback", body.PlaybackUrl);
@@ -169,10 +168,7 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAsync(client, user);
 
-        var response = await client.PostAsJsonAsync("/api/videos/playback", new
-        {
-            videoId = created.Id
-        });
+        var response = await client.GetAsync($"/api/videos/{created.Id}/playback");
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -182,10 +178,7 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
     {
         using var client = IntegrationAuth.CreateClient(_factory);
 
-        var response = await client.PostAsJsonAsync("/api/videos/playback", new
-        {
-            videoId = Guid.NewGuid()
-        });
+        var response = await client.GetAsync($"/api/videos/{Guid.NewGuid()}/playback");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -199,10 +192,7 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAsync(client, user);
 
-        var response = await client.PostAsJsonAsync("/api/videos/playback", new
-        {
-            videoId = video.VideoId
-        });
+        var response = await client.GetAsync($"/api/videos/{video.VideoId}/playback");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -214,9 +204,23 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAsync(client, user);
 
+        var response = await client.GetAsync($"/api/videos/{Guid.NewGuid()}/playback");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestPlayback_WhenCalledAsLegacyPost_ShouldReturnNotFound()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        var video = await _factory.SeedReadyVideoAsync(course.LessonId);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
         var response = await client.PostAsJsonAsync("/api/videos/playback", new
         {
-            videoId = Guid.NewGuid()
+            videoId = video.VideoId
         });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
