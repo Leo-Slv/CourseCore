@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 
@@ -25,34 +26,6 @@ public class CourseAccessService
         _courses = courses;
     }
 
-    public async Task<IReadOnlyCollection<CourseCore.Api.Modules.Courses.Domain.Entities.Course>> ListAvailableCoursesAsync(
-        Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        var user = await _users.FindByIdAsync(userId, cancellationToken);
-        if (user is null || !user.Active)
-        {
-            return [];
-        }
-
-        var activeAreaIds = (await _areas.ListAsync(cancellationToken))
-            .Where(area => area.Active).Select(area => area.Id).ToHashSet();
-        var now = DateTime.UtcNow;
-        var accessibleAreaIds = (await _areas.ListUserAreaAccessesAsync(userId, cancellationToken))
-            .Where(access => activeAreaIds.Contains(access.AreaId) && access.IsValidAt(now))
-            .Select(access => access.AreaId).ToHashSet();
-        var roleIds = (await _roles.FindByUserIdAsync(userId, cancellationToken)).Select(role => role.Id).ToArray();
-        foreach (var access in await _areas.ListRoleAreaAccessesAsync(roleIds, cancellationToken))
-        {
-            if (activeAreaIds.Contains(access.AreaId) && HasPermission(access))
-            {
-                accessibleAreaIds.Add(access.AreaId);
-            }
-        }
-
-        return await _courses.ListByAreaIdsAsync(accessibleAreaIds, cancellationToken);
-    }
-
     public async Task<CourseAccessOutput> CanUserAccessCourseAsync(
         Guid userId,
         Guid courseId,
@@ -75,6 +48,11 @@ public class CourseAccessService
             return Denied(userId, courseId, "User is inactive.");
         }
 
+        if (!user.EmailVerifiedAt.HasValue)
+        {
+            return Denied(userId, courseId, "Email is not verified.");
+        }
+
         var course = await _courses.FindDetailsByIdAsync(courseId, cancellationToken)
             ?? await _courses.FindByIdAsync(courseId, cancellationToken);
 
@@ -88,6 +66,11 @@ public class CourseAccessService
             return Denied(userId, courseId, "Course is not published.");
         }
 
+        if (course.PricingModel == CoursePricingModel.Free)
+        {
+            return Allowed(userId, courseId, "Access granted by free pricing model.");
+        }
+
         var courseAreaIds = course.AreaIds.ToHashSet();
 
         if (courseAreaIds.Count == 0)
@@ -95,7 +78,7 @@ public class CourseAccessService
             return Denied(userId, courseId, "Course has no linked areas.");
         }
 
-        var activeCourseAreaIds = await GetActiveCourseAreaIdsAsync(courseAreaIds, cancellationToken);
+        var activeCourseAreaIds = await GetActiveAreaIdsAsync(courseAreaIds, cancellationToken);
 
         if (activeCourseAreaIds.Count == 0)
         {
@@ -122,14 +105,63 @@ public class CourseAccessService
         return Denied(userId, courseId, "No area access found.");
     }
 
-    private async Task<HashSet<Guid>> GetActiveCourseAreaIdsAsync(
-        HashSet<Guid> courseAreaIds,
+    public async Task<IReadOnlyCollection<AreaOutput>> ListActiveAreasAsync(CancellationToken cancellationToken = default)
+    {
+        var areas = await _areas.ListAsync(cancellationToken);
+
+        return areas.Where(area => area.Active).Select(AreaOutput.FromArea).ToList();
+    }
+
+    public async Task<IReadOnlyCollection<CourseCatalogEntry>> ListCatalogAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var courses = await _courses.ListPublishedAsync(cancellationToken);
+        var user = await _users.FindByIdAsync(userId, cancellationToken);
+
+        if (user is null || !user.Active || !user.EmailVerifiedAt.HasValue)
+        {
+            return courses.Select(course => new CourseCatalogEntry(course, HasAccess: false)).ToList();
+        }
+
+        var accessibleAreaIds = await GetAccessibleAreaIdsAsync(userId, cancellationToken);
+
+        return courses
+            .Select(course => new CourseCatalogEntry(
+                course,
+                course.PricingModel == CoursePricingModel.Free || course.AreaIds.Any(accessibleAreaIds.Contains)))
+            .ToList();
+    }
+
+    private async Task<HashSet<Guid>> GetAccessibleAreaIdsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var activeAreaIds = (await _areas.ListAsync(cancellationToken))
+            .Where(area => area.Active).Select(area => area.Id).ToHashSet();
+        var now = DateTime.UtcNow;
+        var accessibleAreaIds = (await _areas.ListUserAreaAccessesAsync(userId, cancellationToken))
+            .Where(access => activeAreaIds.Contains(access.AreaId) && access.IsValidAt(now))
+            .Select(access => access.AreaId).ToHashSet();
+        var roleIds = (await _roles.FindByUserIdAsync(userId, cancellationToken)).Select(role => role.Id).ToArray();
+
+        foreach (var access in await _areas.ListRoleAreaAccessesAsync(roleIds, cancellationToken))
+        {
+            if (activeAreaIds.Contains(access.AreaId) && HasPermission(access))
+            {
+                accessibleAreaIds.Add(access.AreaId);
+            }
+        }
+
+        return accessibleAreaIds;
+    }
+
+    private async Task<HashSet<Guid>> GetActiveAreaIdsAsync(
+        HashSet<Guid> areaIds,
         CancellationToken cancellationToken)
     {
         var areas = await _areas.ListAsync(cancellationToken);
 
         return areas
-            .Where(area => area.Active && courseAreaIds.Contains(area.Id))
+            .Where(area => area.Active && areaIds.Contains(area.Id))
             .Select(area => area.Id)
             .ToHashSet();
     }

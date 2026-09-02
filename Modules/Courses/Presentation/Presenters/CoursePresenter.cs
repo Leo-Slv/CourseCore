@@ -15,6 +15,7 @@ public static class CoursePresenter
             Description = request.Description,
             ThumbnailUrl = request.ThumbnailUrl,
             DisplayOrder = request.DisplayOrder,
+            PricingModel = request.PricingModel,
             AreaIds = request.AreaIds.ToList(),
             Modules = request.Modules.Select(ToInput).ToList()
         };
@@ -52,6 +53,7 @@ public static class CoursePresenter
             Description = request.Description,
             ThumbnailUrl = request.ThumbnailUrl,
             DisplayOrder = request.DisplayOrder,
+            PricingModel = request.PricingModel,
             AreaIds = request.AreaIds.ToList()
         };
     }
@@ -62,6 +64,15 @@ public static class CoursePresenter
         {
             UserId = userId,
             CourseId = courseId
+        };
+    }
+
+    public static ListAvailableCoursesInput ToInput(Guid userId, ListAvailableCoursesRequest request)
+    {
+        return new ListAvailableCoursesInput
+        {
+            UserId = userId,
+            HasAccess = request.HasAccess
         };
     }
 
@@ -77,6 +88,7 @@ public static class CoursePresenter
             Published = output.Published,
             DisplayOrder = output.DisplayOrder,
             PublishedAt = output.PublishedAt,
+            PricingModel = output.PricingModel,
             AreaIds = output.AreaIds.ToList(),
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
@@ -95,6 +107,7 @@ public static class CoursePresenter
             Published = output.Published,
             DisplayOrder = output.DisplayOrder,
             PublishedAt = output.PublishedAt,
+            PricingModel = output.PricingModel,
             AreaIds = output.AreaIds.ToList(),
             Modules = output.Modules.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,
@@ -102,16 +115,39 @@ public static class CoursePresenter
         };
     }
 
-    public static CourseListItemResponse ToResponse(CourseListItemOutput output)
+    public static AreaSummaryResponse ToResponse(AreaSummaryOutput output)
     {
-        return new CourseListItemResponse
+        return new AreaSummaryResponse
+        {
+            Id = output.Id,
+            Name = output.Name,
+            Slug = output.Slug,
+            DisplayOrder = output.DisplayOrder
+        };
+    }
+
+    public static CourseCatalogItemResponse ToResponse(CourseCatalogItemOutput output)
+    {
+        return new CourseCatalogItemResponse
         {
             Id = output.Id,
             Title = output.Title,
             Slug = output.Slug,
             Description = output.Description,
             ThumbnailUrl = output.ThumbnailUrl,
-            DisplayOrder = output.DisplayOrder
+            DisplayOrder = output.DisplayOrder,
+            PricingModel = output.PricingModel,
+            AreaIds = output.AreaIds.ToList(),
+            HasAccess = output.HasAccess
+        };
+    }
+
+    public static CourseCatalogResponse ToResponse(CourseCatalogOutput output)
+    {
+        return new CourseCatalogResponse
+        {
+            Areas = output.Areas.Select(ToResponse).ToList(),
+            Courses = output.Courses.Select(ToResponse).ToList()
         };
     }
 
@@ -143,8 +179,4 @@ public static class CoursePresenter
         };
     }
 
-    public static IReadOnlyCollection<CourseListItemResponse> ToResponse(IReadOnlyCollection<CourseListItemOutput> outputs)
-    {
-        return outputs.Select(ToResponse).ToList();
-    }
 }

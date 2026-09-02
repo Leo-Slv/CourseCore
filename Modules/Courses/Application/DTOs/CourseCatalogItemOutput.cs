@@ -1,8 +1,9 @@
+using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 
 namespace CourseCore.Api.Modules.Courses.Application.DTOs;
 
-public class CourseListItemOutput
+public class CourseCatalogItemOutput
 {
     public Guid Id { get; init; }
 
@@ -16,16 +17,27 @@ public class CourseListItemOutput
 
     public int DisplayOrder { get; init; }
 
-    public static CourseListItemOutput FromCourse(Course course)
+    public string PricingModel { get; init; } = string.Empty;
+
+    public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
+
+    public bool HasAccess { get; init; }
+
+    public static CourseCatalogItemOutput FromCatalogEntry(CourseCatalogEntry entry)
     {
-        return new CourseListItemOutput
+        var course = entry.Course;
+
+        return new CourseCatalogItemOutput
         {
             Id = course.Id,
             Title = course.Title,
             Slug = course.Slug.Value,
             Description = course.Description,
             ThumbnailUrl = course.ThumbnailUrl,
-            DisplayOrder = course.DisplayOrder
+            DisplayOrder = course.DisplayOrder,
+            PricingModel = course.PricingModel.ToString(),
+            AreaIds = course.AreaIds.ToList(),
+            HasAccess = entry.HasAccess
         };
     }
 }
