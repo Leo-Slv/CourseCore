@@ -1,6 +1,6 @@
 # Postman
 
-A collection do CourseCore cobre os 28 endpoints executáveis da API: 25 actions de controllers e 3 health checks. Ela também inclui 2 requests de diagnóstico disponíveis apenas em `Development` e 8 cenários negativos manuais.
+A collection do CourseCore cobre os 31 endpoints executáveis da API: 28 actions de controllers e 3 health checks. Ela também inclui 2 requests de diagnóstico disponíveis apenas em `Development` e 8 cenários negativos manuais.
 
 ## Importação e configuração
 
@@ -26,7 +26,9 @@ Preencha manualmente antes do fluxo correspondente:
 - `roleId`: não há endpoint público para criar ou listar roles;
 - `areaId`: só é necessário preencher manualmente se `03 - Areas` não for executado antes; `List Areas` e `Create Area` o preenchem automaticamente;
 - `targetUserId`, `courseId`, `lessonId` e `videoId`: somente quando o recurso não puder ser obtido por um request anterior;
-- `videoStorageKey`: chave válida no provider configurado.
+- `videoStorageKey`: chave válida no provider configurado;
+- `captchaToken`: fora de `Production`, com `Turnstile:SecretKey` vazio no servidor, qualquer valor (inclusive o placeholder `dev-bypass`) é aceito — o servidor pula a verificação; em `Production`, precisa ser uma resposta real do Turnstile;
+- `emailVerificationToken`: cole aqui o token recebido no e-mail (ou, sem Resend configurado, o texto logado pelo servidor) antes de rodar `Confirm Email`.
 
 Nunca salve credenciais reais, JWT, refresh token, cookie ou connection string nos arquivos versionados.
 
@@ -36,16 +38,18 @@ A collection usa Bearer `{{accessToken}}` globalmente. Health, login, refresh, l
 
 `Login Admin` envia `adminEmail`/`adminPassword`, lê o contrato real `token.accessToken`, salva o JWT em `accessToken` e salva `userId`. `Login Student` faz o mesmo em `studentAccessToken`, usado explicitamente pelo cenário negativo de autorização.
 
-O refresh token não é salvo em variável. Login grava o refresh token em cookie `HttpOnly`; o cookie jar do Postman o envia automaticamente a `Refresh Token` e `Logout`. O body mantém `refreshToken` vazio apenas por compatibilidade com o contrato. `Refresh Token` salva o novo `token.accessToken` em `accessToken`. Após `200` ou `204`, `Logout` remove `accessToken` e `studentAccessToken` do environment; a API apaga o cookie.
+`Register` cria uma conta pública nova (sem role nenhuma) e já autentica no mesmo request, igual a um login — salva `accessToken` e `userId`. A conta nasce com e-mail não confirmado: `Confirm Email`/`Resend Confirmation` ficam na mesma pasta para fechar esse fluxo. Enquanto o e-mail não é confirmado, nenhum curso é acessível (nem gratuito) — só o catálogo (`List Available Courses`) continua visível.
 
-Login, refresh e logout têm rate limiting. Não há loop agressivo de 429 na collection.
+O refresh token não é salvo em variável. Login/Register gravam o refresh token em cookie `HttpOnly`; o cookie jar do Postman o envia automaticamente a `Refresh Token` e `Logout`. O body mantém `refreshToken` vazio apenas por compatibilidade com o contrato. `Refresh Token` salva o novo `token.accessToken` em `accessToken`. Após `200` ou `204`, `Logout` remove `accessToken` e `studentAccessToken` do environment; a API apaga o cookie.
+
+Login, register, refresh, logout e reenvio de confirmação têm rate limiting. Não há loop agressivo de 429 na collection.
 
 ## Ordem sugerida no Collection Runner
 
 As pastas numeradas expressam a ordem operacional:
 
 1. `00 - Health`;
-2. `01 - Auth` — execute `Login Admin`; `Login Student` é opcional;
+2. `01 - Auth` — execute `Login Admin`; `Login Student` é opcional; `Register`/`Confirm Email`/`Resend Confirmation` são um fluxo à parte, para testar o cadastro público;
 3. `02 - Users`;
 4. `03 - Access`;
 5. `03 - Areas` — `List Areas` e `Create Area` preenchem `areaId` para as pastas seguintes;
@@ -74,10 +78,12 @@ Os scripts preenchem:
 | `moduleId`, `lessonId` | primeiro módulo/aula de Get Course Details |
 | `videoId` | Create Video |
 | `progressId` | Register Lesson Progress ou Get Course Progress |
-| `uniqueEmail` | pre-request de Create/Update User |
+| `uniqueEmail` | pre-request de Create/Update User e de Register |
 | `uniqueAreaSlug` | pre-request de Create/Update Area |
 | `uniqueCourseSlug` | pre-request de Create/Update Course |
 | `correlationId` | pre-request global, renovado em cada request |
+
+`accessToken` e `userId` também são preenchidos por `Register`, do mesmo jeito que `Login Admin`/`Login Student` fazem.
 
 `Logout` remove os dois access tokens. URLs temporárias de playback e refresh tokens nunca são persistidos.
 
@@ -91,6 +97,9 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 | Health | `GET /health/live` | Público | — | health mínimo | 200 | Live |
 | Health | `GET /health/ready` | Público | — | health/readiness | 200, 503 | Ready |
 | Auth | `POST /api/auth/login` | Público | body: `email`, `password` | `AuthResponse` | 200, 400, 401, 429, 500 | Login Admin/Student |
+| Auth | `POST /api/auth/register` | Público | body: `name`, `email`, `password`, `captchaToken` | `AuthResponse` | 201, 400, 409, 429, 500 | Register |
+| Auth | `POST /api/auth/confirm-email` | Bearer | body `token` | sem conteúdo | 204, 400, 401, 500 | Confirm Email |
+| Auth | `POST /api/auth/resend-confirmation` | Bearer | — | sem conteúdo | 204, 401, 404, 409, 429, 500 | Resend Confirmation |
 | Auth | `POST /api/auth/refresh-token` | Público | cookie HttpOnly; body fallback `refreshToken` | `AuthResponse` | 200, 400, 401, 429, 500 | Refresh Token |
 | Auth | `POST /api/auth/logout` | Público | cookie HttpOnly; body fallback `refreshToken` | sem conteúdo | 204, 429, 500 | Logout |
 | Users | `POST /api/users` | Bearer; `ManageUsers` | body: `name`, `email`, `password` | `UserResponse` | 201, 400, 401, 403, 409, 500 | Create User |
@@ -109,7 +118,7 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 | Courses | `PUT /api/courses/{courseId}` | Bearer; `ManageCourses` | path `courseId`; `UpdateCourseRequest` | `CourseResponse` | 200, 400, 401, 403, 404, 409, 500 | Update Course |
 | Courses | `POST /api/courses/{courseId}/publish` | Bearer; `ManageCourses` | path `courseId` | `CourseResponse` | 200, 400, 401, 403, 404, 500 | Publish Course |
 | Courses | `GET /api/courses/{courseId}` | Bearer | path `courseId` | `CourseDetailsResponse` | 200, 400, 401, 403, 404, 500 | Get Course Details |
-| Courses | `GET /api/courses/available` | Bearer | — | array de `CourseListItemResponse` | 200, 400, 401, 403, 500 | List Available Courses |
+| Courses | `GET /api/courses/available` | Bearer | query opcional `hasAccess` (`true`/`false`) | `CourseCatalogResponse` (`areas` + `courses`, cada curso com `hasAccess`) | 200, 400, 401, 403, 500 | List Available Courses |
 | Videos | `POST /api/videos` | Bearer; `ManageVideos` | `CreateVideoRequest` | `VideoResponse` | 201, 400, 401, 403, 404, 409, 500 | Create Video |
 | Videos | `POST /api/videos/{id}/ready` | Bearer; `ManageVideos` | path `id` | `VideoResponse` | 200, 400, 401, 403, 404, 409, 500 | Mark Video Ready |
 | Videos | `GET /api/videos/{videoId}/playback` | Bearer | path `videoId` | `VideoPlaybackResponse` | 200, 400, 401, 403, 404, 409, 500 | Get Playback Url |
@@ -119,6 +128,8 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 Não há endpoint `me/current user`, controller de Audit Logs nem endpoints públicos de CRUD para roles, módulos ou aulas nesta versão. Areas têm CRUD administrativo completo desde `03 - Areas`; não há remoção física, apenas desativação via `PUT`. O módulo Audit Logs registra eventos internamente, mas não expõe listagem HTTP. Não foram inventadas requests para rotas inexistentes.
 
 `GET /api/videos/{videoId}/playback` e `GET /api/progress/courses/{courseId}` eram `POST` com o id no corpo até esta versão; migraram para `GET` com o id na rota (leitura pura, sem efeito colateral) e não existem mais como `POST` — não há entrada de compatibilidade em `90 - Deprecated` para eles, diferente do tratamento dado a `access/course/check`. Ambos respondem com `Cache-Control: no-store`, já que carregam dado privado por usuário ou uma URL assinada com expiração.
+
+`Create Course`/`Update Course` ganharam o campo `pricingModel` (`"Free"` ou `"Paid"`, curso nasce `Paid` se omitido). Um curso `Free` publicado é acessível a qualquer usuário autenticado com e-mail confirmado, mesmo sem grant de Area — inclusive sem Area nenhuma vinculada. `GET /api/courses/available` sempre mostra todas as Areas ativas e todos os cursos publicados; `hasAccess` reflete grant **ou** gratuidade, mas exige e-mail confirmado nos dois casos — recém-registrado sem confirmar vê o catálogo inteiro, só que tudo bloqueado.
 
 As policies resolvem assim:
 
@@ -161,3 +172,5 @@ Execute-os individualmente. O cenário 403 requer `Login Student` e um aluno sem
 `Create Course` depende de `areaId`, obtido de `03 - Areas`. `Get Course Details` depende de acesso ao curso. `Create Video` depende de `lessonId`; playback depende de vídeo pronto e acesso ao curso. Progress depende de aula/vídeo elegíveis. Grants dependem de users/roles/areas existentes; areas já podem ser criadas pela própria collection, roles ainda não.
 
 Cada request envia um novo `X-Correlation-ID`; o teste global confirma o header na resposta. A collection valida `baseUrl` no pre-request e falha cedo se nenhum environment adequado estiver selecionado.
+
+`Register` depende do Turnstile estar configurado no servidor (`Turnstile:SecretKey`); em `Development`/`Staging` sem chave, o servidor pula a verificação e aceita qualquer `captchaToken`. `Confirm Email`/`Resend Confirmation` dependem do Resend (`Resend:ApiKey`); sem chave fora de `Production`, o e-mail não é enviado de verdade — o servidor só loga um aviso, então pegue o token no log da aplicação em vez da caixa de entrada.

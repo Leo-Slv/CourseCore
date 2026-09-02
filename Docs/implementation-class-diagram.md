@@ -7,6 +7,9 @@ classDiagram
     namespace CourseCore.Api.Presentation.Controllers {
         class AuthController {
             +LoginAsync(LoginRequest request) Task~AuthResponse~
+            +RegisterAsync(RegisterRequest request) Task~AuthResponse~
+            +ConfirmEmailAsync(ConfirmEmailRequest request) Task
+            +ResendConfirmationAsync() Task
             +RefreshAsync(RefreshTokenRequest request) Task~AuthResponse~
             +LogoutAsync() Task
         }
@@ -37,7 +40,7 @@ classDiagram
             +UpdateAsync(Guid id, UpdateCourseRequest request) Task~CourseResponse~
             +PublishAsync(Guid id) Task~CourseResponse~
             +GetByIdAsync(Guid id) Task~CourseDetailsResponse~
-            +ListAvailableAsync() Task~IReadOnlyList~CourseResponse~~
+            +ListAvailableAsync(ListAvailableCoursesRequest request) Task~CourseCatalogResponse~
         }
 
         class VideosController {
@@ -139,6 +142,36 @@ classDiagram
         class RefreshTokenUseCase {
             -ITokenService tokenService
             +ExecuteAsync(string refreshToken) Task~AuthOutput~
+        }
+
+        class RegisterUseCase {
+            -IUserRepository users
+            -IPasswordHasher passwordHasher
+            -IPasswordPolicy passwordPolicy
+            -ICaptchaVerificationService captchaVerificationService
+            -IEmailVerificationTokenRepository emailVerificationTokens
+            -SessionIssuer sessionIssuer
+            -IEmailSender emailSender
+            +ExecuteAsync(RegisterInput input) Task~AuthOutput~
+        }
+
+        class ConfirmEmailUseCase {
+            -IUserRepository users
+            -IEmailVerificationTokenRepository emailVerificationTokens
+            +ExecuteAsync(ConfirmEmailInput input) Task
+        }
+
+        class ResendEmailConfirmationUseCase {
+            -IUserRepository users
+            -IEmailVerificationTokenRepository emailVerificationTokens
+            -IEmailSender emailSender
+            +ExecuteAsync(Guid userId) Task
+        }
+
+        class SessionIssuer {
+            -IRoleRepository roles
+            -ITokenService tokenService
+            +BuildAsync(User user) Task~SessionIssueResult~
         }
     }
 
@@ -275,6 +308,8 @@ classDiagram
             -IAreaRepository areas
             +CanUserAccessCourseAsync(Guid userId, Guid courseId) Task~bool~
             +CanUserAccessAreaAsync(Guid userId, Guid areaId) Task~bool~
+            +ListCatalogAsync(Guid userId) Task~IReadOnlyCollection~CourseCatalogEntry~~
+            +ListActiveAreasAsync() Task~IReadOnlyCollection~AreaOutput~~
         }
 
         class CurrentUserService {
@@ -308,6 +343,16 @@ classDiagram
             +GeneratePlaybackUrlAsync(Video video) Task~string~
             +GetUploadUrlAsync(string storageKey) Task~string~
         }
+
+        class ICaptchaVerificationService {
+            <<interface>>
+            +VerifyAsync(string captchaToken) Task~bool~
+        }
+
+        class IEmailSender {
+            <<interface>>
+            +SendAsync(string to, string subject, string htmlBody) Task
+        }
     }
 
     namespace CourseCore.Api.Domain.Entities {
@@ -317,13 +362,25 @@ classDiagram
             +Email Email
             +string PasswordHash
             +bool Active
+            +DateTime? EmailVerifiedAt
             +DateTime CreatedAt
             +DateTime UpdatedAt
             +ChangeName(string name) void
             +ChangeEmail(Email email) void
             +ChangePasswordHash(string passwordHash) void
+            +MarkEmailAsVerified(DateTime? verifiedAt) void
             +Activate() void
             +Deactivate() void
+        }
+
+        class EmailVerificationToken {
+            +Guid Id
+            +Guid UserId
+            +string TokenHash
+            +DateTime ExpiresAt
+            +DateTime CreatedAt
+            +DateTime? ConsumedAt
+            +Consume(DateTime? consumedAt) void
         }
 
         class Role {
@@ -363,12 +420,14 @@ classDiagram
             +bool Published
             +int DisplayOrder
             +DateTime? PublishedAt
+            +CoursePricingModel PricingModel
             +AddModule(CourseModule module) void
             +RemoveModule(Guid moduleId) void
             +AttachArea(Guid areaId) void
             +DetachArea(Guid areaId) void
             +Publish() void
             +Unpublish() void
+            +ChangePricingModel(CoursePricingModel pricingModel) void
         }
 
         class CourseModule {
@@ -496,6 +555,12 @@ classDiagram
             CloudflareR2
             Vimeo
             Mux
+        }
+
+        class CoursePricingModel {
+            <<enumeration>>
+            Free
+            Paid
         }
     }
 

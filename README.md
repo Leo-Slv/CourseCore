@@ -98,6 +98,14 @@ RateLimiting__Refresh__PermitLimit
 RateLimiting__Refresh__WindowSeconds
 RateLimiting__Logout__PermitLimit
 RateLimiting__Logout__WindowSeconds
+RateLimiting__Register__PermitLimit
+RateLimiting__Register__WindowSeconds
+RateLimiting__ResendConfirmation__PermitLimit
+RateLimiting__ResendConfirmation__WindowSeconds
+Turnstile__SecretKey
+Resend__ApiKey
+Resend__FromAddress
+Resend__FromName
 Progress__LessonCompletionThresholdPercent
 Media__Playback__SignedUrlExpirationMinutes
 Media__Playback__SigningSecret
@@ -253,7 +261,7 @@ Os testes de seguranca exercitam o pipeline HTTP real para rotacao concorrente e
 
 ## Postman
 
-O projeto inclui uma collection Postman completa para os 28 endpoints executaveis, com Bearer automatico, refresh por cookie HttpOnly, encadeamento de IDs, cenarios negativos e um environment local somente com placeholders:
+O projeto inclui uma collection Postman completa para os 31 endpoints executaveis, com Bearer automatico, refresh por cookie HttpOnly, encadeamento de IDs, cenarios negativos e um environment local somente com placeholders:
 
 ```text
 Postman/CourseCore.postman_collection.json
@@ -294,7 +302,9 @@ Scalar/OpenAPI nao sao expostos por padrao em `Production`.
 ## Autenticacao e autorizacao
 
 - Login emite JWT.
-- Login, refresh token e logout possuem rate limiting e retornam `429 Too Many Requests` quando o limite configurado e excedido.
+- Registro publico (`POST /api/auth/register`) cria conta sem nenhuma role, protegido por CAPTCHA (Cloudflare Turnstile) e ja autentica no mesmo request.
+- Conta recem-registrada nasce com e-mail nao confirmado; nenhum acesso a conteudo de curso (nem curso gratuito) e liberado ate `POST /api/auth/confirm-email` ser chamado com o token enviado por e-mail (Resend). O catalogo (`GET /api/courses/available`) continua visivel antes da confirmacao, so que com tudo bloqueado.
+- Login, registro, refresh token, logout e reenvio de confirmacao possuem rate limiting e retornam `429 Too Many Requests` quando o limite configurado e excedido.
 - Login de e-mail inexistente executa uma verificacao BCrypt ficticia para reduzir enumeracao por diferenca de tempo.
 - Refresh token e persistido somente como hash.
 - Refresh token e enviado para clientes web em cookie `HttpOnly`.
@@ -437,6 +447,7 @@ CourseCore/
 ## Cuidados de producao
 
 - Configurar secrets via variaveis protegidas ou secret manager.
+- Configurar `Turnstile__SecretKey` e `Resend__ApiKey`/`Resend__FromAddress` — obrigatorios em `Production` (registro publico e confirmacao de e-mail nao sobem sem eles).
 - Configurar connection string real fora do repositorio.
 - Configurar CORS restrito.
 - Configurar HTTPS/HSTS e reverse proxy conforme a infraestrutura.

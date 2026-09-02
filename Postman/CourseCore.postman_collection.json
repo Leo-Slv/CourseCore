@@ -2,7 +2,7 @@
     "info":  {
                  "_postman_id":  "0c28d830-56c0-4d48-8ff1-140e9289d344",
                  "name":  "CourseCore API",
-                 "description":  "Complete operational collection for all 28 runtime endpoints (25 controller actions plus 3 health routes), plus Development-only diagnostics. Bearer authentication defaults to {{accessToken}}; public requests override it with noauth. Import CourseCore Local, fill manual identifiers/credentials, then run folders in numeric order.",
+                 "description":  "Complete operational collection for all 31 runtime endpoints (28 controller actions plus 3 health routes), plus Development-only diagnostics. Bearer authentication defaults to {{accessToken}}; public requests override it with noauth. Import CourseCore Local, fill manual identifiers/credentials, then run folders in numeric order.",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "auth":  {
@@ -223,6 +223,127 @@
                                                                        "type":  "text/javascript"
                                                                    },
                                                         "listen":  "test"
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Register",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/auth/register",
+                                                      "description":  "Self-registers a new account with no roles, then authenticates it in the same call. Public and rate-limited. Requires a valid Turnstile response in captchaToken (bypassed automatically outside Production when Turnstile:SecretKey is not configured). The account starts with an unverified e-mail; course content stays locked until Confirm Email succeeds, even for free courses. Response: AuthResponse. Main statuses: 201, 400, 409, 429, 500. Saves userId and accessToken.",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"name\": \"Postman Student\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"password\": \"Change_me_123456!\",\n  \"captchaToken\": \"{{captchaToken}}\"\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.environment.set(\"uniqueEmail\", `student.${Date.now()}@example.com`);"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.eql(201); });",
+                                                                                    "const json = pm.response.json();",
+                                                                                    "pm.test(\"Registered user has no roles\", function () { pm.expect(json.roles).to.be.an(\"array\").that.is.empty; });",
+                                                                                    "if (json.userId) { pm.environment.set(\"userId\", json.userId); }",
+                                                                                    "if (json.token \u0026\u0026 json.token.accessToken) { pm.environment.set(\"accessToken\", json.token.accessToken); }"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Confirm Email",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "type":  "text",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/auth/confirm-email",
+                                                      "description":  "Confirms the authenticated account e-mail using the token that Resend delivered by e-mail after Register (or Resend Confirmation). Bearer required. In local/dev, check application logs when Resend:ApiKey is not configured, since delivery is skipped outside Production. Response: no content. Main statuses: 204, 400, 401, 500.",
+                                                      "body":  {
+                                                                   "raw":  "{\n  \"token\": \"{{emailVerificationToken}}\"\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               },
+                                                                   "mode":  "raw"
+                                                               }
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is 204\", function () { pm.expect(pm.response.code).to.eql(204); });"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Resend Confirmation",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "X-Correlation-ID",
+                                                                         "type":  "text",
+                                                                         "value":  "{{correlationId}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{baseUrl}}/api/auth/resend-confirmation",
+                                                      "description":  "Invalidates any previous confirmation token for the authenticated account and sends a new one. Bearer required and rate-limited. Returns 409 if the e-mail is already confirmed. Response: no content. Main statuses: 204, 401, 404, 409, 429, 500."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"Status code is successful or already confirmed\", function () {",
+                                                                                    "  pm.expect(pm.response.code).to.be.oneOf([204, 409]);",
+                                                                                    "});"
+                                                                                ],
+                                                                       "type":  "text/javascript"
+                                                                   }
                                                     }
                                                 ]
                                   },
@@ -769,7 +890,7 @@
                                                       "url":  "{{baseUrl}}/api/courses",
                                                       "description":  "Creates a course and optional nested modules/lessons. Bearer required; policy ManageCourses (courses.manage or Admin). Uses areaId and generates uniqueCourseSlug. Response: CourseResponse. Main statuses: 201, 400, 401, 403, 404, 409, 500. Saves courseId and courseSlug.",
                                                       "body":  {
-                                                                   "raw":  "{\n  \"title\": \"Postman Course\",\n  \"slug\": \"{{uniqueCourseSlug}}\",\n  \"description\": \"Course created from Postman\",\n  \"thumbnailUrl\": \"https://example.com/course.png\",\n  \"displayOrder\": 0,\n  \"areaIds\": [\"{{areaId}}\"],\n  \"modules\": [{\n    \"title\": \"Postman Module\",\n    \"description\": \"Module created from Postman\",\n    \"displayOrder\": 0,\n    \"lessons\": [{\n      \"title\": \"Postman Lesson\",\n      \"description\": \"Lesson created from Postman\",\n      \"displayOrder\": 0,\n      \"freePreview\": false\n    }]\n  }]\n}",
+                                                                   "raw":  "{\n  \"title\": \"Postman Course\",\n  \"slug\": \"{{uniqueCourseSlug}}\",\n  \"description\": \"Course created from Postman\",\n  \"thumbnailUrl\": \"https://example.com/course.png\",\n  \"displayOrder\": 0,\n  \"pricingModel\": \"Paid\",\n  \"areaIds\": [\"{{areaId}}\"],\n  \"modules\": [{\n    \"title\": \"Postman Module\",\n    \"description\": \"Module created from Postman\",\n    \"displayOrder\": 0,\n    \"lessons\": [{\n      \"title\": \"Postman Lesson\",\n      \"description\": \"Lesson created from Postman\",\n      \"displayOrder\": 0,\n      \"freePreview\": false\n    }]\n  }]\n}",
                                                                    "options":  {
                                                                                    "raw":  {
                                                                                                "language":  "json"
@@ -821,7 +942,7 @@
                                                       "url":  "{{baseUrl}}/api/courses/{{courseId}}",
                                                       "description":  "Updates courseId. Bearer required; policy ManageCourses. Path: courseId; uses areaId and uniqueCourseSlug. Response: CourseResponse. Main statuses: 200, 400, 401, 403, 404, 409, 500.",
                                                       "body":  {
-                                                                   "raw":  "{\n  \"title\": \"Updated Postman Course\",\n  \"slug\": \"{{uniqueCourseSlug}}\",\n  \"description\": \"Updated from Postman\",\n  \"thumbnailUrl\": \"https://example.com/updated-course.png\",\n  \"displayOrder\": 1,\n  \"areaIds\": [\"{{areaId}}\"]\n}",
+                                                                   "raw":  "{\n  \"title\": \"Updated Postman Course\",\n  \"slug\": \"{{uniqueCourseSlug}}\",\n  \"description\": \"Updated from Postman\",\n  \"thumbnailUrl\": \"https://example.com/updated-course.png\",\n  \"displayOrder\": 1,\n  \"pricingModel\": \"Paid\",\n  \"areaIds\": [\"{{areaId}}\"]\n}",
                                                                    "options":  {
                                                                                    "raw":  {
                                                                                                "language":  "json"
