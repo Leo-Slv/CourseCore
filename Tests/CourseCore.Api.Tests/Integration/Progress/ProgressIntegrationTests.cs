@@ -168,12 +168,11 @@ public class ProgressIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAsync(client, user);
 
-        var response = await client.PostAsJsonAsync("/api/progress/courses", new
-        {
-            courseId = course.CourseId
-        });
+        var response = await client.GetAsync($"/api/progress/courses/{course.CourseId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(response.Headers.CacheControl);
+        Assert.True(response.Headers.CacheControl!.NoStore);
     }
 
     [Fact]
@@ -181,10 +180,7 @@ public class ProgressIntegrationTests : IClassFixture<CourseCoreApiFactory>
     {
         using var client = IntegrationAuth.CreateClient(_factory);
 
-        var response = await client.PostAsJsonAsync("/api/progress/courses", new
-        {
-            courseId = Guid.NewGuid()
-        });
+        var response = await client.GetAsync($"/api/progress/courses/{Guid.NewGuid()}");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -196,9 +192,22 @@ public class ProgressIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAsync(client, user);
 
+        var response = await client.GetAsync($"/api/progress/courses/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCourseProgress_WhenCalledAsLegacyPost_ShouldReturnNotFound()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
         var response = await client.PostAsJsonAsync("/api/progress/courses", new
         {
-            courseId = Guid.NewGuid()
+            courseId = course.CourseId
         });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);

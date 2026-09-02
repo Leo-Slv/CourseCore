@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Progress.Application.DTOs;
 using CourseCore.Api.Modules.Progress.Application.UseCases;
 using CourseCore.Api.Modules.Progress.Presentation.Presenters;
 using CourseCore.Api.Modules.Progress.Presentation.Requests;
@@ -46,7 +47,8 @@ public class ProgressController : ControllerBase
         return Ok(ProgressPresenter.ToResponse(output));
     }
 
-    [HttpPost("courses")]
+    [HttpGet("courses/{courseId:guid}")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(CourseProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -54,11 +56,11 @@ public class ProgressController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<CourseProgressResponse>> GetCourseProgressAsync(
-        GetCourseProgressRequest request,
+        Guid courseId,
         CancellationToken cancellationToken)
     {
         var output = await _getCourseProgressUseCase.ExecuteAsync(
-            ProgressPresenter.ToInput(GetCurrentUserId(), request),
+            new GetCourseProgressInput { UserId = GetCurrentUserId(), CourseId = courseId },
             cancellationToken);
 
         return Ok(ProgressPresenter.ToResponse(output));

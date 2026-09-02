@@ -17,15 +17,6 @@ public static class ProgressPresenter
         };
     }
 
-    public static GetCourseProgressInput ToInput(Guid userId, GetCourseProgressRequest request)
-    {
-        return new GetCourseProgressInput
-        {
-            UserId = userId,
-            CourseId = request.CourseId
-        };
-    }
-
     public static LessonProgressResponse ToResponse(LessonProgressOutput output)
     {
         return new LessonProgressResponse
