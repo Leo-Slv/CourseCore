@@ -7,7 +7,7 @@ public static class CourseInputValidator
 {
     public static void Validate(CreateCourseInput input)
     {
-        ValidateCourseFields(input.Title, input.Slug, input.Description, input.ThumbnailUrl, input.AreaIds);
+        ValidateCourseFields(input.Title, input.Slug, input.Description, input.ThumbnailUrl, input.PricingModel, input.AreaIds);
 
         if (input.Modules is null || input.Modules.Count > CourseValidationLimits.MaxModules)
         {
@@ -39,7 +39,7 @@ public static class CourseInputValidator
 
     public static void Validate(UpdateCourseInput input)
     {
-        ValidateCourseFields(input.Title, input.Slug, input.Description, input.ThumbnailUrl, input.AreaIds);
+        ValidateCourseFields(input.Title, input.Slug, input.Description, input.ThumbnailUrl, input.PricingModel, input.AreaIds);
     }
 
     private static void ValidateCourseFields(
@@ -47,11 +47,13 @@ public static class CourseInputValidator
         string slug,
         string description,
         string? thumbnailUrl,
+        string pricingModel,
         IReadOnlyCollection<Guid>? areaIds)
     {
         if (!IsValidRequired(title, CourseValidationLimits.TitleMaxLength)
             || !IsValidRequired(slug, CourseValidationLimits.SlugMaxLength)
             || !IsValidRequired(description, CourseValidationLimits.DescriptionMaxLength)
+            || !IsValidRequired(pricingModel, CourseValidationLimits.PricingModelMaxLength)
             || areaIds is null
             || areaIds.Count > CourseValidationLimits.MaxAreaIds
             || !IsValidHttpUrl(thumbnailUrl, CourseValidationLimits.ThumbnailUrlMaxLength))

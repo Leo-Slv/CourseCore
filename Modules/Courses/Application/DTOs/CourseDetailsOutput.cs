@@ -20,6 +20,8 @@ public class CourseDetailsOutput
 
     public DateTime? PublishedAt { get; init; }
 
+    public string PricingModel { get; init; } = string.Empty;
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CourseModuleOutput> Modules { get; init; } = Array.Empty<CourseModuleOutput>();
@@ -40,6 +42,7 @@ public class CourseDetailsOutput
             Published = course.Published,
             DisplayOrder = course.DisplayOrder,
             PublishedAt = course.PublishedAt,
+            PricingModel = course.PricingModel.ToString(),
             AreaIds = course.AreaIds.ToList(),
             Modules = course.Modules
                 .OrderBy(module => module.DisplayOrder)

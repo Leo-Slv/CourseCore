@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -19,6 +20,10 @@ public class CourseConfiguration : IEntityTypeConfiguration<CoursePersistenceMod
         builder.Property(x => x.Published).IsRequired();
         builder.Property(x => x.DisplayOrder).IsRequired();
         builder.Property(x => x.PublishedAt).IsRequired(false);
+        builder.Property(x => x.PricingModel)
+            .IsRequired()
+            .HasMaxLength(20)
+            .HasDefaultValue(nameof(CoursePricingModel.Paid));
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 

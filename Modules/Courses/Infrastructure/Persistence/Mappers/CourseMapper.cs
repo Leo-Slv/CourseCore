@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Courses.Domain.Entities;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
@@ -20,6 +21,7 @@ public static class CourseMapper
             model.Published,
             model.DisplayOrder,
             model.PublishedAt,
+            ParsePricingModel(model.PricingModel),
             modules,
             areaIds,
             model.CreatedAt,
@@ -38,6 +40,7 @@ public static class CourseMapper
             Published = course.Published,
             DisplayOrder = course.DisplayOrder,
             PublishedAt = course.PublishedAt,
+            PricingModel = course.PricingModel.ToString(),
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt,
             CourseAreas = ToCourseAreas(course).ToList(),
@@ -54,6 +57,7 @@ public static class CourseMapper
         model.Published = course.Published;
         model.DisplayOrder = course.DisplayOrder;
         model.PublishedAt = course.PublishedAt;
+        model.PricingModel = course.PricingModel.ToString();
         model.UpdatedAt = course.UpdatedAt;
 
         model.CourseAreas.Clear();
@@ -65,6 +69,16 @@ public static class CourseMapper
 
         // Course update/publish flows do not edit module structure.
         // Preserve existing required child rows to avoid severing EF relationships.
+    }
+
+    private static CoursePricingModel ParsePricingModel(string value)
+    {
+        if (Enum.TryParse<CoursePricingModel>(value, ignoreCase: true, out var pricingModel))
+        {
+            return pricingModel;
+        }
+
+        throw new InvalidOperationException($"Unknown course pricing model '{value}'.");
     }
 
     private static IEnumerable<CourseAreaPersistenceModel> ToCourseAreas(Course course)

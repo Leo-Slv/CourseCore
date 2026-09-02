@@ -20,6 +20,8 @@ public class CourseOutput
 
     public DateTime? PublishedAt { get; init; }
 
+    public string PricingModel { get; init; } = string.Empty;
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public DateTime CreatedAt { get; init; }
@@ -38,6 +40,7 @@ public class CourseOutput
             Published = course.Published,
             DisplayOrder = course.DisplayOrder,
             PublishedAt = course.PublishedAt,
+            PricingModel = course.PricingModel.ToString(),
             AreaIds = course.AreaIds.ToList(),
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt

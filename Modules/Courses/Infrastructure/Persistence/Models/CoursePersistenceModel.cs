@@ -20,6 +20,8 @@ public class CoursePersistenceModel
 
     public DateTime? PublishedAt { get; set; }
 
+    public string PricingModel { get; set; } = string.Empty;
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Shared.Domain.Entities;
 using CourseCore.Api.Shared.Domain.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
@@ -16,7 +17,8 @@ public class Course : EntityBase
         string? thumbnailUrl,
         bool published,
         int displayOrder,
-        DateTime? publishedAt)
+        DateTime? publishedAt,
+        CoursePricingModel pricingModel)
     {
         Title = ValidateRequired(title, nameof(Title));
         Slug = slug ?? throw new DomainException("Slug is required.");
@@ -25,6 +27,7 @@ public class Course : EntityBase
         Published = published;
         DisplayOrder = ValidateDisplayOrder(displayOrder);
         PublishedAt = publishedAt;
+        PricingModel = pricingModel;
     }
 
     public string Title { get; private set; }
@@ -41,13 +44,21 @@ public class Course : EntityBase
 
     public DateTime? PublishedAt { get; private set; }
 
+    public CoursePricingModel PricingModel { get; private set; }
+
     public IReadOnlyCollection<CourseModule> Modules => _modules.AsReadOnly();
 
     public IReadOnlyCollection<Guid> AreaIds => _areaIds.AsReadOnly();
 
-    public static Course Create(string title, Slug slug, string description, int displayOrder, string? thumbnailUrl = null)
+    public static Course Create(
+        string title,
+        Slug slug,
+        string description,
+        int displayOrder,
+        string? thumbnailUrl = null,
+        CoursePricingModel pricingModel = CoursePricingModel.Paid)
     {
-        return new Course(title, slug, description, thumbnailUrl, published: false, displayOrder, publishedAt: null);
+        return new Course(title, slug, description, thumbnailUrl, published: false, displayOrder, publishedAt: null, pricingModel);
     }
 
     public static Course Restore(
@@ -59,12 +70,13 @@ public class Course : EntityBase
         bool published,
         int displayOrder,
         DateTime? publishedAt,
+        CoursePricingModel pricingModel,
         IEnumerable<CourseModule>? modules,
         IEnumerable<Guid>? areaIds,
         DateTime createdAt,
         DateTime updatedAt)
     {
-        var course = new Course(title, slug, description, thumbnailUrl, published, displayOrder, publishedAt)
+        var course = new Course(title, slug, description, thumbnailUrl, published, displayOrder, publishedAt, pricingModel)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -117,6 +129,12 @@ public class Course : EntityBase
     public void ChangeDisplayOrder(int order)
     {
         DisplayOrder = ValidateDisplayOrder(order);
+        MarkAsUpdated();
+    }
+
+    public void ChangePricingModel(CoursePricingModel pricingModel)
+    {
+        PricingModel = pricingModel;
         MarkAsUpdated();
     }
 

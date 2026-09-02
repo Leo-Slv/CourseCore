@@ -14,5 +14,7 @@ public class UpdateCourseInput
 
     public int DisplayOrder { get; init; }
 
+    public string PricingModel { get; init; } = string.Empty;
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 }

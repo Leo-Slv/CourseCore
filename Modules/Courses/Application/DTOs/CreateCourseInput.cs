@@ -12,6 +12,8 @@ public class CreateCourseInput
 
     public int DisplayOrder { get; init; }
 
+    public string PricingModel { get; init; } = string.Empty;
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CreateCourseModuleInput> Modules { get; init; } = Array.Empty<CreateCourseModuleInput>();

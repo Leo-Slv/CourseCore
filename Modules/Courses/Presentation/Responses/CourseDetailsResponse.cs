@@ -18,6 +18,8 @@ public class CourseDetailsResponse
 
     public DateTime? PublishedAt { get; init; }
 
+    public string PricingModel { get; init; } = string.Empty;
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CourseModuleResponse> Modules { get; init; } = Array.Empty<CourseModuleResponse>();

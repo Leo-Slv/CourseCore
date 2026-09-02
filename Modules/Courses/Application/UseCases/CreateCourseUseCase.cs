@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Application.Validation;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
@@ -33,6 +34,7 @@ public class CreateCourseUseCase
         CourseInputValidator.Validate(input);
 
         var slug = Slug.Create(input.Slug);
+        var pricingModel = ParsePricingModel(input.PricingModel);
 
         return _unitOfWork.ExecuteAsync(async () =>
         {
@@ -46,7 +48,8 @@ public class CreateCourseUseCase
                 slug,
                 input.Description,
                 input.DisplayOrder,
-                input.ThumbnailUrl);
+                input.ThumbnailUrl,
+                pricingModel);
 
             foreach (var areaId in NormalizeIds(input.AreaIds))
             {
@@ -101,4 +104,13 @@ public class CreateCourseUseCase
             .ToList();
     }
 
+    private static CoursePricingModel ParsePricingModel(string pricingModel)
+    {
+        if (Enum.TryParse<CoursePricingModel>(pricingModel, ignoreCase: true, out var parsed))
+        {
+            return parsed;
+        }
+
+        throw new ArgumentException("PricingModel is invalid.", nameof(pricingModel));
+    }
 }
