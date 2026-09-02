@@ -19,6 +19,18 @@ public sealed class RateLimitOptions
         PermitLimit = 30,
         WindowSeconds = 60
     };
+
+    public RateLimitPolicyOptions Register { get; init; } = new()
+    {
+        PermitLimit = 5,
+        WindowSeconds = 60
+    };
+
+    public RateLimitPolicyOptions ResendConfirmation { get; init; } = new()
+    {
+        PermitLimit = 5,
+        WindowSeconds = 60
+    };
 }
 
 public sealed class RateLimitPolicyOptions

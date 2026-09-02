@@ -36,6 +36,16 @@ public static class RateLimiterExtensions
                 context => CreateFixedWindowPartition(
                     context,
                     GetOptions(context).Logout));
+            rateLimiterOptions.AddPolicy(
+                RateLimitPolicyNames.AuthRegister,
+                context => CreateFixedWindowPartition(
+                    context,
+                    GetOptions(context).Register));
+            rateLimiterOptions.AddPolicy(
+                RateLimitPolicyNames.AuthResendConfirmation,
+                context => CreateFixedWindowPartition(
+                    context,
+                    GetOptions(context).ResendConfirmation));
         });
 
         return services;

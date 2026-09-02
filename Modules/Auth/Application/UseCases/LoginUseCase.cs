@@ -1,57 +1,41 @@
-using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Auth.Application.DTOs;
-using CourseCore.Api.Modules.Auth.Domain.Entities;
+using CourseCore.Api.Modules.Auth.Application.Services;
 using CourseCore.Api.Modules.Auth.Domain.Repositories;
-using CourseCore.Api.Modules.Auth.Infrastructure.Security;
-using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Auth.Application.UseCases;
 
 public class LoginUseCase
 {
     private readonly IUserRepository _users;
-    private readonly IRoleRepository _roles;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly ITokenService _tokenService;
     private readonly IRefreshTokenRepository _refreshTokens;
-    private readonly IRefreshTokenHasher _refreshTokenHasher;
-    private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly SessionIssuer _sessionIssuer;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
-    private readonly JwtOptions _jwtOptions;
     private readonly ILogger<LoginUseCase> _logger;
 
     public LoginUseCase(
         IUserRepository users,
-        IRoleRepository roles,
         IPasswordHasher passwordHasher,
-        ITokenService tokenService,
         IRefreshTokenRepository refreshTokens,
-        IRefreshTokenHasher refreshTokenHasher,
-        IRefreshTokenGenerator refreshTokenGenerator,
+        SessionIssuer sessionIssuer,
         IUnitOfWork unitOfWork,
         IAuditLogService auditLogs,
-        IOptions<JwtOptions> jwtOptions,
         ILogger<LoginUseCase> logger)
     {
         _users = users;
-        _roles = roles;
         _passwordHasher = passwordHasher;
-        _tokenService = tokenService;
         _refreshTokens = refreshTokens;
-        _refreshTokenHasher = refreshTokenHasher;
-        _refreshTokenGenerator = refreshTokenGenerator;
+        _sessionIssuer = sessionIssuer;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
-        _jwtOptions = jwtOptions.Value;
         _logger = logger;
     }
 
@@ -77,23 +61,11 @@ public class LoginUseCase
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
-        var roles = await _roles.FindByUserIdAsync(user.Id, cancellationToken);
-        var roleNames = roles.Select(role => role.Name).ToArray();
-        var permissions = await _roles.FindPermissionKeysByUserIdAsync(user.Id, cancellationToken);
-        var accessToken = await _tokenService.GenerateAccessTokenAsync(user, roleNames, permissions, cancellationToken);
-        var refreshToken = _refreshTokenGenerator.Generate();
-        var refreshTokenHash = _refreshTokenHasher.Hash(refreshToken);
-        var now = DateTime.UtcNow;
+        var session = await _sessionIssuer.BuildAsync(user, cancellationToken);
 
         await _unitOfWork.ExecuteAsync(async () =>
         {
-            await _refreshTokens.AddAsync(
-                RefreshToken.Create(
-                    user.Id,
-                    refreshTokenHash,
-                    now.AddDays(_jwtOptions.RefreshTokenExpirationDays),
-                    now),
-                cancellationToken);
+            await _refreshTokens.AddAsync(session.RefreshToken, cancellationToken);
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.LoginSucceeded,
                 "User",
@@ -105,18 +77,6 @@ public class LoginUseCase
 
         _logger.LogInformation("User {UserId} signed in successfully.", user.Id);
 
-        return new AuthOutput
-        {
-            UserId = user.Id,
-            Name = user.Name,
-            Email = user.Email.Value,
-            Roles = roleNames,
-            Token = new AuthToken
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                ExpiresAt = now.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes)
-            }
-        };
+        return session.Output;
     }
 }

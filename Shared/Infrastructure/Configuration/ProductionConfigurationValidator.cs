@@ -44,6 +44,10 @@ public static class ProductionConfigurationValidator
         {
             throw new InvalidOperationException("Cors:AllowedOrigins must contain at least one origin in Production.");
         }
+
+        ValidateRequired(configuration["Turnstile:SecretKey"], "Turnstile:SecretKey");
+        ValidateRequired(configuration["Resend:ApiKey"], "Resend:ApiKey");
+        ValidateRequired(configuration["Resend:FromAddress"], "Resend:FromAddress");
     }
 
     private static void ValidateSecretsAreDistinct(string jwtSecret, string mediaSigningSecret)

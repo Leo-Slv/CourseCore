@@ -15,6 +15,26 @@ public static class AuthPresenter
         };
     }
 
+    public static RegisterInput ToInput(RegisterRequest request)
+    {
+        return new RegisterInput
+        {
+            Name = request.Name,
+            Email = request.Email,
+            Password = request.Password,
+            CaptchaToken = request.CaptchaToken
+        };
+    }
+
+    public static ConfirmEmailInput ToInput(Guid userId, ConfirmEmailRequest request)
+    {
+        return new ConfirmEmailInput
+        {
+            UserId = userId,
+            Token = request.Token
+        };
+    }
+
     public static string ToRefreshToken(RefreshTokenRequest request)
     {
         return request.RefreshToken;

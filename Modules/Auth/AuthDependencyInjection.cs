@@ -34,9 +34,22 @@ public static class AuthDependencyInjection
         services.AddScoped<IRefreshTokenGenerator, SecureRefreshTokenGenerator>();
         services.AddScoped<IRefreshTokenRepository, EfRefreshTokenRepository>();
         services.AddScoped<IRefreshTokenCookieService, RefreshTokenCookieService>();
+        services.AddScoped<IEmailVerificationTokenHasher, Sha256EmailVerificationTokenHasher>();
+        services.AddScoped<IEmailVerificationTokenGenerator, SecureEmailVerificationTokenGenerator>();
+        services.AddScoped<IEmailVerificationTokenRepository, EfEmailVerificationTokenRepository>();
+        services.AddScoped<SessionIssuer>();
         services.AddScoped<LoginUseCase>();
         services.AddScoped<RefreshTokenUseCase>();
         services.AddScoped<LogoutUseCase>();
+        services.AddScoped<RegisterUseCase>();
+        services.AddScoped<ConfirmEmailUseCase>();
+        services.AddScoped<ResendEmailConfirmationUseCase>();
+
+        services.Configure<TurnstileOptions>(configuration.GetSection("Turnstile"));
+        services.AddHttpClient<ICaptchaVerificationService, TurnstileCaptchaVerificationService>(client =>
+        {
+            client.BaseAddress = new Uri("https://challenges.cloudflare.com/");
+        });
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
