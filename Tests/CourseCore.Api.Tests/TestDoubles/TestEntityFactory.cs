@@ -1,5 +1,6 @@
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
@@ -12,6 +13,7 @@ public static class TestEntityFactory
         string email = "user@coursecore.local",
         string passwordHash = "hashed:password",
         bool active = true,
+        bool emailVerified = true,
         int tokenVersion = 0)
     {
         var now = DateTime.UtcNow.AddMinutes(-5);
@@ -22,7 +24,7 @@ public static class TestEntityFactory
             Email.Create(email),
             passwordHash,
             active,
-            emailVerifiedAt: null,
+            emailVerifiedAt: emailVerified ? now : null,
             tokenVersion,
             now,
             now);
@@ -56,13 +58,14 @@ public static class TestEntityFactory
             now);
     }
 
-    public static Course PublishedCourse(Guid areaId)
+    public static Course PublishedCourse(Guid areaId, CoursePricingModel pricingModel = CoursePricingModel.Paid)
     {
         var course = Course.Create(
             "Course",
             Slug.Create($"course-{Guid.NewGuid():N}"),
             "Course",
-            displayOrder: 0);
+            displayOrder: 0,
+            pricingModel: pricingModel);
 
         course.AttachArea(areaId);
         course.Publish();

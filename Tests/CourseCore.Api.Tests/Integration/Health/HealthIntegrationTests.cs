@@ -109,6 +109,9 @@ public class HealthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Media__Playback__AllowedStorageProviders__0", "Local");
         Environment.SetEnvironmentVariable("Cors__AllowedOrigins__0", "https://localhost");
         Environment.SetEnvironmentVariable("Auth__RefreshTokenCookie__Secure", "true");
+        Environment.SetEnvironmentVariable("Turnstile__SecretKey", "integration-test-turnstile-secret");
+        Environment.SetEnvironmentVariable("Resend__ApiKey", "integration-test-resend-api-key");
+        Environment.SetEnvironmentVariable("Resend__FromAddress", "no-reply@coursecore.local");
     }
 
     private static void ClearProductionEnvironmentVariables()
@@ -123,6 +126,9 @@ public class HealthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Media__Playback__AllowedStorageProviders__0", null);
         Environment.SetEnvironmentVariable("Cors__AllowedOrigins__0", null);
         Environment.SetEnvironmentVariable("Auth__RefreshTokenCookie__Secure", null);
+        Environment.SetEnvironmentVariable("Turnstile__SecretKey", null);
+        Environment.SetEnvironmentVariable("Resend__ApiKey", null);
+        Environment.SetEnvironmentVariable("Resend__FromAddress", null);
     }
 }
 

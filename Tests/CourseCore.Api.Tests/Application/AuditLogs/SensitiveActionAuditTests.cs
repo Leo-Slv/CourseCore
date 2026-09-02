@@ -136,7 +136,8 @@ public class SensitiveActionAuditTests
             Title = "Course",
             Slug = $"course-{Guid.NewGuid():N}",
             Description = "Course description",
-            DisplayOrder = 1
+            DisplayOrder = 1,
+            PricingModel = "Paid"
         });
 
         var auditLog = Assert.Single(auditLogs.Entries);
@@ -164,7 +165,8 @@ public class SensitiveActionAuditTests
             Title = "Updated Course",
             Slug = $"updated-course-{Guid.NewGuid():N}",
             Description = "Updated description",
-            DisplayOrder = 2
+            DisplayOrder = 2,
+            PricingModel = "Paid"
         });
 
         var auditLog = Assert.Single(auditLogs.Entries);

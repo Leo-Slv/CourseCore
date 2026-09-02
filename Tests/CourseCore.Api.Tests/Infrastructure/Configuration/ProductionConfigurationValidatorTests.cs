@@ -20,7 +20,10 @@ public class ProductionConfigurationValidatorTests
             ["Media:Playback:AllowedStorageProviders:0"] = "Local",
             ["Cors:AllowedOrigins:0"] = "https://coursecore.local",
             ["Auth:RefreshTokenCookie:Secure"] = "true",
-            ["Auth:RefreshTokenCookie:SameSite"] = "Lax"
+            ["Auth:RefreshTokenCookie:SameSite"] = "Lax",
+            ["Turnstile:SecretKey"] = "production-turnstile-secret",
+            ["Resend:ApiKey"] = "production-resend-api-key",
+            ["Resend:FromAddress"] = "no-reply@coursecore.local"
         });
 
         var exception = Record.Exception(configuration.ValidateProductionConfiguration);
@@ -35,6 +38,9 @@ public class ProductionConfigurationValidatorTests
     [InlineData("Jwt:SecretKey")]
     [InlineData("Media:Playback:SigningSecret")]
     [InlineData("Media:Playback:BaseUrl")]
+    [InlineData("Turnstile:SecretKey")]
+    [InlineData("Resend:ApiKey")]
+    [InlineData("Resend:FromAddress")]
     public void ValidateProductionConfiguration_WhenRequiredValueIsMissing_ShouldThrow(string key)
     {
         var values = ValidValues();
@@ -144,7 +150,10 @@ public class ProductionConfigurationValidatorTests
             ["Media:Playback:AllowedStorageProviders:0"] = "Local",
             ["Cors:AllowedOrigins:0"] = "https://coursecore.local",
             ["Auth:RefreshTokenCookie:Secure"] = "true",
-            ["Auth:RefreshTokenCookie:SameSite"] = "Lax"
+            ["Auth:RefreshTokenCookie:SameSite"] = "Lax",
+            ["Turnstile:SecretKey"] = "production-turnstile-secret",
+            ["Resend:ApiKey"] = "production-resend-api-key",
+            ["Resend:FromAddress"] = "no-reply@coursecore.local"
         };
     }
 

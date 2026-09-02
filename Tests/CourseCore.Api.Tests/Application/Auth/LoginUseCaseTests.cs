@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Auth.Application.DTOs;
+using CourseCore.Api.Modules.Auth.Application.Services;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
@@ -123,21 +124,23 @@ public class LoginUseCaseTests
         }
 
         var passwordHasher = new FakePasswordHasher();
-        var useCase = new LoginUseCase(
-            users,
+        var sessionIssuer = new SessionIssuer(
             roles,
-            passwordHasher,
             new FakeTokenService(),
-            refreshTokens,
-            new FakeRefreshTokenHasher(),
             new FakeRefreshTokenGenerator("refresh-token"),
-            unitOfWork,
-            auditLogs,
+            new FakeRefreshTokenHasher(),
             Options.Create(new JwtOptions
             {
                 AccessTokenExpirationMinutes = 60,
                 RefreshTokenExpirationDays = 7
-            }),
+            }));
+        var useCase = new LoginUseCase(
+            users,
+            passwordHasher,
+            refreshTokens,
+            sessionIssuer,
+            unitOfWork,
+            auditLogs,
             NullLogger<LoginUseCase>.Instance);
 
         return new LoginFixture(useCase, refreshTokens, unitOfWork, auditLogs, passwordHasher);

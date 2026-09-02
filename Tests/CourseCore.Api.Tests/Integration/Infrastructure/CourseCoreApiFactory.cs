@@ -1,11 +1,15 @@
 using System.Text;
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
+using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
+using CourseCore.Api.Tests.TestDoubles;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -249,7 +253,9 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         return course.CourseId;
     }
 
-    public async Task<TestCourseData> SeedPublishedCourseWithLessonAsync(Guid? grantUserAccess = null)
+    public async Task<TestCourseData> SeedPublishedCourseWithLessonAsync(
+        Guid? grantUserAccess = null,
+        CoursePricingModel pricingModel = CoursePricingModel.Paid)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
@@ -264,6 +270,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Published = true,
             DisplayOrder = 0,
             PublishedAt = now,
+            PricingModel = pricingModel.ToString(),
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -451,6 +458,16 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["RateLimiting:Logout:PermitLimit"] = "100",
                 ["RateLimiting:Logout:WindowSeconds"] = "60",
                 ["RateLimiting:Logout:QueueLimit"] = "0",
+                ["RateLimiting:Register:PermitLimit"] = "100",
+                ["RateLimiting:Register:WindowSeconds"] = "60",
+                ["RateLimiting:Register:QueueLimit"] = "0",
+                ["RateLimiting:ResendConfirmation:PermitLimit"] = "100",
+                ["RateLimiting:ResendConfirmation:WindowSeconds"] = "60",
+                ["RateLimiting:ResendConfirmation:QueueLimit"] = "0",
+                ["Turnstile:SecretKey"] = "integration-test-turnstile-secret",
+                ["Resend:ApiKey"] = "integration-test-resend-api-key",
+                ["Resend:FromAddress"] = "no-reply@coursecore.local",
+                ["Resend:FromName"] = "CourseCore",
                 ["Progress:LessonCompletionThresholdPercent"] = "90",
                 ["Media:Playback:SignedUrlExpirationMinutes"] = "10",
                 ["Media:Playback:SigningSecret"] = "integration-test-media-signing-secret-32-characters-minimum",
@@ -485,6 +502,11 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 options.TokenValidationParameters.IssuerSigningKey =
                     new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecretKey));
             });
+
+            services.RemoveAll<ICaptchaVerificationService>();
+            services.AddSingleton<ICaptchaVerificationService, FakeCaptchaVerificationService>();
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender, FakeEmailSender>();
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();

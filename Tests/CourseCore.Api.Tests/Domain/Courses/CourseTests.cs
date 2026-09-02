@@ -1,10 +1,37 @@
 using CourseCore.Api.Modules.Courses.Domain.Entities;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
 namespace CourseCore.Api.Tests.Domain.Courses;
 
 public class CourseTests
 {
+    [Fact]
+    public void Create_WhenPricingModelIsNotSpecified_ShouldDefaultToPaid()
+    {
+        var course = CreateCourse();
+
+        Assert.Equal(CoursePricingModel.Paid, course.PricingModel);
+    }
+
+    [Fact]
+    public void Create_WhenPricingModelIsFree_ShouldStorePricingModel()
+    {
+        var course = Course.Create("Course", Slug.Create("free-course"), "Description", 0, pricingModel: CoursePricingModel.Free);
+
+        Assert.Equal(CoursePricingModel.Free, course.PricingModel);
+    }
+
+    [Fact]
+    public void ChangePricingModel_WhenCalled_ShouldUpdatePricingModel()
+    {
+        var course = CreateCourse();
+
+        course.ChangePricingModel(CoursePricingModel.Free);
+
+        Assert.Equal(CoursePricingModel.Free, course.PricingModel);
+    }
+
     [Fact]
     public void Publish_WhenCourseExists_ShouldPublishCourse()
     {

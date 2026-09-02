@@ -5,6 +5,8 @@ using System.Text.Json;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Tests.Integration.Infrastructure;
 using CourseCore.Api.Modules.Courses.Application.Validation;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
+using CourseCore.Api.Modules.Courses.Presentation.Responses;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace CourseCore.Api.Tests.Integration.Courses;
@@ -185,6 +187,7 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
             description = "Updated integration course",
             thumbnailUrl = "https://cdn.coursecore.local/thumb.png",
             displayOrder = 1,
+            pricingModel = "Paid",
             areaIds = new[] { areaId }
         });
 
@@ -258,6 +261,57 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ListAvailableCourses_ShouldIncludeGrantedAndLockedCoursesWithAreas()
+    {
+        var user = await _factory.SeedUserAsync();
+        var granted = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        var locked = await _factory.SeedPublishedCourseWithLessonAsync();
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses/available");
+        var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.True(body!.Areas.Count >= 2);
+        Assert.True(body.Courses.Single(c => c.Id == granted.CourseId).HasAccess);
+        Assert.False(body.Courses.Single(c => c.Id == locked.CourseId).HasAccess);
+    }
+
+    [Fact]
+    public async Task ListAvailableCourses_WhenFilteredByHasAccessTrue_ShouldOnlyReturnGrantedCourses()
+    {
+        var user = await _factory.SeedUserAsync();
+        var granted = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        var locked = await _factory.SeedPublishedCourseWithLessonAsync();
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses/available?hasAccess=true");
+        var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.NotNull(body);
+        Assert.Contains(body!.Courses, c => c.Id == granted.CourseId);
+        Assert.DoesNotContain(body.Courses, c => c.Id == locked.CourseId);
+    }
+
+    [Fact]
+    public async Task ListAvailableCourses_WhenCourseIsFree_ShouldMarkFreeCourseAsAccessible()
+    {
+        var user = await _factory.SeedUserAsync();
+        var freeCourse = await _factory.SeedPublishedCourseWithLessonAsync(pricingModel: CoursePricingModel.Free);
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses/available");
+        var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.NotNull(body);
+        Assert.True(body!.Courses.Single(c => c.Id == freeCourse.CourseId).HasAccess);
+    }
+
     private HttpClient CreateClient()
     {
         return _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -310,6 +364,7 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
             description = "Created integration course",
             thumbnailUrl = "https://cdn.coursecore.local/course.png",
             displayOrder = 0,
+            pricingModel = "Paid",
             areaIds = new[] { areaId },
             modules = new[]
             {
