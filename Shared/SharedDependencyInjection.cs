@@ -1,4 +1,5 @@
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Infrastructure.Email;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
 using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
 using CourseCore.Api.Shared.Infrastructure.Security;
@@ -32,6 +33,12 @@ public static class SharedDependencyInjection
         services.Configure<AdminSeedOptions>(
             configuration.GetSection(AdminSeedOptions.SectionName));
         services.AddScoped<CourseCoreDatabaseSeeder>();
+
+        services.Configure<ResendOptions>(configuration.GetSection("Resend"));
+        services.AddHttpClient<IEmailSender, ResendEmailSender>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.resend.com/");
+        });
 
         return services;
     }
