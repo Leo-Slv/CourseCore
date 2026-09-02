@@ -112,11 +112,13 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 | Courses | `GET /api/courses/available` | Bearer | — | array de `CourseListItemResponse` | 200, 400, 401, 403, 500 | List Available Courses |
 | Videos | `POST /api/videos` | Bearer; `ManageVideos` | `CreateVideoRequest` | `VideoResponse` | 201, 400, 401, 403, 404, 409, 500 | Create Video |
 | Videos | `POST /api/videos/{id}/ready` | Bearer; `ManageVideos` | path `id` | `VideoResponse` | 200, 400, 401, 403, 404, 409, 500 | Mark Video Ready |
-| Videos | `POST /api/videos/playback` | Bearer | body `videoId` | `VideoPlaybackResponse` | 200, 400, 401, 403, 404, 409, 500 | Get Playback Url |
+| Videos | `GET /api/videos/{videoId}/playback` | Bearer | path `videoId` | `VideoPlaybackResponse` | 200, 400, 401, 403, 404, 409, 500 | Get Playback Url |
 | Progress | `POST /api/progress/lessons` | Bearer | body `lessonId`, `watchedSeconds`; `markAsCompleted` é legado | `LessonProgressResponse` | 200, 400, 401, 403, 404, 500 | Register Lesson Progress |
-| Progress | `POST /api/progress/courses` | Bearer | body `courseId` | `CourseProgressResponse` | 200, 400, 401, 403, 404, 500 | Get Course Progress |
+| Progress | `GET /api/progress/courses/{courseId}` | Bearer | path `courseId` | `CourseProgressResponse` | 200, 400, 401, 403, 404, 500 | Get Course Progress |
 
 Não há endpoint `me/current user`, controller de Audit Logs nem endpoints públicos de CRUD para roles, módulos ou aulas nesta versão. Areas têm CRUD administrativo completo desde `03 - Areas`; não há remoção física, apenas desativação via `PUT`. O módulo Audit Logs registra eventos internamente, mas não expõe listagem HTTP. Não foram inventadas requests para rotas inexistentes.
+
+`GET /api/videos/{videoId}/playback` e `GET /api/progress/courses/{courseId}` eram `POST` com o id no corpo até esta versão; migraram para `GET` com o id na rota (leitura pura, sem efeito colateral) e não existem mais como `POST` — não há entrada de compatibilidade em `90 - Deprecated` para eles, diferente do tratamento dado a `access/course/check`. Ambos respondem com `Cache-Control: no-store`, já que carregam dado privado por usuário ou uma URL assinada com expiração.
 
 As policies resolvem assim:
 

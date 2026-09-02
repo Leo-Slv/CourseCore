@@ -1038,30 +1038,16 @@
                                   {
                                       "name":  "Get Playback Url",
                                       "request":  {
-                                                      "method":  "POST",
+                                                      "method":  "GET",
                                                       "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "type":  "text",
-                                                                         "value":  "application/json"
-                                                                     },
                                                                      {
                                                                          "key":  "X-Correlation-ID",
                                                                          "type":  "text",
                                                                          "value":  "{{correlationId}}"
                                                                      }
                                                                  ],
-                                                      "url":  "{{baseUrl}}/api/videos/playback",
-                                                      "description":  "Requests a temporary signed playback URL for videoId. Bearer required; no named policy beyond authentication and course access. Response: VideoPlaybackResponse. Main statuses: 200, 400, 401, 403, 404, 409, 500. The signed URL is deliberately not persisted.",
-                                                      "body":  {
-                                                                   "raw":  "{\n  \"videoId\": \"{{videoId}}\"\n}",
-                                                                   "options":  {
-                                                                                   "raw":  {
-                                                                                               "language":  "json"
-                                                                                           }
-                                                                               },
-                                                                   "mode":  "raw"
-                                                               }
+                                                      "url":  "{{baseUrl}}/api/videos/{{videoId}}/playback",
+                                                      "description":  "Requests a temporary signed playback URL for videoId. Bearer required; no named policy beyond authentication and course access. Response: VideoPlaybackResponse. Main statuses: 200, 400, 401, 403, 404, 409, 500. The signed URL is deliberately not persisted. Response is Cache-Control: no-store."
                                                   },
                                       "event":  [
                                                     {
@@ -1069,7 +1055,8 @@
                                                                        "exec":  [
                                                                                     "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.eql(200); });",
                                                                                     "const json = pm.response.json();",
-                                                                                    "pm.test(\"Playback response has URL and expiration\", function () { pm.expect(json.playbackUrl).to.be.a(\"string\").and.not.empty; pm.expect(json.expiresAt).to.exist; });"
+                                                                                    "pm.test(\"Playback response has URL and expiration\", function () { pm.expect(json.playbackUrl).to.be.a(\"string\").and.not.empty; pm.expect(json.expiresAt).to.exist; });",
+                                                                                    "pm.test(\"Response is not cached\", function () { pm.expect(pm.response.headers.get(\"Cache-Control\") || \"\").to.include(\"no-store\"); });"
                                                                                 ],
                                                                        "type":  "text/javascript"
                                                                    },
@@ -1127,30 +1114,16 @@
                                   {
                                       "name":  "Get Course Progress",
                                       "request":  {
-                                                      "method":  "POST",
+                                                      "method":  "GET",
                                                       "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "type":  "text",
-                                                                         "value":  "application/json"
-                                                                     },
                                                                      {
                                                                          "key":  "X-Correlation-ID",
                                                                          "type":  "text",
                                                                          "value":  "{{correlationId}}"
                                                                      }
                                                                  ],
-                                                      "url":  "{{baseUrl}}/api/progress/courses",
-                                                      "description":  "Returns the authenticated user progress for courseId. Bearer required; no named policy. Body: courseId. Response: CourseProgressResponse. Main statuses: 200, 400, 401, 403, 404, 500. Saves progressId and the first lesson progress id when available.",
-                                                      "body":  {
-                                                                   "raw":  "{\n  \"courseId\": \"{{courseId}}\"\n}",
-                                                                   "options":  {
-                                                                                   "raw":  {
-                                                                                               "language":  "json"
-                                                                                           }
-                                                                               },
-                                                                   "mode":  "raw"
-                                                               }
+                                                      "url":  "{{baseUrl}}/api/progress/courses/{{courseId}}",
+                                                      "description":  "Returns the authenticated user progress for courseId. Bearer required; no named policy. Path: courseId. Response: CourseProgressResponse. Main statuses: 200, 400, 401, 403, 404, 500. Saves progressId and the first lesson progress id when available. Response is Cache-Control: no-store."
                                                   },
                                       "event":  [
                                                     {
@@ -1158,7 +1131,8 @@
                                                                        "exec":  [
                                                                                     "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.eql(200); });",
                                                                                     "const json = pm.response.json();",
-                                                                                    "if (json.id) { pm.environment.set(\"progressId\", json.id); }"
+                                                                                    "if (json.id) { pm.environment.set(\"progressId\", json.id); }",
+                                                                                    "pm.test(\"Response is not cached\", function () { pm.expect(pm.response.headers.get(\"Cache-Control\") || \"\").to.include(\"no-store\"); });"
                                                                                 ],
                                                                        "type":  "text/javascript"
                                                                    },
