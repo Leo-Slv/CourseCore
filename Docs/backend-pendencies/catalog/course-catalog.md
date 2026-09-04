@@ -14,7 +14,7 @@ Courses: { id, title, slug, description, thumbnailUrl, displayOrder,
 
 Everything below is mockup content with nothing in that shape behind it.
 
-## 1. No module/lesson counts or duration per course
+## 1. No module/lesson counts or duration per course — CLOSED
 
 - **Mockup expects**: "24 aulas · 7h", "8 módulos" on each card.
 - **Backend today**: only reachable via `GET /api/courses/{id}`
@@ -25,6 +25,16 @@ Everything below is mockup content with nothing in that shape behind it.
   added directly to `CourseCatalogItemResponse`, computed server-side.
 - **Workaround shipped**: none — card shows title/area/description only.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-04**: `CourseCatalogItemResponse` now carries
+  `ModuleCount`, `LessonCount`, and `DurationSeconds` (summed video
+  duration across all of the course's lessons, regardless of video
+  processing status). Computed server-side via a new bulk
+  `ICourseRepository.ListContentSummariesAsync` projection (module/lesson
+  counts, no per-course N+1) combined with a new bulk
+  `IVideoRepository.ListDurationSecondsByLessonIdsAsync` lookup, composed
+  in `ListAvailableCoursesUseCase`. No schema change — both existing
+  tables already carried the data. `GET /api/courses/available` is the
+  only endpoint affected.
 
 ## 2. No per-course progress
 

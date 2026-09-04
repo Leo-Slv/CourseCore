@@ -21,6 +21,10 @@ public interface ICourseRepository
         IReadOnlyCollection<Guid> areaIds,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<CourseContentSummary>> ListContentSummariesAsync(
+        IReadOnlyCollection<Guid> courseIds,
+        CancellationToken cancellationToken = default);
+
     Task CreateAsync(Course course, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Course course, CancellationToken cancellationToken = default);

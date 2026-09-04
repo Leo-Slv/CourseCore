@@ -97,6 +97,46 @@ public class EfCourseRepository : ICourseRepository
         return models.Select(CourseMapper.ToDomain).ToList();
     }
 
+    public async Task<IReadOnlyCollection<CourseContentSummary>> ListContentSummariesAsync(
+        IReadOnlyCollection<Guid> courseIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (courseIds.Count == 0)
+        {
+            return [];
+        }
+
+        var moduleCourseIds = await _dbContext.CourseModules
+            .AsNoTracking()
+            .Where(module => courseIds.Contains(module.CourseId))
+            .Select(module => module.CourseId)
+            .ToListAsync(cancellationToken);
+
+        var lessonRows = await _dbContext.Lessons
+            .AsNoTracking()
+            .Where(lesson => courseIds.Contains(lesson.Module!.CourseId))
+            .Select(lesson => new { CourseId = lesson.Module!.CourseId, LessonId = lesson.Id })
+            .ToListAsync(cancellationToken);
+
+        var moduleCountsByCourseId = moduleCourseIds
+            .GroupBy(courseId => courseId)
+            .ToDictionary(group => group.Key, group => group.Count());
+
+        var lessonIdsByCourseId = lessonRows
+            .GroupBy(row => row.CourseId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyCollection<Guid>)group.Select(row => row.LessonId).ToList());
+
+        return courseIds
+            .Select(courseId =>
+            {
+                var moduleCount = moduleCountsByCourseId.GetValueOrDefault(courseId, 0);
+                var lessonIds = lessonIdsByCourseId.GetValueOrDefault(courseId, []);
+
+                return new CourseContentSummary(courseId, moduleCount, lessonIds.Count, lessonIds);
+            })
+            .ToList();
+    }
+
     public async Task CreateAsync(Course course, CancellationToken cancellationToken = default)
     {
         await _dbContext.Courses.AddAsync(CourseMapper.ToPersistence(course), cancellationToken);

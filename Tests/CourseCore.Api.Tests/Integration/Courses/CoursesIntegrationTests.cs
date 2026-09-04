@@ -312,6 +312,51 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.True(body!.Courses.Single(c => c.Id == freeCourse.CourseId).HasAccess);
     }
 
+    [Fact]
+    public async Task ListAvailableCourses_ShouldIncludeModuleLessonCountsAndSummedDuration()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        await _factory.SeedReadyVideoAsync(course.LessonId, durationSeconds: 300);
+
+        var secondModuleId = await _factory.SeedCourseModuleAsync(course.CourseId, displayOrder: 1);
+        var secondLessonId = await _factory.SeedLessonAsync(secondModuleId, displayOrder: 0);
+        var thirdLessonId = await _factory.SeedLessonAsync(secondModuleId, displayOrder: 1);
+        await _factory.SeedReadyVideoAsync(secondLessonId, durationSeconds: 180);
+        _ = thirdLessonId; // intentionally left without a video
+
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses/available");
+        var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        var item = body!.Courses.Single(c => c.Id == course.CourseId);
+        Assert.Equal(2, item.ModuleCount);
+        Assert.Equal(3, item.LessonCount);
+        Assert.Equal(480, item.DurationSeconds);
+    }
+
+    [Fact]
+    public async Task ListAvailableCourses_WhenCourseHasNoModules_ShouldReturnZeroCountsAndZeroDuration()
+    {
+        var user = await _factory.SeedUserAsync();
+        var (_, courseId) = await _factory.SeedPublishedCourseWithoutContentAsync(user.Id);
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses/available");
+        var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.NotNull(body);
+        var item = body!.Courses.Single(c => c.Id == courseId);
+        Assert.Equal(0, item.ModuleCount);
+        Assert.Equal(0, item.LessonCount);
+        Assert.Equal(0, item.DurationSeconds);
+    }
+
     private HttpClient CreateClient()
     {
         return _factory.CreateClient(new WebApplicationFactoryClientOptions

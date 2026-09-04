@@ -23,7 +23,17 @@ public class CourseCatalogItemOutput
 
     public bool HasAccess { get; init; }
 
-    public static CourseCatalogItemOutput FromCatalogEntry(CourseCatalogEntry entry)
+    public int ModuleCount { get; init; }
+
+    public int LessonCount { get; init; }
+
+    public int DurationSeconds { get; init; }
+
+    public static CourseCatalogItemOutput FromCatalogEntry(
+        CourseCatalogEntry entry,
+        int moduleCount,
+        int lessonCount,
+        int durationSeconds)
     {
         var course = entry.Course;
 
@@ -37,7 +47,10 @@ public class CourseCatalogItemOutput
             DisplayOrder = course.DisplayOrder,
             PricingModel = course.PricingModel.ToString(),
             AreaIds = course.AreaIds.ToList(),
-            HasAccess = entry.HasAccess
+            HasAccess = entry.HasAccess,
+            ModuleCount = moduleCount,
+            LessonCount = lessonCount,
+            DurationSeconds = durationSeconds
         };
     }
 }

@@ -8,6 +8,10 @@ public interface IVideoRepository
 
     Task<Video?> FindByLessonIdAsync(Guid lessonId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<Guid, int>> ListDurationSecondsByLessonIdsAsync(
+        IReadOnlyCollection<Guid> lessonIds,
+        CancellationToken cancellationToken = default);
+
     Task CreateAsync(Video video, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Video video, CancellationToken cancellationToken = default);

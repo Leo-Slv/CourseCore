@@ -328,6 +328,103 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         return new TestCourseData(area.Id, course.Id, module.Id, lesson.Id);
     }
 
+    public async Task<(Guid AreaId, Guid CourseId)> SeedPublishedCourseWithoutContentAsync(
+        Guid? grantUserAccess = null,
+        CoursePricingModel pricingModel = CoursePricingModel.Paid)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+        var area = CreateArea(now);
+        var course = new CoursePersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            Title = "Integration Course Without Content",
+            Slug = $"integration-course-empty-{Guid.NewGuid():N}",
+            Description = "Integration test course without modules",
+            Published = true,
+            DisplayOrder = 0,
+            PublishedAt = now,
+            PricingModel = pricingModel.ToString(),
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        dbContext.Areas.Add(area);
+        dbContext.Courses.Add(course);
+        dbContext.CourseAreas.Add(new CourseAreaPersistenceModel
+        {
+            CourseId = course.Id,
+            AreaId = area.Id,
+            CreatedAt = now
+        });
+
+        if (grantUserAccess is not null)
+        {
+            dbContext.UserAreaAccesses.Add(new UserAreaAccessPersistenceModel
+            {
+                Id = Guid.NewGuid(),
+                UserId = grantUserAccess.Value,
+                AreaId = area.Id,
+                CanView = true,
+                CanManage = false,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        return (area.Id, course.Id);
+    }
+
+    public async Task<Guid> SeedCourseModuleAsync(Guid courseId, int displayOrder = 0)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+        var module = new CourseModulePersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            CourseId = courseId,
+            Title = "Integration Module",
+            Description = "Integration test module",
+            Published = true,
+            DisplayOrder = displayOrder,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        dbContext.CourseModules.Add(module);
+        await dbContext.SaveChangesAsync();
+
+        return module.Id;
+    }
+
+    public async Task<Guid> SeedLessonAsync(Guid moduleId, int displayOrder = 0)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+        var lesson = new LessonPersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            ModuleId = moduleId,
+            Title = "Integration Lesson",
+            Description = "Integration test lesson",
+            FreePreview = false,
+            Published = true,
+            DisplayOrder = displayOrder,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        dbContext.Lessons.Add(lesson);
+        await dbContext.SaveChangesAsync();
+
+        return lesson.Id;
+    }
+
     public async Task GrantUserAreaAccessAsync(Guid userId, Guid areaId, bool canView = true, bool canManage = false)
     {
         using var scope = Services.CreateScope();

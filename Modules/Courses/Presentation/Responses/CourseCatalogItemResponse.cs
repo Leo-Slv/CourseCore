@@ -19,4 +19,10 @@ public class CourseCatalogItemResponse
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public bool HasAccess { get; init; }
+
+    public int ModuleCount { get; init; }
+
+    public int LessonCount { get; init; }
+
+    public int DurationSeconds { get; init; }
 }

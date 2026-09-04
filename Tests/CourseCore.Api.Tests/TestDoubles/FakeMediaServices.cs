@@ -19,6 +19,18 @@ public sealed class FakeVideoRepository : IVideoRepository
         return Task.FromResult(Videos.FirstOrDefault(video => video.LessonId == lessonId));
     }
 
+    public Task<IReadOnlyDictionary<Guid, int>> ListDurationSecondsByLessonIdsAsync(
+        IReadOnlyCollection<Guid> lessonIds,
+        CancellationToken cancellationToken = default)
+    {
+        var lessonIdSet = lessonIds.ToHashSet();
+        IReadOnlyDictionary<Guid, int> result = Videos
+            .Where(video => lessonIdSet.Contains(video.LessonId))
+            .ToDictionary(video => video.LessonId, video => video.DurationSeconds);
+
+        return Task.FromResult(result);
+    }
+
     public Task CreateAsync(Video video, CancellationToken cancellationToken = default)
     {
         Videos.Add(video);

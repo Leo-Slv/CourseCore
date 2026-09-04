@@ -138,7 +138,10 @@ public static class CoursePresenter
             DisplayOrder = output.DisplayOrder,
             PricingModel = output.PricingModel,
             AreaIds = output.AreaIds.ToList(),
-            HasAccess = output.HasAccess
+            HasAccess = output.HasAccess,
+            ModuleCount = output.ModuleCount,
+            LessonCount = output.LessonCount,
+            DurationSeconds = output.DurationSeconds
         };
     }
 
