@@ -22,6 +22,8 @@ public class CourseDetailsOutput
 
     public string PricingModel { get; init; } = string.Empty;
 
+    public decimal? PriceAmount { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CourseModuleOutput> Modules { get; init; } = Array.Empty<CourseModuleOutput>();
@@ -43,6 +45,7 @@ public class CourseDetailsOutput
             DisplayOrder = course.DisplayOrder,
             PublishedAt = course.PublishedAt,
             PricingModel = course.PricingModel.ToString(),
+            PriceAmount = course.PriceAmount,
             AreaIds = course.AreaIds.ToList(),
             Modules = course.Modules
                 .OrderBy(module => module.DisplayOrder)

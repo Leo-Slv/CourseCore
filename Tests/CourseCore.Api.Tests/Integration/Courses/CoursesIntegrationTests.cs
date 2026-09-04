@@ -97,6 +97,27 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task CreateCourse_WhenFreeWithPriceAmount_ShouldReturnBadRequest()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/courses", new
+        {
+            title = "Free Course With Price",
+            slug = $"free-course-with-price-{Guid.NewGuid():N}",
+            description = "Description",
+            displayOrder = 0,
+            pricingModel = "Free",
+            priceAmount = 50m,
+            areaIds = Array.Empty<Guid>(),
+            modules = Array.Empty<object>()
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CreateCourse_WhenTitleIsTooLong_ShouldReturnBadRequest()
     {
         using var client = CreateClient();
@@ -192,6 +213,54 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
         });
 
         await AssertStatusAsync(HttpStatusCode.OK, response);
+    }
+
+    [Fact]
+    public async Task UpdateCourse_WhenPriceAmountProvided_ShouldPersistPriceAmount()
+    {
+        using var client = CreateClient();
+        var areaId = await _factory.SeedAreaAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var updateResponse = await client.PutAsJsonAsync($"/api/courses/{course.CourseId}", new
+        {
+            title = "Updated Integration Course",
+            slug = $"updated-integration-course-{Guid.NewGuid():N}",
+            description = "Updated integration course",
+            thumbnailUrl = "https://cdn.coursecore.local/thumb.png",
+            displayOrder = 1,
+            pricingModel = "Paid",
+            priceAmount = 199.90m,
+            areaIds = new[] { areaId }
+        });
+
+        await AssertStatusAsync(HttpStatusCode.OK, updateResponse);
+
+        var viewer = await _factory.SeedUserAsync();
+        using var viewerClient = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(viewerClient, viewer);
+
+        var catalogResponse = await viewerClient.GetAsync("/api/courses/available");
+        var body = await catalogResponse.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.NotNull(body);
+        Assert.Equal(199.90m, body!.Courses.Single(c => c.Id == course.CourseId).PriceAmount);
+    }
+
+    [Fact]
+    public async Task ListAvailableCourses_ShouldIncludePriceAmountOnPaidCourses()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(pricingModel: CoursePricingModel.Paid);
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses/available");
+        var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.NotNull(body);
+        Assert.Null(body!.Courses.Single(c => c.Id == course.CourseId).PriceAmount);
     }
 
     [Fact]
@@ -410,6 +479,7 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
             thumbnailUrl = "https://cdn.coursecore.local/course.png",
             displayOrder = 0,
             pricingModel = "Paid",
+            priceAmount = 149.90m,
             areaIds = new[] { areaId },
             modules = new[]
             {

@@ -19,6 +19,8 @@ public class CourseCatalogItemOutput
 
     public string PricingModel { get; init; } = string.Empty;
 
+    public decimal? PriceAmount { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public bool HasAccess { get; init; }
@@ -46,6 +48,7 @@ public class CourseCatalogItemOutput
             ThumbnailUrl = course.ThumbnailUrl,
             DisplayOrder = course.DisplayOrder,
             PricingModel = course.PricingModel.ToString(),
+            PriceAmount = course.PriceAmount,
             AreaIds = course.AreaIds.ToList(),
             HasAccess = entry.HasAccess,
             ModuleCount = moduleCount,

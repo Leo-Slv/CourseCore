@@ -22,6 +22,7 @@ public static class CourseMapper
             model.DisplayOrder,
             model.PublishedAt,
             ParsePricingModel(model.PricingModel),
+            model.PriceAmount,
             modules,
             areaIds,
             model.CreatedAt,
@@ -41,6 +42,7 @@ public static class CourseMapper
             DisplayOrder = course.DisplayOrder,
             PublishedAt = course.PublishedAt,
             PricingModel = course.PricingModel.ToString(),
+            PriceAmount = course.PriceAmount,
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt,
             CourseAreas = ToCourseAreas(course).ToList(),
@@ -58,6 +60,7 @@ public static class CourseMapper
         model.DisplayOrder = course.DisplayOrder;
         model.PublishedAt = course.PublishedAt;
         model.PricingModel = course.PricingModel.ToString();
+        model.PriceAmount = course.PriceAmount;
         model.UpdatedAt = course.UpdatedAt;
 
         model.CourseAreas.Clear();

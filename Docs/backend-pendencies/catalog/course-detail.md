@@ -63,12 +63,19 @@ Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.
   backend.
 - **Severity**: Feature gap.
 
-## 5. No price amount or installments
+## 5. No price amount or installments — PARTIALLY CLOSED
 
 - **Mockup expects**: "R$ 149", "ou 3× de R$ 49,67".
 - **Backend today**: same as the catalog page — `PricingModel` is
   `Free`/`Paid` only, no amount, no installment concept.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-04**: the amount half of this gap is closed — see
+  `Docs/backend-pendencies/catalog/course-catalog.md` pendency #3, same
+  `Course.PriceAmount` field, surfaced on `CourseDetailsResponse` too.
+  **Installments remain unresolved** — no installment concept was added (a
+  single total amount only); that's a real gap still, not just a display
+  choice, since "3× de R$ 49,67" implies a payment/billing concept this
+  backend still has zero scope for.
 
 ## 6. No purchase/checkout endpoint
 

@@ -49,7 +49,8 @@ public class CreateCourseUseCase
                 input.Description,
                 input.DisplayOrder,
                 input.ThumbnailUrl,
-                pricingModel);
+                pricingModel,
+                input.PriceAmount);
 
             foreach (var areaId in NormalizeIds(input.AreaIds))
             {

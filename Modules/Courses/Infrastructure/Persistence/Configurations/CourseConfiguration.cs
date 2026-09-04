@@ -24,6 +24,7 @@ public class CourseConfiguration : IEntityTypeConfiguration<CoursePersistenceMod
             .IsRequired()
             .HasMaxLength(20)
             .HasDefaultValue(nameof(CoursePricingModel.Paid));
+        builder.Property(x => x.PriceAmount).HasPrecision(10, 2);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 

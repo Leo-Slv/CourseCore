@@ -16,6 +16,7 @@ public static class CoursePresenter
             ThumbnailUrl = request.ThumbnailUrl,
             DisplayOrder = request.DisplayOrder,
             PricingModel = request.PricingModel,
+            PriceAmount = request.PriceAmount,
             AreaIds = request.AreaIds.ToList(),
             Modules = request.Modules.Select(ToInput).ToList()
         };
@@ -54,6 +55,7 @@ public static class CoursePresenter
             ThumbnailUrl = request.ThumbnailUrl,
             DisplayOrder = request.DisplayOrder,
             PricingModel = request.PricingModel,
+            PriceAmount = request.PriceAmount,
             AreaIds = request.AreaIds.ToList()
         };
     }
@@ -89,6 +91,7 @@ public static class CoursePresenter
             DisplayOrder = output.DisplayOrder,
             PublishedAt = output.PublishedAt,
             PricingModel = output.PricingModel,
+            PriceAmount = output.PriceAmount,
             AreaIds = output.AreaIds.ToList(),
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
@@ -108,6 +111,7 @@ public static class CoursePresenter
             DisplayOrder = output.DisplayOrder,
             PublishedAt = output.PublishedAt,
             PricingModel = output.PricingModel,
+            PriceAmount = output.PriceAmount,
             AreaIds = output.AreaIds.ToList(),
             Modules = output.Modules.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,
@@ -137,6 +141,7 @@ public static class CoursePresenter
             ThumbnailUrl = output.ThumbnailUrl,
             DisplayOrder = output.DisplayOrder,
             PricingModel = output.PricingModel,
+            PriceAmount = output.PriceAmount,
             AreaIds = output.AreaIds.ToList(),
             HasAccess = output.HasAccess,
             ModuleCount = output.ModuleCount,

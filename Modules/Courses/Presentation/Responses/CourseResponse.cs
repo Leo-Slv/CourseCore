@@ -20,6 +20,8 @@ public class CourseResponse
 
     public string PricingModel { get; init; } = string.Empty;
 
+    public decimal? PriceAmount { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public DateTime CreatedAt { get; init; }

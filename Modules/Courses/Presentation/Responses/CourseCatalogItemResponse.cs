@@ -16,6 +16,8 @@ public class CourseCatalogItemResponse
 
     public string PricingModel { get; init; } = string.Empty;
 
+    public decimal? PriceAmount { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public bool HasAccess { get; init; }

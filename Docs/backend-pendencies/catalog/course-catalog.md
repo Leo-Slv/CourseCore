@@ -49,7 +49,7 @@ Everything below is mockup content with nothing in that shape behind it.
   (mockup `1j`, not yet specced), not the catalog grid.
 - **Severity**: Feature gap.
 
-## 3. No real price amounts
+## 3. No real price amounts — CLOSED
 
 - **Mockup expects**: "R$ 149", "R$ 99" on paid courses.
 - **Backend today**: `PricingModel` is a string enum, `"Free"` or `"Paid"`
@@ -59,6 +59,22 @@ Everything below is mockup content with nothing in that shape behind it.
 - **Workaround shipped**: badge only ever says "Gratuito" or "Pago", no
   number.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-04**: `Course` gained an optional `PriceAmount`
+  (`decimal?`), exposed on the catalog item, course, and course-details
+  responses. Two deliberate scope decisions, made with the user: (1) no
+  `Currency` field — every mockup only ever shows `R$`, so the amount is
+  implicitly BRL; a currency field can be added later without renaming if a
+  real need appears. (2) no "Paid requires a price" invariant — this field is
+  retrofitted onto an existing table, so every already-existing Paid course
+  has no price today; the only enforced rule is that a **Free** course may
+  never carry one (`DomainException`, 400). A Paid course without a price
+  still just shows "Pago" with no number, same as before this change — a real
+  number appears once an admin sets one via `PUT /api/courses/{id}`. This
+  extends beyond `Docs/specs/catalog/self-registration-and-free-courses.md`
+  §10, which scoped `PricingModel` to classification-only — the user
+  explicitly chose to extend it for **display value only**; no
+  payment/checkout/billing concept was added, matching that section's actual
+  boundary.
 
 ## 4. No "por concessão" (grant-only) category
 

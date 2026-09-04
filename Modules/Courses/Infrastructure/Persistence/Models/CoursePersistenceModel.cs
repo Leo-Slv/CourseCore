@@ -22,6 +22,8 @@ public class CoursePersistenceModel
 
     public string PricingModel { get; set; } = string.Empty;
 
+    public decimal? PriceAmount { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

@@ -14,6 +14,8 @@ public class CreateCourseInput
 
     public string PricingModel { get; init; } = string.Empty;
 
+    public decimal? PriceAmount { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CreateCourseModuleInput> Modules { get; init; } = Array.Empty<CreateCourseModuleInput>();

@@ -61,6 +61,7 @@ public class UpdateCourseUseCase
             course.ChangeThumbnailUrl(input.ThumbnailUrl);
             course.ChangeDisplayOrder(input.DisplayOrder);
             course.ChangePricingModel(pricingModel);
+            course.ChangePriceAmount(input.PriceAmount);
 
             SyncAreas(course.AreaIds, NormalizeIds(input.AreaIds), course.AttachArea, course.DetachArea);
 
