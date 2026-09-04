@@ -101,7 +101,7 @@ Everything below is mockup content with nothing in that shape behind it.
 - **Severity**: Feature gap — largest single missing feature in this
   screen's mockup.
 
-## 6. No request-access / "Solicitar acesso" endpoint
+## 6. No request-access / "Solicitar acesso" endpoint — CLOSED
 
 - **Mockup expects**: a self-service "Solicitar acesso" action on locked
   courses.
@@ -111,6 +111,20 @@ Everything below is mockup content with nothing in that shape behind it.
   surface.
 - **Workaround shipped**: locked courses show a badge only, no action.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-04**: new `AccessRequest` aggregate (Access module,
+  Pending/Approved/Rejected) plus a full API surface —
+  `POST /api/access/requests` (any authenticated user; targets a **course**,
+  not an area, since holding access to any one of a course's linked areas
+  already unlocks it — same semantics `CourseAccessService` already uses;
+  rejects free courses, already-has-access, and duplicate-pending with 409),
+  `GET /api/access/requests/mine` (own requests), and, behind the same
+  `ManageUserAreaAccess` policy an admin already needs to grant access
+  directly: `GET /api/access/requests` (optional `?status=`),
+  `POST /api/access/requests/{id}/approve` (grants `UserAreaAccess` for every
+  currently active area linked to the course — no area picker needed),
+  `POST /api/access/requests/{id}/reject`. This repo has no admin frontend
+  (the admin course panel was itself skipped elsewhere in this directory), so
+  "the admin approval surface" here is this API, not a screen.
 
 ## 7. No server-side search or area filter
 

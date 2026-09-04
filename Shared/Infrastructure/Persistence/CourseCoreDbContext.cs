@@ -36,6 +36,8 @@ public class CourseCoreDbContext : DbContext
 
     public DbSet<RoleAreaAccessPersistenceModel> RoleAreaAccesses => Set<RoleAreaAccessPersistenceModel>();
 
+    public DbSet<AccessRequestPersistenceModel> AccessRequests => Set<AccessRequestPersistenceModel>();
+
     public DbSet<CoursePersistenceModel> Courses => Set<CoursePersistenceModel>();
 
     public DbSet<CourseAreaPersistenceModel> CourseAreas => Set<CourseAreaPersistenceModel>();

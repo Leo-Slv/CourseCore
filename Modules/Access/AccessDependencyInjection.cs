@@ -11,6 +11,7 @@ public static class AccessDependencyInjection
     {
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IAreaRepository, EfAreaRepository>();
+        services.AddScoped<IAccessRequestRepository, EfAccessRequestRepository>();
         services.AddScoped<CourseAccessService>();
         services.AddScoped<GrantUserAreaAccessUseCase>();
         services.AddScoped<GrantRoleAreaAccessUseCase>();
@@ -19,6 +20,11 @@ public static class AccessDependencyInjection
         services.AddScoped<UpdateAreaUseCase>();
         services.AddScoped<GetAreaByIdUseCase>();
         services.AddScoped<ListAreasUseCase>();
+        services.AddScoped<RequestCourseAccessUseCase>();
+        services.AddScoped<ApproveAccessRequestUseCase>();
+        services.AddScoped<RejectAccessRequestUseCase>();
+        services.AddScoped<ListAccessRequestsUseCase>();
+        services.AddScoped<ListMyAccessRequestsUseCase>();
 
         return services;
     }

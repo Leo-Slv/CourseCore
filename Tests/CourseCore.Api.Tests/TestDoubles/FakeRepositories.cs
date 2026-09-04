@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
@@ -396,6 +397,54 @@ public sealed class FakeProgressRepository : IProgressRepository
         SavedCourseProgresses.Add(progress);
         _courseProgresses[(progress.UserId, progress.CourseId)] = progress;
 
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class FakeAccessRequestRepository : IAccessRequestRepository
+{
+    public List<AccessRequest> Requests { get; } = [];
+
+    public Task<AccessRequest?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Requests.FirstOrDefault(request => request.Id == id));
+    }
+
+    public Task<AccessRequest?> FindPendingByUserAndCourseAsync(
+        Guid userId,
+        Guid courseId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Requests.FirstOrDefault(request =>
+            request.UserId == userId && request.CourseId == courseId && request.Status == AccessRequestStatus.Pending));
+    }
+
+    public Task<IReadOnlyCollection<AccessRequest>> ListByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<AccessRequest>>(
+            Requests.Where(request => request.UserId == userId).ToArray());
+    }
+
+    public Task<IReadOnlyCollection<AccessRequest>> ListAsync(
+        AccessRequestStatus? status,
+        CancellationToken cancellationToken = default)
+    {
+        var results = status is null
+            ? Requests
+            : Requests.Where(request => request.Status == status.Value);
+
+        return Task.FromResult<IReadOnlyCollection<AccessRequest>>(results.ToArray());
+    }
+
+    public Task CreateAsync(AccessRequest request, CancellationToken cancellationToken = default)
+    {
+        Requests.Add(request);
+
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(AccessRequest request, CancellationToken cancellationToken = default)
+    {
         return Task.CompletedTask;
     }
 }

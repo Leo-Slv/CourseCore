@@ -16,6 +16,9 @@ public static class AuditLogActionNames
     public const string UserSessionsRevoked = "UserSessionsRevoked";
     public const string UserAreaAccessGranted = "UserAreaAccessGranted";
     public const string RoleAreaAccessGranted = "RoleAreaAccessGranted";
+    public const string AccessRequestCreated = "AccessRequestCreated";
+    public const string AccessRequestApproved = "AccessRequestApproved";
+    public const string AccessRequestRejected = "AccessRequestRejected";
     public const string AreaCreated = "AreaCreated";
     public const string AreaUpdated = "AreaUpdated";
     public const string AreaActivated = "AreaActivated";

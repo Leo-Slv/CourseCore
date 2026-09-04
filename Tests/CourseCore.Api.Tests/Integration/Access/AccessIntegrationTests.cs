@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
+using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Tests.Integration.Infrastructure;
 
 namespace CourseCore.Api.Tests.Integration.Access;
@@ -257,5 +258,139 @@ public class AccessIntegrationTests : IClassFixture<CourseCoreApiFactory>
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestCourseAccess_WhenLockedPaidCourse_ShouldReturnOk()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/access/requests", new { courseId = course.CourseId });
+        var body = await response.Content.ReadFromJsonAsync<AccessRequestResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Equal("Pending", body.Status);
+    }
+
+    [Fact]
+    public async Task RequestCourseAccess_WhenCourseIsFree_ShouldReturnConflict()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(pricingModel: CoursePricingModel.Free);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/access/requests", new { courseId = course.CourseId });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestCourseAccess_WhenUserAlreadyHasAccess_ShouldReturnConflict()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/access/requests", new { courseId = course.CourseId });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestCourseAccess_WhenAnonymous_ShouldReturnUnauthorized()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+
+        var response = await client.PostAsJsonAsync("/api/access/requests", new { courseId = Guid.NewGuid() });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListAccessRequests_WhenAdmin_ShouldReturnPendingRequests()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        using var requesterClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(requesterClient, user);
+        var created = await requesterClient.PostAsJsonAsync("/api/access/requests", new { courseId = course.CourseId });
+        var createdBody = await created.Content.ReadFromJsonAsync<AccessRequestResponse>();
+
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+
+        var response = await adminClient.GetAsync("/api/access/requests?status=Pending");
+        var body = await response.Content.ReadFromJsonAsync<List<AccessRequestResponse>>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.NotNull(createdBody);
+        Assert.Contains(body, r => r.Id == createdBody.Id);
+    }
+
+    [Fact]
+    public async Task ListAccessRequests_WhenUserLacksPermission_ShouldReturnForbidden()
+    {
+        var user = await _factory.SeedUserAsync();
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/access/requests");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveAccessRequest_WhenAdmin_ShouldGrantUserAreaAccess()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        using var requesterClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(requesterClient, user);
+        var created = await requesterClient.PostAsJsonAsync("/api/access/requests", new { courseId = course.CourseId });
+        var createdBody = await created.Content.ReadFromJsonAsync<AccessRequestResponse>();
+
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+
+        var approveResponse = await adminClient.PostAsync($"/api/access/requests/{createdBody!.Id}/approve", content: null);
+        var approveBody = await approveResponse.Content.ReadFromJsonAsync<AccessRequestResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, approveResponse.StatusCode);
+        Assert.NotNull(approveBody);
+        Assert.Equal("Approved", approveBody.Status);
+
+        var accessResponse = await requesterClient.GetAsync($"/api/access/courses/{course.CourseId}");
+        var accessBody = await accessResponse.Content.ReadFromJsonAsync<CourseAccessResponse>();
+
+        Assert.NotNull(accessBody);
+        Assert.True(accessBody.CanAccess);
+    }
+
+    [Fact]
+    public async Task RejectAccessRequest_WhenAdmin_ShouldMarkRejected()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        using var requesterClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(requesterClient, user);
+        var created = await requesterClient.PostAsJsonAsync("/api/access/requests", new { courseId = course.CourseId });
+        var createdBody = await created.Content.ReadFromJsonAsync<AccessRequestResponse>();
+
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+
+        var response = await adminClient.PostAsync($"/api/access/requests/{createdBody!.Id}/reject", content: null);
+        var body = await response.Content.ReadFromJsonAsync<AccessRequestResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Equal("Rejected", body.Status);
     }
 }
