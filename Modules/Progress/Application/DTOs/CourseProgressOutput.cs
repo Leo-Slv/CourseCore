@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Progress.Domain.Entities;
 
 namespace CourseCore.Api.Modules.Progress.Application.DTOs;
@@ -18,8 +19,11 @@ public class CourseProgressOutput
 
     public IReadOnlyCollection<LessonProgressOutput> Lessons { get; init; } = Array.Empty<LessonProgressOutput>();
 
+    public IReadOnlyCollection<ModuleProgressOutput> Modules { get; init; } = Array.Empty<ModuleProgressOutput>();
+
     public static CourseProgressOutput FromProgress(
         UserCourseProgress progress,
+        Course course,
         IReadOnlyCollection<UserLessonProgress> lessons)
     {
         return new CourseProgressOutput
@@ -33,13 +37,15 @@ public class CourseProgressOutput
             Lessons = lessons
                 .OrderBy(lesson => lesson.LastWatchedAt)
                 .Select(LessonProgressOutput.FromProgress)
-                .ToList()
+                .ToList(),
+            Modules = BuildModules(course, lessons)
         };
     }
 
     public static CourseProgressOutput Empty(
         Guid userId,
         Guid courseId,
+        Course course,
         IReadOnlyCollection<UserLessonProgress> lessons)
     {
         return new CourseProgressOutput
@@ -53,7 +59,18 @@ public class CourseProgressOutput
             Lessons = lessons
                 .OrderBy(lesson => lesson.LastWatchedAt)
                 .Select(LessonProgressOutput.FromProgress)
-                .ToList()
+                .ToList(),
+            Modules = BuildModules(course, lessons)
         };
+    }
+
+    private static IReadOnlyCollection<ModuleProgressOutput> BuildModules(
+        Course course,
+        IReadOnlyCollection<UserLessonProgress> lessons)
+    {
+        return course.Modules
+            .OrderBy(module => module.DisplayOrder)
+            .Select(module => ModuleProgressOutput.FromModule(module, lessons))
+            .ToList();
     }
 }

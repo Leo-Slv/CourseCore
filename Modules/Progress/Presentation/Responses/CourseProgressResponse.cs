@@ -15,4 +15,6 @@ public class CourseProgressResponse
     public DateTime? CompletedAt { get; init; }
 
     public IReadOnlyCollection<LessonProgressResponse> Lessons { get; init; } = Array.Empty<LessonProgressResponse>();
+
+    public IReadOnlyCollection<ModuleProgressResponse> Modules { get; init; } = Array.Empty<ModuleProgressResponse>();
 }

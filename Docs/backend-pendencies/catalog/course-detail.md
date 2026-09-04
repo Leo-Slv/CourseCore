@@ -135,10 +135,21 @@ Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.
   catalog item.
 - **Severity**: Cosmetic.
 
-## 8. No module-level progress
+## 8. No module-level progress — CLOSED
 
 - **Mockup expects**: a progress bar per module card.
 - **Backend today**: same per-course-only progress endpoint gap as the
   catalog page (`GET /api/progress/courses/{courseId}`) — nothing
   module-level.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-04**: `GET /api/progress/courses/{courseId}` now
+  returns a `Modules` array (`ModuleId`, `LessonCount`,
+  `CompletedLessonCount`, `ProgressPercent`) alongside the existing
+  course-level percent and flat lesson list. Computed live at read time in
+  `GetCourseProgressUseCase` from data it already loads (`Course.Modules`
+  plus every lesson-progress row for the course) — no new query, no new
+  persistence, no migration. This deliberately diverges from how
+  course-level percent works (a denormalized column recalculated on every
+  `POST /api/progress/lessons`): the write path (`RegisterLessonProgressUseCase`)
+  is untouched, so per-module numbers are always freshly computed rather
+  than relying on a second cached value staying in sync with the first.

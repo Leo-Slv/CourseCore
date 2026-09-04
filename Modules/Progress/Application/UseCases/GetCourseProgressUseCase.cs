@@ -77,9 +77,9 @@ public class GetCourseProgressUseCase
 
         if (courseProgress is null)
         {
-            return CourseProgressOutput.Empty(input.UserId, input.CourseId, lessonProgresses);
+            return CourseProgressOutput.Empty(input.UserId, input.CourseId, course, lessonProgresses);
         }
 
-        return CourseProgressOutput.FromProgress(courseProgress, lessonProgresses);
+        return CourseProgressOutput.FromProgress(courseProgress, course, lessonProgresses);
     }
 }

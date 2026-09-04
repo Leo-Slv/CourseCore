@@ -212,4 +212,38 @@ public class ProgressIntegrationTests : IClassFixture<CourseCoreApiFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetCourseProgress_ShouldReturnPerModuleBreakdown()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        await _factory.SeedReadyVideoAsync(course.LessonId, durationSeconds: 100);
+        var moduleTwoId = await _factory.SeedCourseModuleAsync(course.CourseId, displayOrder: 1);
+        var lessonTwoId = await _factory.SeedLessonAsync(moduleTwoId, displayOrder: 0);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        await client.PostAsJsonAsync("/api/progress/lessons", new
+        {
+            lessonId = course.LessonId,
+            watchedSeconds = 90
+        });
+
+        var response = await client.GetAsync($"/api/progress/courses/{course.CourseId}");
+        var body = await response.Content.ReadFromJsonAsync<CourseProgressResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Equal(2, body!.Modules.Count);
+        var moduleOne = body.Modules.Single(m => m.ModuleId == course.ModuleId);
+        Assert.Equal(1, moduleOne.LessonCount);
+        Assert.Equal(1, moduleOne.CompletedLessonCount);
+        Assert.Equal(100, moduleOne.ProgressPercent);
+        var moduleTwo = body.Modules.Single(m => m.ModuleId == moduleTwoId);
+        Assert.Equal(1, moduleTwo.LessonCount);
+        Assert.Equal(0, moduleTwo.CompletedLessonCount);
+        Assert.Equal(0, moduleTwo.ProgressPercent);
+        _ = lessonTwoId;
+    }
 }

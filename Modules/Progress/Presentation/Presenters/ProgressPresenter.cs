@@ -41,7 +41,19 @@ public static class ProgressPresenter
             ProgressPercent = output.ProgressPercent,
             StartedAt = output.StartedAt,
             CompletedAt = output.CompletedAt,
-            Lessons = output.Lessons.Select(ToResponse).ToList()
+            Lessons = output.Lessons.Select(ToResponse).ToList(),
+            Modules = output.Modules.Select(ToResponse).ToList()
+        };
+    }
+
+    public static ModuleProgressResponse ToResponse(ModuleProgressOutput output)
+    {
+        return new ModuleProgressResponse
+        {
+            ModuleId = output.ModuleId,
+            LessonCount = output.LessonCount,
+            CompletedLessonCount = output.CompletedLessonCount,
+            ProgressPercent = output.ProgressPercent
         };
     }
 }
