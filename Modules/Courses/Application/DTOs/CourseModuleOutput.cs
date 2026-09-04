@@ -20,7 +20,8 @@ public class CourseModuleOutput
 
     public static CourseModuleOutput FromModule(
         CourseModule module,
-        IReadOnlyDictionary<Guid, (Guid VideoId, int DurationSeconds)> videoInfoByLessonId)
+        IReadOnlyDictionary<Guid, (Guid VideoId, int DurationSeconds)> videoInfoByLessonId,
+        bool hasAccess)
     {
         return new CourseModuleOutput
         {
@@ -32,9 +33,14 @@ public class CourseModuleOutput
             Published = module.Published,
             Lessons = module.Lessons
                 .OrderBy(lesson => lesson.DisplayOrder)
-                .Select(lesson => videoInfoByLessonId.TryGetValue(lesson.Id, out var videoInfo)
-                    ? LessonOutput.FromLesson(lesson, videoInfo.VideoId, videoInfo.DurationSeconds)
-                    : LessonOutput.FromLesson(lesson, videoId: null, durationSeconds: null))
+                .Select(lesson =>
+                {
+                    var canSeeVideo = hasAccess || lesson.FreePreview;
+
+                    return canSeeVideo && videoInfoByLessonId.TryGetValue(lesson.Id, out var videoInfo)
+                        ? LessonOutput.FromLesson(lesson, videoInfo.VideoId, videoInfo.DurationSeconds)
+                        : LessonOutput.FromLesson(lesson, videoId: null, durationSeconds: null);
+                })
                 .ToList()
         };
     }

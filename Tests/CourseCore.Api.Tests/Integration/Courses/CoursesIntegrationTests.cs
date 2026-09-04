@@ -276,7 +276,7 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
-    public async Task GetCourseDetails_WhenUserHasNoAccess_ShouldReturnForbidden()
+    public async Task GetCourseDetails_WhenUserHasNoAccess_ShouldReturnPreview()
     {
         using var client = CreateClient();
         var courseId = await _factory.SeedPublishedCourseAsync(grantAdminAccess: false);
@@ -284,9 +284,35 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
 
         var response = await client.GetAsync($"/api/courses/{courseId}");
+        var body = await response.Content.ReadFromJsonAsync<CourseDetailsResponse>();
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.False(body!.HasAccess);
+    }
+
+    [Fact]
+    public async Task GetCourseDetails_WhenLessonIsFreePreview_ShouldExposeVideoIdEvenWithoutAccess()
+    {
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(lessonFreePreview: true);
+        var video = await _factory.SeedReadyVideoAsync(course.LessonId, durationSeconds: 90);
+        var viewer = await _factory.SeedUserAsync();
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, viewer);
+
+        var response = await client.GetAsync($"/api/courses/{course.CourseId}");
+        var body = await response.Content.ReadFromJsonAsync<CourseDetailsResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.False(body!.HasAccess);
+        var lesson = Assert.Single(Assert.Single(body.Modules).Lessons);
+        Assert.Equal(video.VideoId, lesson.VideoId);
+
+        var playbackResponse = await client.GetAsync($"/api/videos/{video.VideoId}/playback");
+
+        Assert.Equal(HttpStatusCode.OK, playbackResponse.StatusCode);
     }
 
     [Fact]

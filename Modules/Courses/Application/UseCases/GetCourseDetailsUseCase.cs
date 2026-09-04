@@ -48,7 +48,11 @@ public class GetCourseDetailsUseCase
             input.CourseId,
             cancellationToken);
 
-        if (!access.CanAccess)
+        var isLockedButBrowsable = access.Reason is CourseAccessDenialReasons.CourseHasNoLinkedAreas
+            or CourseAccessDenialReasons.CourseHasNoActiveLinkedAreas
+            or CourseAccessDenialReasons.NoAreaAccessFound;
+
+        if (!access.CanAccess && !isLockedButBrowsable)
         {
             throw new ForbiddenException("User cannot access this course.");
         }
@@ -62,6 +66,6 @@ public class GetCourseDetailsUseCase
             entry => entry.Key,
             entry => (entry.Value.Id, entry.Value.DurationSeconds));
 
-        return CourseDetailsOutput.FromCourse(course, videoInfoByLessonId);
+        return CourseDetailsOutput.FromCourse(course, access.CanAccess, videoInfoByLessonId);
     }
 }

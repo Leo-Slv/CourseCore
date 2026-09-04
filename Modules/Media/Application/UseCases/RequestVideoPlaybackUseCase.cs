@@ -91,7 +91,7 @@ public class RequestVideoPlaybackUseCase
             course.Id,
             cancellationToken);
 
-        if (!access.CanAccess)
+        if (!access.CanAccess && !lesson.FreePreview)
         {
             throw new ForbiddenException("User cannot access this video.");
         }

@@ -24,6 +24,8 @@ public class CourseDetailsOutput
 
     public decimal? PriceAmount { get; init; }
 
+    public bool HasAccess { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CourseModuleOutput> Modules { get; init; } = Array.Empty<CourseModuleOutput>();
@@ -34,6 +36,7 @@ public class CourseDetailsOutput
 
     public static CourseDetailsOutput FromCourse(
         Course course,
+        bool hasAccess,
         IReadOnlyDictionary<Guid, (Guid VideoId, int DurationSeconds)> videoInfoByLessonId)
     {
         return new CourseDetailsOutput
@@ -48,10 +51,11 @@ public class CourseDetailsOutput
             PublishedAt = course.PublishedAt,
             PricingModel = course.PricingModel.ToString(),
             PriceAmount = course.PriceAmount,
+            HasAccess = hasAccess,
             AreaIds = course.AreaIds.ToList(),
             Modules = course.Modules
                 .OrderBy(module => module.DisplayOrder)
-                .Select(module => CourseModuleOutput.FromModule(module, videoInfoByLessonId))
+                .Select(module => CourseModuleOutput.FromModule(module, videoInfoByLessonId, hasAccess))
                 .ToList(),
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt

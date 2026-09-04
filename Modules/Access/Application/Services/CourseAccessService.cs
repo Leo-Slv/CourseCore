@@ -75,14 +75,14 @@ public class CourseAccessService
 
         if (courseAreaIds.Count == 0)
         {
-            return Denied(userId, courseId, "Course has no linked areas.");
+            return Denied(userId, courseId, CourseAccessDenialReasons.CourseHasNoLinkedAreas);
         }
 
         var activeCourseAreaIds = await GetActiveAreaIdsAsync(courseAreaIds, cancellationToken);
 
         if (activeCourseAreaIds.Count == 0)
         {
-            return Denied(userId, courseId, "Course has no active linked areas.");
+            return Denied(userId, courseId, CourseAccessDenialReasons.CourseHasNoActiveLinkedAreas);
         }
 
         var now = DateTime.UtcNow;
@@ -102,7 +102,7 @@ public class CourseAccessService
             return Allowed(userId, courseId, "Access granted by role area access.");
         }
 
-        return Denied(userId, courseId, "No area access found.");
+        return Denied(userId, courseId, CourseAccessDenialReasons.NoAreaAccessFound);
     }
 
     public async Task<IReadOnlyCollection<AreaOutput>> ListActiveAreasAsync(CancellationToken cancellationToken = default)

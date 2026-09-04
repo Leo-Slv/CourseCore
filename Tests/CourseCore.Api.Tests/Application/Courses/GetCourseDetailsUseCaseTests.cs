@@ -25,15 +25,18 @@ public class GetCourseDetailsUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenUserHasNoAccess_ShouldThrowForbiddenException()
+    public async Task ExecuteAsync_WhenUserHasNoAreaAccess_ShouldReturnPreviewWithHasAccessFalse()
     {
         var fixture = CreateFixture(grantAccessToInputUser: false);
 
-        await Assert.ThrowsAsync<ForbiddenException>(() => fixture.UseCase.ExecuteAsync(new GetCourseDetailsInput
+        var output = await fixture.UseCase.ExecuteAsync(new GetCourseDetailsInput
         {
             UserId = fixture.InputUserId,
             CourseId = fixture.CourseId
-        }));
+        });
+
+        Assert.False(output.HasAccess);
+        Assert.Equal(fixture.CourseId, output.Id);
     }
 
     [Fact]
@@ -50,6 +53,7 @@ public class GetCourseDetailsUseCaseTests
         Assert.Equal(fixture.CourseId, output.Id);
         Assert.Equal("Course", output.Title);
         Assert.Equal(fixture.AreaId, Assert.Single(output.AreaIds));
+        Assert.True(output.HasAccess);
     }
 
     [Fact]
@@ -57,11 +61,45 @@ public class GetCourseDetailsUseCaseTests
     {
         var fixture = CreateFixture(grantAccessToInputUser: false, grantAccessToOtherUser: true);
 
-        await Assert.ThrowsAsync<ForbiddenException>(() => fixture.UseCase.ExecuteAsync(new GetCourseDetailsInput
+        var output = await fixture.UseCase.ExecuteAsync(new GetCourseDetailsInput
         {
             UserId = fixture.InputUserId,
             CourseId = fixture.CourseId
-        }));
+        });
+
+        Assert.False(output.HasAccess);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenLockedCourseHasFreePreviewLesson_ShouldExposeItsVideoButNotOthers()
+    {
+        var fixture = CreateFixture(grantAccessToInputUser: false);
+        var module = CourseModule.Create(fixture.CourseId, "Module", "Module", 0);
+        var previewLesson = Lesson.Create(module.Id, "Preview Lesson", "Preview Lesson", 0);
+        previewLesson.MarkAsFreePreview();
+        var lockedLesson = Lesson.Create(module.Id, "Locked Lesson", "Locked Lesson", 1);
+        module.AddLesson(previewLesson);
+        module.AddLesson(lockedLesson);
+        fixture.Course.AddModule(module);
+        var previewVideo = Video.Create(
+            previewLesson.Id, "Preview Video", "Preview Video", VideoStorageProvider.Local, "videos/preview.mp4",
+            durationSeconds: 90, sizeBytes: 10);
+        var lockedVideo = Video.Create(
+            lockedLesson.Id, "Locked Video", "Locked Video", VideoStorageProvider.Local, "videos/locked.mp4",
+            durationSeconds: 300, sizeBytes: 10);
+        fixture.Videos.Videos.Add(previewVideo);
+        fixture.Videos.Videos.Add(lockedVideo);
+
+        var output = await fixture.UseCase.ExecuteAsync(new GetCourseDetailsInput
+        {
+            UserId = fixture.InputUserId,
+            CourseId = fixture.CourseId
+        });
+
+        Assert.False(output.HasAccess);
+        var lessons = Assert.Single(output.Modules).Lessons;
+        Assert.Equal(previewVideo.Id, lessons.Single(l => l.Id == previewLesson.Id).VideoId);
+        Assert.Null(lessons.Single(l => l.Id == lockedLesson.Id).VideoId);
     }
 
     [Fact]

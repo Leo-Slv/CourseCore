@@ -2,7 +2,7 @@
 
 Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.md)
 
-## 1. All-or-nothing course access — no partial data for locked courses
+## 1. All-or-nothing course access — no partial data for locked courses — CLOSED
 
 - **Mockup expects**: a "browse before you buy" layout — 2 of 8 modules
   shown unlocked as a preview, "Assistir aula grátis" on individual
@@ -22,8 +22,20 @@ Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.
   either.
 - **Severity**: Feature gap — this is the single biggest reason the page
   looks structurally different from the mockup, not just missing a field.
+- **Resolved, 2026-09-04**: `GetCourseDetailsUseCase` no longer 403s the
+  whole request for a locked-but-otherwise-valid paid course (user in good
+  standing, course published) — it now returns the full module/lesson
+  structure with a new `CourseDetailsResponse.HasAccess: bool` flag, exactly
+  the "preview" option this pendency's own "What's needed" listed. The other
+  two denial reasons (bad account, unpublished course) are unchanged hard
+  403/404s — there's genuinely nothing to preview there. Locked, non-preview
+  lessons report `VideoId: null` (see pendency 2 — that's the enforcement
+  mechanism). Implemented as an allow-list against
+  `CourseAccessService`'s existing denial reasons (now named constants,
+  `CourseAccessDenialReasons`), so any future denial reason defaults to hard
+  403 rather than silently starting to leak preview data.
 
-## 2. `LessonResponse.FreePreview` exists but is completely unenforced
+## 2. `LessonResponse.FreePreview` exists but is completely unenforced — CLOSED
 
 - **Mockup expects**: lessons marked free-preview are actually watchable
   without full course access.
@@ -44,8 +56,15 @@ Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.
 - **Severity**: Feature gap — a CourseCore change, explicitly out of scope
   for this frontend to work around; noted so it isn't mistaken for an
   oversight later.
+- **Resolved, 2026-09-04**: both branches this pendency asked for now exist.
+  `RequestVideoPlaybackUseCase` allows playback when `lesson.FreePreview ==
+  true`, independent of `CanUserAccessCourseAsync` — the real enforcement
+  point, since a `VideoId` reaching the client some other way still can't be
+  played without either full access or `FreePreview`. `GetCourseDetailsUseCase`
+  (pendency 1) is the second layer: a free-preview lesson's `VideoId` is
+  populated even on a locked course; every other lesson's is `null`.
 
-## 3. No duration reachable in bulk
+## 3. No duration reachable in bulk — CLOSED
 
 - **Mockup expects**: "12h de vídeo" at the course level.
 - **Backend today**: duration only exists per-video
@@ -55,6 +74,12 @@ Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.
   `CourseDetailsResponse`, or per-lesson duration exposed without needing a
   full playback request per video.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-04**: `LessonResponse.DurationSeconds` (added for
+  `catalog/lesson-player.md` pendency 1) covers the "per-lesson duration
+  exposed" option this pendency's own "What's needed" already accepted —
+  "12h de vídeo" at course level is a client-side sum over the lessons
+  already returned by `GET /api/courses/{id}`, no further backend field
+  needed.
 
 ## 4. No certificate concept
 

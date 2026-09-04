@@ -112,6 +112,7 @@ public static class CoursePresenter
             PublishedAt = output.PublishedAt,
             PricingModel = output.PricingModel,
             PriceAmount = output.PriceAmount,
+            HasAccess = output.HasAccess,
             AreaIds = output.AreaIds.ToList(),
             Modules = output.Modules.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,

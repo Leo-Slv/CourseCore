@@ -77,6 +77,20 @@ public class RequestVideoPlaybackUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenLessonIsFreePreviewAndUserHasNoAccess_ShouldReturnPlaybackUrl()
+    {
+        var fixture = CreateFixture(grantAccess: false, freePreview: true);
+
+        var output = await fixture.UseCase.ExecuteAsync(new RequestVideoPlaybackInput
+        {
+            UserId = fixture.UserId,
+            VideoId = fixture.Video.Id
+        });
+
+        Assert.Equal(fixture.Video.Id, output.VideoId);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenUserHasAccess_ShouldReturnPlaybackUrl()
     {
         var fixture = CreateFixture(grantAccess: true);
@@ -97,7 +111,8 @@ public class RequestVideoPlaybackUseCaseTests
         bool grantAccess,
         bool addCourse = true,
         bool userActive = true,
-        bool videoReady = true)
+        bool videoReady = true,
+        bool freePreview = false)
     {
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
@@ -109,6 +124,11 @@ public class RequestVideoPlaybackUseCaseTests
         var user = TestEntityFactory.User(active: userActive);
         var area = TestEntityFactory.Area();
         var (course, lesson) = CreatePublishedCourseWithLesson(area.Id);
+
+        if (freePreview)
+        {
+            lesson.MarkAsFreePreview();
+        }
         var video = Video.Create(
             lesson.Id,
             "Video",

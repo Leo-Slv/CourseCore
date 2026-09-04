@@ -22,6 +22,8 @@ public class CourseDetailsResponse
 
     public decimal? PriceAmount { get; init; }
 
+    public bool HasAccess { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CourseModuleResponse> Modules { get; init; } = Array.Empty<CourseModuleResponse>();
