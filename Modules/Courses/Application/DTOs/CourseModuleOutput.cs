@@ -18,7 +18,9 @@ public class CourseModuleOutput
 
     public IReadOnlyCollection<LessonOutput> Lessons { get; init; } = Array.Empty<LessonOutput>();
 
-    public static CourseModuleOutput FromModule(CourseModule module)
+    public static CourseModuleOutput FromModule(
+        CourseModule module,
+        IReadOnlyDictionary<Guid, (Guid VideoId, int DurationSeconds)> videoInfoByLessonId)
     {
         return new CourseModuleOutput
         {
@@ -30,7 +32,9 @@ public class CourseModuleOutput
             Published = module.Published,
             Lessons = module.Lessons
                 .OrderBy(lesson => lesson.DisplayOrder)
-                .Select(LessonOutput.FromLesson)
+                .Select(lesson => videoInfoByLessonId.TryGetValue(lesson.Id, out var videoInfo)
+                    ? LessonOutput.FromLesson(lesson, videoInfo.VideoId, videoInfo.DurationSeconds)
+                    : LessonOutput.FromLesson(lesson, videoId: null, durationSeconds: null))
                 .ToList()
         };
     }

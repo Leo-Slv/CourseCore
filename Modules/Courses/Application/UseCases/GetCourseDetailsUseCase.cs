@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
+using CourseCore.Api.Modules.Media.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Exceptions;
 
 namespace CourseCore.Api.Modules.Courses.Application.UseCases;
@@ -9,13 +10,16 @@ public class GetCourseDetailsUseCase
 {
     private readonly ICourseRepository _courses;
     private readonly CourseAccessService _courseAccessService;
+    private readonly IVideoRepository _videos;
 
     public GetCourseDetailsUseCase(
         ICourseRepository courses,
-        CourseAccessService courseAccessService)
+        CourseAccessService courseAccessService,
+        IVideoRepository videos)
     {
         _courses = courses;
         _courseAccessService = courseAccessService;
+        _videos = videos;
     }
 
     public async Task<CourseDetailsOutput> ExecuteAsync(
@@ -49,6 +53,15 @@ public class GetCourseDetailsUseCase
             throw new ForbiddenException("User cannot access this course.");
         }
 
-        return CourseDetailsOutput.FromCourse(course);
+        var lessonIds = course.Modules
+            .SelectMany(module => module.Lessons)
+            .Select(lesson => lesson.Id)
+            .ToList();
+        var videosByLessonId = await _videos.ListByLessonIdsAsync(lessonIds, cancellationToken);
+        var videoInfoByLessonId = videosByLessonId.ToDictionary(
+            entry => entry.Key,
+            entry => (entry.Value.Id, entry.Value.DurationSeconds));
+
+        return CourseDetailsOutput.FromCourse(course, videoInfoByLessonId);
     }
 }

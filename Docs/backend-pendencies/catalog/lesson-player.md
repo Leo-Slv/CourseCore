@@ -2,7 +2,7 @@
 
 Spec: [`Docs/specs/catalog/lesson-player.md`](../../specs/catalog/lesson-player.md)
 
-## 1. No route resolves a lesson's video ID — BLOCKING
+## 1. No route resolves a lesson's video ID — CLOSED (was BLOCKING)
 
 - **Mockup expects**: a working video player, since that's the entire
   reason this screen exists.
@@ -32,8 +32,18 @@ Spec: [`Docs/specs/catalog/lesson-player.md`](../../specs/catalog/lesson-player.
   faking playback.
 - **Severity**: **Blocking** — not "a field is missing," the screen's core
   feature has no viable data path at all until this endpoint exists.
+- **Resolved, 2026-09-04**: `LessonResponse` (nested under
+  `GET /api/courses/{id}`) now carries `VideoId` and `DurationSeconds`
+  (both nullable — a lesson with no attached video reports `null`, not a
+  misleading `0:00`), computed server-side via a new bulk
+  `IVideoRepository.ListByLessonIdsAsync` lookup in `GetCourseDetailsUseCase`
+  (one query for the whole course, no per-lesson N+1). The frontend now has
+  exactly the handoff this pendency asked for: read `videoId` off the
+  lesson, then call the already-working `GET /api/videos/{videoId}/playback`.
+  No new endpoint needed — the field-on-`LessonResponse` option from "What's
+  needed" below was the one implemented.
 
-## 2. No per-lesson duration reachable
+## 2. No per-lesson duration reachable — CLOSED
 
 - **Mockup expects**: "14:20" next to each lesson in the sidebar.
 - **Backend today**: only on `VideoResponse.DurationSeconds` — same
@@ -41,6 +51,8 @@ Spec: [`Docs/specs/catalog/lesson-player.md`](../../specs/catalog/lesson-player.
   free once pendency 1 is fixed (assuming the new endpoint/field also
   returns duration).
 - **Severity**: Feature gap, downstream of pendency 1.
+- **Resolved, 2026-09-04**: solved by the same change as pendency 1 —
+  `LessonResponse.DurationSeconds` is populated in the same bulk lookup.
 
 ## 3. No attached-materials concept
 
@@ -56,14 +68,19 @@ Spec: [`Docs/specs/catalog/lesson-player.md`](../../specs/catalog/lesson-player.
 - **Backend today**: nothing anywhere in the domain.
 - **Severity**: Feature gap.
 
-## 5. Captions, playback speed, scrubber — moot until pendency 1 is fixed
+## 5. Captions, playback speed, scrubber — unblocked, frontend work only
 
 - **Mockup expects**: CC toggle, speed control, a real scrubber over the
   video timeline.
 - **Backend today**: irrelevant while there's no real video to control —
   chrome for a player that doesn't play here.
-- **Severity**: Blocking, same root cause as pendency 1 — not tracked
-  separately, revisit once real playback exists.
+- **Severity**: was "Blocking, same root cause as pendency 1." Now that
+  pendency 1 is resolved (2026-09-04) and a real signed playback URL is
+  reachable, speed control and a scrubber are pure frontend `<video>`-element
+  features against that URL — no backend gap remains for them. Captions
+  specifically would need a subtitle-track concept added to `Video` if real
+  ones are wanted (not requested here, not implemented) — otherwise this
+  item is frontend scope, not a backend pendency anymore.
 
 ## What already works and needed no workaround
 

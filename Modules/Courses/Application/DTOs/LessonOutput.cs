@@ -18,7 +18,11 @@ public class LessonOutput
 
     public bool Published { get; init; }
 
-    public static LessonOutput FromLesson(Lesson lesson)
+    public Guid? VideoId { get; init; }
+
+    public int? DurationSeconds { get; init; }
+
+    public static LessonOutput FromLesson(Lesson lesson, Guid? videoId, int? durationSeconds)
     {
         return new LessonOutput
         {
@@ -28,7 +32,9 @@ public class LessonOutput
             Description = lesson.Description,
             DisplayOrder = lesson.DisplayOrder,
             FreePreview = lesson.FreePreview,
-            Published = lesson.Published
+            Published = lesson.Published,
+            VideoId = videoId,
+            DurationSeconds = durationSeconds
         };
     }
 }

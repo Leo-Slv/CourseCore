@@ -183,7 +183,9 @@ public static class CoursePresenter
             Description = output.Description,
             DisplayOrder = output.DisplayOrder,
             FreePreview = output.FreePreview,
-            Published = output.Published
+            Published = output.Published,
+            VideoId = output.VideoId,
+            DurationSeconds = output.DurationSeconds
         };
     }
 

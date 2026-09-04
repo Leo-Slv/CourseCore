@@ -51,6 +51,23 @@ public class EfVideoRepository : IVideoRepository
         return rows.ToDictionary(row => row.LessonId, row => row.DurationSeconds);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, Video>> ListByLessonIdsAsync(
+        IReadOnlyCollection<Guid> lessonIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (lessonIds.Count == 0)
+        {
+            return new Dictionary<Guid, Video>();
+        }
+
+        var models = await _dbContext.Videos
+            .AsNoTracking()
+            .Where(video => lessonIds.Contains(video.LessonId))
+            .ToListAsync(cancellationToken);
+
+        return models.ToDictionary(model => model.LessonId, VideoMapper.ToDomain);
+    }
+
     public async Task CreateAsync(Video video, CancellationToken cancellationToken = default)
     {
         await _dbContext.Videos.AddAsync(VideoMapper.ToPersistence(video), cancellationToken);

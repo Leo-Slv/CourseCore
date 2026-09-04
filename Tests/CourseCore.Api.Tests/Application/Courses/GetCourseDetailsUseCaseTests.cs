@@ -2,6 +2,9 @@ using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Application.UseCases;
+using CourseCore.Api.Modules.Courses.Domain.Entities;
+using CourseCore.Api.Modules.Media.Domain.Entities;
+using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Tests.TestDoubles;
 
@@ -61,6 +64,49 @@ public class GetCourseDetailsUseCaseTests
         }));
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenLessonHasVideo_ShouldIncludeVideoIdAndDuration()
+    {
+        var fixture = CreateFixture(grantAccessToInputUser: true);
+        var module = CourseModule.Create(fixture.CourseId, "Module", "Module", 0);
+        var lesson = Lesson.Create(module.Id, "Lesson", "Lesson", 0);
+        module.AddLesson(lesson);
+        fixture.Course.AddModule(module);
+        var video = Video.Create(
+            lesson.Id, "Video", "Video", VideoStorageProvider.Local, "videos/v.mp4", durationSeconds: 240, sizeBytes: 10);
+        fixture.Videos.Videos.Add(video);
+
+        var output = await fixture.UseCase.ExecuteAsync(new GetCourseDetailsInput
+        {
+            UserId = fixture.InputUserId,
+            CourseId = fixture.CourseId
+        });
+
+        var lessonOutput = Assert.Single(Assert.Single(output.Modules).Lessons);
+        Assert.Equal(video.Id, lessonOutput.VideoId);
+        Assert.Equal(240, lessonOutput.DurationSeconds);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenLessonHasNoVideo_ShouldReturnNullVideoFields()
+    {
+        var fixture = CreateFixture(grantAccessToInputUser: true);
+        var module = CourseModule.Create(fixture.CourseId, "Module", "Module", 0);
+        var lesson = Lesson.Create(module.Id, "Lesson", "Lesson", 0);
+        module.AddLesson(lesson);
+        fixture.Course.AddModule(module);
+
+        var output = await fixture.UseCase.ExecuteAsync(new GetCourseDetailsInput
+        {
+            UserId = fixture.InputUserId,
+            CourseId = fixture.CourseId
+        });
+
+        var lessonOutput = Assert.Single(Assert.Single(output.Modules).Lessons);
+        Assert.Null(lessonOutput.VideoId);
+        Assert.Null(lessonOutput.DurationSeconds);
+    }
+
     private static GetCourseDetailsFixture CreateFixture(
         bool addCourse = true,
         bool grantAccessToInputUser = false,
@@ -95,14 +141,17 @@ public class GetCourseDetailsUseCaseTests
         }
 
         var courseAccessService = new CourseAccessService(users, roles, areas, courses);
-        var useCase = new GetCourseDetailsUseCase(courses, courseAccessService);
+        var videos = new FakeVideoRepository();
+        var useCase = new GetCourseDetailsUseCase(courses, courseAccessService, videos);
 
         return new GetCourseDetailsFixture(
             useCase,
             inputUser.Id,
             otherUser.Id,
             course.Id,
-            area.Id);
+            area.Id,
+            course,
+            videos);
     }
 
     private sealed record GetCourseDetailsFixture(
@@ -110,5 +159,7 @@ public class GetCourseDetailsUseCaseTests
         Guid InputUserId,
         Guid OtherUserId,
         Guid CourseId,
-        Guid AreaId);
+        Guid AreaId,
+        Course Course,
+        FakeVideoRepository Videos);
 }

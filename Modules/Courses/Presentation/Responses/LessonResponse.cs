@@ -15,4 +15,8 @@ public class LessonResponse
     public bool FreePreview { get; init; }
 
     public bool Published { get; init; }
+
+    public Guid? VideoId { get; init; }
+
+    public int? DurationSeconds { get; init; }
 }

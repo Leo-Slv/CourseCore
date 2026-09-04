@@ -10,7 +10,7 @@ those earlier screens already hit, reconfirmed here because this page's
 mockup leans on them harder (a dashboard card shows more per-course
 detail than a catalog card does).
 
-## 1. No duration anywhere — course-level, remaining-time, or per-lesson
+## 1. No duration anywhere — course-level, remaining-time, or per-lesson — CLOSED
 
 - **Mockup expects**: "24 aulas · 7h" on a completed course's cover,
   "restam 8min" on the hero card's current-lesson line, "12min
@@ -24,6 +24,14 @@ detail than a catalog card does).
   not estimated.
 - **Severity**: Feature gap, same root cause as lesson-player pendency 1
   — closing it there closes it here too.
+- **Resolved, 2026-09-04**: closed by the same two changes made this
+  session — `CourseCatalogItemResponse.DurationSeconds` (course-level
+  total, added for `catalog/course-catalog.md` pendency 1) and
+  `LessonResponse.DurationSeconds` (per-lesson, added for
+  `catalog/lesson-player.md` pendency 1). "Remaining time" per lesson is
+  now computable client-side from `LessonResponse.DurationSeconds` minus
+  the existing `GET /api/progress/courses/{id}` response's per-lesson
+  `WatchedSeconds` — no further backend change needed for that specifically.
 
 ## 2. No certificate concept
 

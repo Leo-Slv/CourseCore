@@ -32,7 +32,9 @@ public class CourseDetailsOutput
 
     public DateTime UpdatedAt { get; init; }
 
-    public static CourseDetailsOutput FromCourse(Course course)
+    public static CourseDetailsOutput FromCourse(
+        Course course,
+        IReadOnlyDictionary<Guid, (Guid VideoId, int DurationSeconds)> videoInfoByLessonId)
     {
         return new CourseDetailsOutput
         {
@@ -49,7 +51,7 @@ public class CourseDetailsOutput
             AreaIds = course.AreaIds.ToList(),
             Modules = course.Modules
                 .OrderBy(module => module.DisplayOrder)
-                .Select(CourseModuleOutput.FromModule)
+                .Select(module => CourseModuleOutput.FromModule(module, videoInfoByLessonId))
                 .ToList(),
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt

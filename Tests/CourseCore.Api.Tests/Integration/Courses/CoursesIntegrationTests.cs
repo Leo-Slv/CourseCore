@@ -290,6 +290,29 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task GetCourseDetails_WhenLessonHasVideo_ShouldIncludeVideoIdAndDuration()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        var video = await _factory.SeedReadyVideoAsync(course.LessonId, durationSeconds: 240);
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync($"/api/courses/{course.CourseId}");
+        var body = await response.Content.ReadFromJsonAsync<CourseDetailsResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        var lesson = Assert.Single(Assert.Single(body!.Modules).Lessons);
+        Assert.Equal(video.VideoId, lesson.VideoId);
+        Assert.Equal(240, lesson.DurationSeconds);
+
+        var playbackResponse = await client.GetAsync($"/api/videos/{lesson.VideoId}/playback");
+
+        Assert.Equal(HttpStatusCode.OK, playbackResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task GetCourseDetails_WhenUserHasAccess_ShouldReturnOk()
     {
         using var client = CreateClient();
