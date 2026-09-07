@@ -27,6 +27,7 @@ public class AuthController : ControllerBase
     private readonly ResendEmailConfirmationUseCase _resendEmailConfirmationUseCase;
     private readonly RequestPasswordResetUseCase _requestPasswordResetUseCase;
     private readonly ConfirmPasswordResetUseCase _confirmPasswordResetUseCase;
+    private readonly GetCurrentUserUseCase _getCurrentUserUseCase;
     private readonly IRefreshTokenCookieService _refreshTokenCookieService;
     private readonly ICurrentUserService _currentUserService;
     private readonly AuthResponseOptions _authResponseOptions;
@@ -41,6 +42,7 @@ public class AuthController : ControllerBase
         ResendEmailConfirmationUseCase resendEmailConfirmationUseCase,
         RequestPasswordResetUseCase requestPasswordResetUseCase,
         ConfirmPasswordResetUseCase confirmPasswordResetUseCase,
+        GetCurrentUserUseCase getCurrentUserUseCase,
         IRefreshTokenCookieService refreshTokenCookieService,
         ICurrentUserService currentUserService,
         IOptions<AuthResponseOptions> authResponseOptions,
@@ -54,6 +56,7 @@ public class AuthController : ControllerBase
         _resendEmailConfirmationUseCase = resendEmailConfirmationUseCase;
         _requestPasswordResetUseCase = requestPasswordResetUseCase;
         _confirmPasswordResetUseCase = confirmPasswordResetUseCase;
+        _getCurrentUserUseCase = getCurrentUserUseCase;
         _refreshTokenCookieService = refreshTokenCookieService;
         _currentUserService = currentUserService;
         _authResponseOptions = authResponseOptions.Value;
@@ -160,6 +163,19 @@ public class AuthController : ControllerBase
         await _confirmPasswordResetUseCase.ExecuteAsync(AuthPresenter.ToInput(request), cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpGet("me")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType(typeof(CurrentUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<CurrentUserResponse>> MeAsync(CancellationToken cancellationToken)
+    {
+        var output = await _getCurrentUserUseCase.ExecuteAsync(GetCurrentUserId(), cancellationToken);
+
+        return Ok(AuthPresenter.ToResponse(output));
     }
 
     [HttpPost("refresh-token")]

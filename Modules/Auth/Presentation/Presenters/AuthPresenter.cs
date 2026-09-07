@@ -75,6 +75,19 @@ public static class AuthPresenter
         };
     }
 
+    public static CurrentUserResponse ToResponse(CurrentUserOutput output)
+    {
+        return new CurrentUserResponse
+        {
+            UserId = output.UserId,
+            Name = output.Name,
+            Email = output.Email,
+            Active = output.Active,
+            EmailVerifiedAt = output.EmailVerifiedAt,
+            Roles = output.Roles.ToList()
+        };
+    }
+
     public static AuthTokenResponse ToResponse(AuthToken token, bool exposeRefreshToken)
     {
         return new AuthTokenResponse

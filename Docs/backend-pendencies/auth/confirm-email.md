@@ -34,7 +34,7 @@ Spec: [`Docs/specs/auth/confirm-email.md`](../../specs/auth/confirm-email.md)
   what this pendency's own note already anticipated ("a real emailed link
   would work transparently... with no frontend change required").
 
-## 2. No self-service email-change endpoint
+## 2. No self-service email-change endpoint — CLOSED (won't implement)
 
 - **Mockup expects**: "Trocar e-mail" actually lets the user change their
   registered address.
@@ -48,8 +48,14 @@ Spec: [`Docs/specs/auth/confirm-email.md`](../../specs/auth/confirm-email.md)
 - **Workaround shipped**: "Trocar e-mail" is a stub link
   (`appRoutes.auth.changeEmail`), no page behind it.
 - **Severity**: Feature gap.
+- **Decision, 2026-09-07: won't implement.** Self-service email change is
+  deliberately not offered as a supported action — a user's own email
+  stays fixed after registration. Changing it remains admin-only via the
+  existing `PUT /api/users/{userId}` (`ManageUsers` policy). The frontend's
+  "Trocar e-mail" stub should be removed rather than pointed at a future
+  endpoint — there is no plan to build one.
 
-## 3. No "am I confirmed?" read endpoint
+## 3. No "am I confirmed?" read endpoint — CLOSED
 
 - **Mockup expects (implicitly)**: nothing in the mockup itself, but a
   correct implementation would want the status card to reflect real-time
@@ -65,3 +71,10 @@ Spec: [`Docs/specs/auth/confirm-email.md`](../../specs/auth/confirm-email.md)
 - **Severity**: Feature gap — same root cause referenced by every later
   screen's client-only auth gating; revisit centrally, not per-screen, if
   `/auth/me` ever gets added.
+- **Resolved, 2026-09-07**: `GET /api/auth/me` now exists — returns
+  `UserId, Name, Email, Active, EmailVerifiedAt, Roles` for the
+  authenticated caller (any authenticated user, no extra policy). This is
+  the central `/auth/me` this pendency and every other screen's
+  client-only auth gating already deferred to — revisit those other call
+  sites opportunistically now that a real endpoint exists, rather than as
+  a blocking follow-up.
