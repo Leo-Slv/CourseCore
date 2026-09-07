@@ -197,6 +197,28 @@ public class SensitiveActionAuditTests
     }
 
     [Fact]
+    public async Task UnpublishCourse_ShouldRecordCourseUnpublishedAuditLog()
+    {
+        var course = Course.Create(
+            "Course",
+            Slug.Create($"course-{Guid.NewGuid():N}"),
+            "Course description",
+            displayOrder: 1);
+        course.Publish();
+        var courses = new FakeCourseRepository();
+        courses.Courses.Add(course);
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new UnpublishCourseUseCase(courses, new FakeUnitOfWork(), auditLogs);
+
+        await useCase.ExecuteAsync(new PublishCourseInput { CourseId = course.Id });
+
+        var auditLog = Assert.Single(auditLogs.Entries);
+        Assert.Equal(AuditLogActionNames.CourseUnpublished, auditLog.Action);
+        Assert.Equal("Course", auditLog.EntityName);
+        Assert.Equal(course.Id, auditLog.EntityId);
+    }
+
+    [Fact]
     public async Task CreateVideo_ShouldRecordVideoCreatedAuditLog()
     {
         var lesson = Lesson.Create(Guid.NewGuid(), "Lesson", "Lesson description", displayOrder: 1);

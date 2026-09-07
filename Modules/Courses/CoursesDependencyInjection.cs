@@ -13,8 +13,10 @@ public static class CoursesDependencyInjection
         services.AddScoped<CreateCourseUseCase>();
         services.AddScoped<UpdateCourseUseCase>();
         services.AddScoped<PublishCourseUseCase>();
+        services.AddScoped<UnpublishCourseUseCase>();
         services.AddScoped<GetCourseDetailsUseCase>();
         services.AddScoped<ListAvailableCoursesUseCase>();
+        services.AddScoped<ListAllCoursesUseCase>();
 
         return services;
     }

@@ -19,23 +19,29 @@ public class CoursesController : ControllerBase
     private readonly CreateCourseUseCase _createCourseUseCase;
     private readonly UpdateCourseUseCase _updateCourseUseCase;
     private readonly PublishCourseUseCase _publishCourseUseCase;
+    private readonly UnpublishCourseUseCase _unpublishCourseUseCase;
     private readonly GetCourseDetailsUseCase _getCourseDetailsUseCase;
     private readonly ListAvailableCoursesUseCase _listAvailableCoursesUseCase;
+    private readonly ListAllCoursesUseCase _listAllCoursesUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public CoursesController(
         CreateCourseUseCase createCourseUseCase,
         UpdateCourseUseCase updateCourseUseCase,
         PublishCourseUseCase publishCourseUseCase,
+        UnpublishCourseUseCase unpublishCourseUseCase,
         GetCourseDetailsUseCase getCourseDetailsUseCase,
         ListAvailableCoursesUseCase listAvailableCoursesUseCase,
+        ListAllCoursesUseCase listAllCoursesUseCase,
         ICurrentUserService currentUserService)
     {
         _createCourseUseCase = createCourseUseCase;
         _updateCourseUseCase = updateCourseUseCase;
         _publishCourseUseCase = publishCourseUseCase;
+        _unpublishCourseUseCase = unpublishCourseUseCase;
         _getCourseDetailsUseCase = getCourseDetailsUseCase;
         _listAvailableCoursesUseCase = listAvailableCoursesUseCase;
+        _listAllCoursesUseCase = listAllCoursesUseCase;
         _currentUserService = currentUserService;
     }
 
@@ -98,6 +104,39 @@ public class CoursesController : ControllerBase
             cancellationToken);
 
         return Ok(CoursePresenter.ToResponse(output));
+    }
+
+    [HttpPost("{courseId:guid}/unpublish")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
+    [ProducesResponseType(typeof(CourseResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<CourseResponse>> UnpublishAsync(
+        Guid courseId,
+        CancellationToken cancellationToken)
+    {
+        var output = await _unpublishCourseUseCase.ExecuteAsync(
+            new PublishCourseInput { CourseId = courseId },
+            cancellationToken);
+
+        return Ok(CoursePresenter.ToResponse(output));
+    }
+
+    [HttpGet]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<CourseResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IReadOnlyCollection<CourseResponse>>> ListAllAsync(
+        CancellationToken cancellationToken)
+    {
+        var output = await _listAllCoursesUseCase.ExecuteAsync(cancellationToken);
+
+        return Ok(output.Select(CoursePresenter.ToResponse).ToList());
     }
 
     [HttpGet("{courseId:guid}")]

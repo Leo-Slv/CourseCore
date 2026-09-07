@@ -12,4 +12,5 @@ public static class AuthPolicyNames
     public const string ManageCourses = "ManageCourses";
     public const string ManageVideos = "ManageVideos";
     public const string ReadProgress = "ReadProgress";
+    public const string ReadAudit = "ReadAudit";
 }

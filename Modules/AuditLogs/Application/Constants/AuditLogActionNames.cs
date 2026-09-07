@@ -28,6 +28,7 @@ public static class AuditLogActionNames
     public const string CourseCreated = "CourseCreated";
     public const string CourseUpdated = "CourseUpdated";
     public const string CoursePublished = "CoursePublished";
+    public const string CourseUnpublished = "CourseUnpublished";
     public const string VideoCreated = "VideoCreated";
     public const string VideoMarkedReady = "VideoMarkedReady";
 }

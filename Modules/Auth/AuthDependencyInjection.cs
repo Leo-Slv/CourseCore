@@ -113,6 +113,7 @@ public static class AuthDependencyInjection
             AddPermissionPolicy(options, AuthPolicyNames.ManageCourses, AuthPermissionNames.ManageCourses);
             AddPermissionPolicy(options, AuthPolicyNames.ManageVideos, AuthPermissionNames.ManageVideos);
             AddPermissionPolicy(options, AuthPolicyNames.ReadProgress, AuthPermissionNames.ReadProgress);
+            AddPermissionPolicy(options, AuthPolicyNames.ReadAudit, AuthPermissionNames.ReadAudit);
         });
 
         return services;

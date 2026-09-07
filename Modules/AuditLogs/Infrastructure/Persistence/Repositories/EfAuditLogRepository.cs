@@ -46,4 +46,21 @@ public class EfAuditLogRepository : IAuditLogRepository
 
         return models.Select(AuditLogMapper.ToDomain).ToList();
     }
+
+    public async Task<(IReadOnlyCollection<AuditLog> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.AuditLogs.AsNoTracking();
+        var totalCount = await query.CountAsync(cancellationToken);
+        var models = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (models.Select(AuditLogMapper.ToDomain).ToList(), totalCount);
+    }
 }

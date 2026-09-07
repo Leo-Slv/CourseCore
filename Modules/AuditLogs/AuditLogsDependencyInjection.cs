@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
+using CourseCore.Api.Modules.AuditLogs.Application.UseCases;
 using CourseCore.Api.Modules.AuditLogs.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Infrastructure.Persistence.Repositories;
 
@@ -10,6 +11,7 @@ public static class AuditLogsDependencyInjection
     {
         services.AddScoped<IAuditLogRepository, EfAuditLogRepository>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<ListAuditLogsUseCase>();
 
         return services;
     }

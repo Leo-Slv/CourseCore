@@ -42,7 +42,7 @@ CourseCore side.
 | Screen | File | Why skipped |
 |---|---|---|
 | Checkout — Pix/cartão (`1i`) | [catalog/course-detail.md](catalog/course-detail.md) (pendency 6 update) | No payment/checkout endpoint at all — explicit backend non-goal, not just a missing field. |
-| Painel admin — Cursos (`1k`) | [admin/courses-panel.md](admin/courses-panel.md) | No endpoint lists draft courses (a draft would become unreachable after leaving the screen) and no audit-log read endpoint. |
+| Painel admin — Cursos (`1k`) | [admin/courses-panel.md](admin/courses-panel.md) | Blocking gaps closed 2026-09-07 (course listing + audit-log read); screen itself still has no spec, so it stays unbuilt here. |
 
 New screens get their own file here as part of the standard spec workflow
 (see `CLAUDE.md`, "Implementation Workflow") — add a row above when one is

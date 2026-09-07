@@ -276,6 +276,73 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task UnpublishCourse_WhenPublished_ShouldReturnOkAndUnpublish()
+    {
+        using var client = CreateClient();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsync($"/api/courses/{course.CourseId}/unpublish", content: null);
+        await AssertStatusAsync(HttpStatusCode.OK, response);
+
+        var body = await response.Content.ReadFromJsonAsync<CourseResponse>();
+        Assert.NotNull(body);
+        Assert.False(body!.Published);
+        Assert.Null(body.PublishedAt);
+    }
+
+    [Fact]
+    public async Task UnpublishCourse_WhenAnonymous_ShouldReturnUnauthorized()
+    {
+        using var client = CreateClient();
+
+        var response = await client.PostAsync($"/api/courses/{Guid.NewGuid()}/unpublish", content: null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListAllCourses_WhenAdmin_ShouldIncludeDraftCourses()
+    {
+        using var client = CreateClient();
+        var areaId = await _factory.SeedAreaAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var draftResponse = await client.PostAsJsonAsync("/api/courses", CreateCourseRequest(areaId));
+        var draft = await draftResponse.Content.ReadFromJsonAsync<CourseResponse>();
+
+        var response = await client.GetAsync("/api/courses");
+        var body = await response.Content.ReadFromJsonAsync<List<CourseResponse>>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.NotNull(draft);
+        var listedDraft = body!.Single(c => c.Id == draft!.Id);
+        Assert.False(listedDraft.Published);
+    }
+
+    [Fact]
+    public async Task ListAllCourses_WhenUserHasNoPermissionOrAdminRole_ShouldReturnForbidden()
+    {
+        using var client = CreateClient();
+        var user = await _factory.SeedUserAsync();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListAllCourses_WhenAnonymous_ShouldReturnUnauthorized()
+    {
+        using var client = CreateClient();
+
+        var response = await client.GetAsync("/api/courses");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetCourseDetails_WhenUserHasNoAccess_ShouldReturnPreview()
     {
         using var client = CreateClient();

@@ -14,4 +14,9 @@ public interface IAuditLogRepository
     Task<IReadOnlyCollection<AuditLog>> ListByUserAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyCollection<AuditLog> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 }

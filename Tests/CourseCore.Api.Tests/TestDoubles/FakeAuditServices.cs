@@ -69,6 +69,21 @@ public sealed class FakeAuditLogRepository : IAuditLogRepository
         return Task.FromResult<IReadOnlyCollection<AuditLog>>(
             AuditLogs.Where(log => log.UserId == userId).ToArray());
     }
+
+    public Task<(IReadOnlyCollection<AuditLog> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var ordered = AuditLogs
+            .OrderByDescending(log => log.CreatedAt)
+            .ThenByDescending(log => log.Id)
+            .ToArray();
+
+        var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToArray();
+
+        return Task.FromResult<(IReadOnlyCollection<AuditLog> Items, int TotalCount)>((items, ordered.Length));
+    }
 }
 
 public sealed class FakeCurrentUserService : ICurrentUserService
