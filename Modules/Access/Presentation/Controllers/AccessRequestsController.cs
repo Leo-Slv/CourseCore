@@ -20,6 +20,8 @@ public class AccessRequestsController : ControllerBase
     private readonly ListAccessRequestsUseCase _listAccessRequestsUseCase;
     private readonly ApproveAccessRequestUseCase _approveAccessRequestUseCase;
     private readonly RejectAccessRequestUseCase _rejectAccessRequestUseCase;
+    private readonly GrantCourseAccessUseCase _grantCourseAccessUseCase;
+    private readonly ListGrantedCourseAccessUseCase _listGrantedCourseAccessUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public AccessRequestsController(
@@ -28,6 +30,8 @@ public class AccessRequestsController : ControllerBase
         ListAccessRequestsUseCase listAccessRequestsUseCase,
         ApproveAccessRequestUseCase approveAccessRequestUseCase,
         RejectAccessRequestUseCase rejectAccessRequestUseCase,
+        GrantCourseAccessUseCase grantCourseAccessUseCase,
+        ListGrantedCourseAccessUseCase listGrantedCourseAccessUseCase,
         ICurrentUserService currentUserService)
     {
         _requestCourseAccessUseCase = requestCourseAccessUseCase;
@@ -35,6 +39,8 @@ public class AccessRequestsController : ControllerBase
         _listAccessRequestsUseCase = listAccessRequestsUseCase;
         _approveAccessRequestUseCase = approveAccessRequestUseCase;
         _rejectAccessRequestUseCase = rejectAccessRequestUseCase;
+        _grantCourseAccessUseCase = grantCourseAccessUseCase;
+        _listGrantedCourseAccessUseCase = listGrantedCourseAccessUseCase;
         _currentUserService = currentUserService;
     }
 
@@ -127,6 +133,44 @@ public class AccessRequestsController : ControllerBase
             cancellationToken);
 
         return Ok(AccessPresenter.ToResponse(output));
+    }
+
+    [HttpPost("grant")]
+    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [ProducesResponseType(typeof(AccessRequestResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<AccessRequestResponse>> GrantAsync(
+        GrantCourseAccessRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _grantCourseAccessUseCase.ExecuteAsync(
+            request.UserId,
+            request.CourseId,
+            GetCurrentUserId(),
+            cancellationToken);
+
+        return Ok(AccessPresenter.ToResponse(output));
+    }
+
+    [HttpGet("users/{userId:guid}/granted")]
+    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<AccessRequestResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IReadOnlyCollection<AccessRequestResponse>>> ListGrantedAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var outputs = await _listGrantedCourseAccessUseCase.ExecuteAsync(userId, cancellationToken);
+
+        return Ok(outputs.Select(AccessPresenter.ToResponse).ToList());
     }
 
     private Guid GetCurrentUserId()

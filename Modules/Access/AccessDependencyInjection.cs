@@ -25,6 +25,10 @@ public static class AccessDependencyInjection
         services.AddScoped<RejectAccessRequestUseCase>();
         services.AddScoped<ListAccessRequestsUseCase>();
         services.AddScoped<ListMyAccessRequestsUseCase>();
+        services.AddScoped<ListUserAreaAccessUseCase>();
+        services.AddScoped<RevokeUserAreaAccessUseCase>();
+        services.AddScoped<GrantCourseAccessUseCase>();
+        services.AddScoped<ListGrantedCourseAccessUseCase>();
 
         return services;
     }

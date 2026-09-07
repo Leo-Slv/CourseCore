@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Application.DTOs;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.DTOs;
@@ -9,13 +10,15 @@ namespace CourseCore.Api.Modules.Users.Application.UseCases;
 public class ListUsersUseCase
 {
     private readonly IUserRepository _users;
+    private readonly IRoleRepository _roles;
 
-    public ListUsersUseCase(IUserRepository users)
+    public ListUsersUseCase(IUserRepository users, IRoleRepository roles)
     {
         _users = users;
+        _roles = roles;
     }
 
-    public async Task<PagedResult<UserOutput>> ExecuteAsync(
+    public async Task<UserListOutput> ExecuteAsync(
         ListUsersInput input,
         CancellationToken cancellationToken = default)
     {
@@ -30,15 +33,32 @@ public class ListUsersUseCase
                 $"PageSize must be between 1 and {PaginationLimits.MaximumPageSize}.");
         }
 
-        var (users, totalCount) = await _users.ListPagedAsync(input.Page, input.PageSize, cancellationToken);
+        var search = string.IsNullOrWhiteSpace(input.Search) ? null : input.Search.Trim();
+        var (users, totalCount) = await _users.ListPagedAsync(input.Page, input.PageSize, search, cancellationToken);
+        var roleNamesByUserId = await _roles.FindRoleNamesByUserIdsAsync(
+            users.Select(user => user.Id).ToList(),
+            cancellationToken);
+        var totalRegistered = await _users.CountAsync(cancellationToken);
+        var totalConfirmed = await _users.CountConfirmedAsync(cancellationToken);
 
-        return new PagedResult<UserOutput>
+        var page = new PagedResult<UserOutput>
         {
-            Items = users.Select(UserOutput.FromUser).ToList(),
+            Items = users
+                .Select(user => UserOutput.FromUser(
+                    user,
+                    roleNamesByUserId.TryGetValue(user.Id, out var roleNames) ? roleNames : null))
+                .ToList(),
             Page = input.Page,
             PageSize = input.PageSize,
             TotalItems = totalCount,
             TotalPages = (int)Math.Ceiling(totalCount / (double)input.PageSize)
+        };
+
+        return new UserListOutput
+        {
+            Page = page,
+            TotalRegistered = totalRegistered,
+            TotalConfirmed = totalConfirmed
         };
     }
 }

@@ -43,11 +43,14 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAdminAsync(client);
         var json = await client.GetFromJsonAsync<JsonElement>("/api/users");
-        Assert.Equal(1, json.GetProperty("page").GetInt32());
-        Assert.Equal(50, json.GetProperty("pageSize").GetInt32());
-        Assert.Equal(JsonValueKind.Array, json.GetProperty("items").ValueKind);
-        Assert.True(json.TryGetProperty("totalItems", out _));
-        Assert.True(json.TryGetProperty("totalPages", out _));
+        var page = json.GetProperty("page");
+        Assert.Equal(1, page.GetProperty("page").GetInt32());
+        Assert.Equal(50, page.GetProperty("pageSize").GetInt32());
+        Assert.Equal(JsonValueKind.Array, page.GetProperty("items").ValueKind);
+        Assert.True(page.TryGetProperty("totalItems", out _));
+        Assert.True(page.TryGetProperty("totalPages", out _));
+        Assert.True(json.TryGetProperty("totalRegistered", out _));
+        Assert.True(json.TryGetProperty("totalConfirmed", out _));
     }
 
     [Fact]
@@ -56,9 +59,10 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
         using var client = IntegrationAuth.CreateClient(_factory);
         await IntegrationAuth.AuthenticateAsAdminAsync(client);
         var json = await client.GetFromJsonAsync<JsonElement>("/api/users?page=1&pageSize=2");
-        Assert.Equal(1, json.GetProperty("page").GetInt32());
-        Assert.Equal(2, json.GetProperty("pageSize").GetInt32());
-        Assert.True(json.GetProperty("items").GetArrayLength() <= 2);
+        var page = json.GetProperty("page");
+        Assert.Equal(1, page.GetProperty("page").GetInt32());
+        Assert.Equal(2, page.GetProperty("pageSize").GetInt32());
+        Assert.True(page.GetProperty("items").GetArrayLength() <= 2);
     }
 
     [Theory]
@@ -221,6 +225,57 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
         });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUserById_WhenUserExists_ShouldReturnUser()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var user = await _factory.SeedUserAsync();
+
+        var response = await client.GetAsync($"/api/users/{user.Id}");
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(user.Id, json.GetProperty("id").GetGuid());
+        Assert.Equal(JsonValueKind.Array, json.GetProperty("roleNames").ValueKind);
+    }
+
+    [Fact]
+    public async Task GetUserById_WhenUserDoesNotExist_ShouldReturnNotFound()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.GetAsync($"/api/users/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignAndRemoveRole_ShouldRoundTrip()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var user = await _factory.SeedUserAsync();
+        var roleId = await _factory.SeedRoleAsync("Integration Role");
+
+        var assignResponse = await client.PostAsync($"/api/users/{user.Id}/roles/{roleId}", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, assignResponse.StatusCode);
+
+        var afterAssignJson = await client.GetFromJsonAsync<JsonElement>($"/api/users/{user.Id}");
+        Assert.Contains(
+            afterAssignJson.GetProperty("roleNames").EnumerateArray(),
+            role => role.GetString() == "Integration Role");
+
+        var removeResponse = await client.DeleteAsync($"/api/users/{user.Id}/roles/{roleId}");
+        Assert.Equal(HttpStatusCode.NoContent, removeResponse.StatusCode);
+
+        var afterRemoveJson = await client.GetFromJsonAsync<JsonElement>($"/api/users/{user.Id}");
+        Assert.DoesNotContain(
+            afterRemoveJson.GetProperty("roleNames").EnumerateArray(),
+            role => role.GetString() == "Integration Role");
     }
 
     private static object CreateUserRequest(string password = "IntegrationUser123!")

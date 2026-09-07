@@ -16,7 +16,15 @@ public interface IRoleRepository
 
     Task<IReadOnlyCollection<Role>> ListAsync(CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindRoleNamesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default);
+
     Task CreateAsync(Role role, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Role role, CancellationToken cancellationToken = default);
+
+    Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
+
+    Task RemoveFromUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
 }

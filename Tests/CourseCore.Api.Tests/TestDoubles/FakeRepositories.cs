@@ -41,9 +41,18 @@ public sealed class FakeUserRepository : IUserRepository
         return Task.FromResult<IReadOnlyCollection<User>>(_usersById.Values.ToArray());
     }
 
-    public Task<(IReadOnlyCollection<User> Items, int TotalCount)> ListPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    public Task<(IReadOnlyCollection<User> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var ordered = _usersById.Values.OrderBy(user => user.Name).ThenBy(user => user.Id).ToArray();
+        var filtered = string.IsNullOrWhiteSpace(search)
+            ? _usersById.Values.AsEnumerable()
+            : _usersById.Values.Where(user =>
+                user.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || user.Email.Value.Contains(search, StringComparison.OrdinalIgnoreCase));
+        var ordered = filtered.OrderBy(user => user.Name).ThenBy(user => user.Id).ToArray();
         return Task.FromResult(((IReadOnlyCollection<User>)ordered.Skip((page - 1) * pageSize).Take(pageSize).ToArray(), ordered.Length));
     }
 
@@ -64,6 +73,16 @@ public sealed class FakeUserRepository : IUserRepository
     public Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_usersByEmail.ContainsKey(email.Value));
+    }
+
+    public Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_usersById.Count);
+    }
+
+    public Task<int> CountConfirmedAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_usersById.Values.Count(user => user.EmailVerifiedAt is not null));
     }
 }
 
@@ -131,6 +150,42 @@ public sealed class FakeRoleRepository : IRoleRepository
     public Task UpdateAsync(Role role, CancellationToken cancellationToken = default)
     {
         _roles[role.Id] = role;
+
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindRoleNamesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        var result = userIds
+            .Where(userId => _rolesByUserId.ContainsKey(userId))
+            .ToDictionary(
+                userId => userId,
+                userId => (IReadOnlyCollection<string>)_rolesByUserId[userId]
+                    .Where(role => role.Active)
+                    .Select(role => role.Name)
+                    .ToList());
+
+        return Task.FromResult<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>>(result);
+    }
+
+    public Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
+    {
+        if (_roles.TryGetValue(roleId, out var role))
+        {
+            AddForUser(userId, role);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveFromUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
+    {
+        if (_rolesByUserId.TryGetValue(userId, out var roles))
+        {
+            roles.RemoveAll(role => role.Id == roleId);
+        }
 
         return Task.CompletedTask;
     }

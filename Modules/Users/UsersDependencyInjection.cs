@@ -12,6 +12,9 @@ public static class UsersDependencyInjection
         services.AddScoped<CreateUserUseCase>();
         services.AddScoped<UpdateUserUseCase>();
         services.AddScoped<ListUsersUseCase>();
+        services.AddScoped<GetUserByIdUseCase>();
+        services.AddScoped<AssignUserRoleUseCase>();
+        services.AddScoped<RemoveUserRoleUseCase>();
 
         return services;
     }

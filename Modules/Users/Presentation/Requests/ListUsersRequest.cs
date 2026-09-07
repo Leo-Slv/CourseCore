@@ -6,4 +6,5 @@ public sealed class ListUsersRequest
 {
     public int Page { get; init; } = PaginationLimits.DefaultPage;
     public int PageSize { get; init; } = PaginationLimits.DefaultPageSize;
+    public string? Search { get; init; }
 }

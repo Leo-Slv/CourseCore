@@ -14,6 +14,7 @@ public interface IUserRepository
     Task<(IReadOnlyCollection<User> Items, int TotalCount)> ListPagedAsync(
         int page,
         int pageSize,
+        string? search = null,
         CancellationToken cancellationToken = default);
 
     Task CreateAsync(User user, CancellationToken cancellationToken = default);
@@ -21,4 +22,8 @@ public interface IUserRepository
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default);
+
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
+
+    Task<int> CountConfirmedAsync(CancellationToken cancellationToken = default);
 }

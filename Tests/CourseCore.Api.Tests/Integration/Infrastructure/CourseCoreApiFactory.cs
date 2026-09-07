@@ -233,6 +233,27 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         return role.Id;
     }
 
+    public async Task<Guid> SeedRoleAsync(string? roleName = null)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        var now = DateTime.UtcNow;
+        var role = new RolePersistenceModel
+        {
+            Id = Guid.NewGuid(),
+            Name = roleName ?? $"role-{Guid.NewGuid():N}",
+            Description = "Integration test role",
+            Active = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        dbContext.Roles.Add(role);
+        await dbContext.SaveChangesAsync();
+
+        return role.Id;
+    }
+
     public async Task<Guid> SeedAreaAsync()
     {
         using var scope = Services.CreateScope();

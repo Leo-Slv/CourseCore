@@ -47,9 +47,16 @@ public class EfUserRepository : IUserRepository
     public async Task<(IReadOnlyCollection<User> Items, int TotalCount)> ListPagedAsync(
         int page,
         int pageSize,
+        string? search = null,
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(x => x.Name.Contains(search) || x.Email.Contains(search));
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
         var models = await query
             .OrderBy(x => x.Name)
@@ -82,5 +89,15 @@ public class EfUserRepository : IUserRepository
     public Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default)
     {
         return _dbContext.Users.AnyAsync(x => x.Email == email.Value, cancellationToken);
+    }
+
+    public Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users.CountAsync(cancellationToken);
+    }
+
+    public Task<int> CountConfirmedAsync(CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users.CountAsync(x => x.EmailVerifiedAt != null, cancellationToken);
     }
 }

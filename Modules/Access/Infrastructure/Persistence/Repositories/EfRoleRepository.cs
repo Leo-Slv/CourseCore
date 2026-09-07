@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Mappers;
+using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -87,5 +88,59 @@ public class EfRoleRepository : IRoleRepository
         }
 
         RoleMapper.ApplyChanges(role, model);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindRoleNamesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<Guid, IReadOnlyCollection<string>>();
+        }
+
+        var rows = await _dbContext.UserRoles
+            .AsNoTracking()
+            .Where(x => userIds.Contains(x.UserId) && x.Role != null && x.Role.Active)
+            .Select(x => new { x.UserId, RoleName = x.Role!.Name })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(row => row.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyCollection<string>)group.Select(row => row.RoleName).ToList());
+    }
+
+    public async Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
+    {
+        var exists = await _dbContext.UserRoles
+            .AsNoTracking()
+            .AnyAsync(x => x.UserId == userId && x.RoleId == roleId, cancellationToken);
+
+        if (exists)
+        {
+            return;
+        }
+
+        await _dbContext.UserRoles.AddAsync(
+            new UserRolePersistenceModel
+            {
+                UserId = userId,
+                RoleId = roleId,
+                CreatedAt = DateTime.UtcNow
+            },
+            cancellationToken);
+    }
+
+    public async Task RemoveFromUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.UserRoles
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.RoleId == roleId, cancellationToken);
+
+        if (model is not null)
+        {
+            _dbContext.UserRoles.Remove(model);
+        }
     }
 }

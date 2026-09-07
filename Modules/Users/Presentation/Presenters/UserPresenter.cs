@@ -32,7 +32,8 @@ public static class UserPresenter
     public static ListUsersInput ToInput(ListUsersRequest request) => new()
     {
         Page = request.Page,
-        PageSize = request.PageSize
+        PageSize = request.PageSize,
+        Search = request.Search
     };
 
     public static UserResponse ToResponse(UserOutput output)
@@ -44,6 +45,7 @@ public static class UserPresenter
             Email = output.Email,
             Active = output.Active,
             EmailVerifiedAt = output.EmailVerifiedAt,
+            RoleNames = output.RoleNames,
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
         };
@@ -61,5 +63,12 @@ public static class UserPresenter
         PageSize = output.PageSize,
         TotalItems = output.TotalItems,
         TotalPages = output.TotalPages
+    };
+
+    public static UserListResponse ToResponse(UserListOutput output) => new()
+    {
+        Page = ToResponse(output.Page),
+        TotalRegistered = output.TotalRegistered,
+        TotalConfirmed = output.TotalConfirmed
     };
 }
