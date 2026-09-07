@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Shared.Domain.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
@@ -74,6 +75,32 @@ public class AreaTests
         var area = CreateArea();
 
         Assert.Throws<DomainException>(() => area.ChangeDisplayOrder(-1));
+    }
+
+    [Fact]
+    public void Create_WhenAccentColorIsNotSpecified_ShouldDefaultToBlue()
+    {
+        var area = CreateArea();
+
+        Assert.Equal(AreaAccentColor.Blue, area.AccentColor);
+    }
+
+    [Fact]
+    public void ChangeAccentColor_WhenValid_ShouldUpdateAccentColor()
+    {
+        var area = CreateArea();
+
+        area.ChangeAccentColor(AreaAccentColor.Purple);
+
+        Assert.Equal(AreaAccentColor.Purple, area.AccentColor);
+    }
+
+    [Fact]
+    public void ChangeAccentColor_WhenUndefinedValue_ShouldThrow()
+    {
+        var area = CreateArea();
+
+        Assert.Throws<DomainException>(() => area.ChangeAccentColor((AreaAccentColor)999));
     }
 
     [Fact]

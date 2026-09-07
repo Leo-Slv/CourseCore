@@ -109,7 +109,7 @@ public class CourseAccessService
     {
         var areas = await _areas.ListAsync(cancellationToken);
 
-        return areas.Where(area => area.Active).Select(AreaOutput.FromArea).ToList();
+        return areas.Where(area => area.Active).Select(area => AreaOutput.FromArea(area)).ToList();
     }
 
     public async Task<IReadOnlyCollection<CourseCatalogEntry>> ListCatalogAsync(

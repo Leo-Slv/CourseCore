@@ -13,7 +13,8 @@ public static class AreaPresenter
             Name = request.Name,
             Slug = request.Slug,
             Description = request.Description,
-            DisplayOrder = request.DisplayOrder
+            DisplayOrder = request.DisplayOrder,
+            AccentColor = request.AccentColor
         };
     }
 
@@ -26,7 +27,8 @@ public static class AreaPresenter
             Slug = request.Slug,
             Description = request.Description,
             DisplayOrder = request.DisplayOrder,
-            Active = request.Active
+            Active = request.Active,
+            AccentColor = request.AccentColor
         };
     }
 
@@ -48,8 +50,22 @@ public static class AreaPresenter
             Description = output.Description,
             Active = output.Active,
             DisplayOrder = output.DisplayOrder,
+            AccentColor = output.AccentColor,
+            CourseCount = output.CourseCount,
+            Courses = output.Courses.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
+        };
+    }
+
+    public static AreaCourseSummaryResponse ToResponse(AreaCourseSummaryOutput output)
+    {
+        return new AreaCourseSummaryResponse
+        {
+            Id = output.Id,
+            Title = output.Title,
+            Slug = output.Slug,
+            Published = output.Published
         };
     }
 

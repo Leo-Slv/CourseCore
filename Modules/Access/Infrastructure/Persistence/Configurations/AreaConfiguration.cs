@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -17,6 +18,10 @@ public class AreaConfiguration : IEntityTypeConfiguration<AreaPersistenceModel>
         builder.Property(x => x.Description).IsRequired().HasMaxLength(500);
         builder.Property(x => x.Active).IsRequired();
         builder.Property(x => x.DisplayOrder).IsRequired();
+        builder.Property(x => x.AccentColor)
+            .IsRequired()
+            .HasMaxLength(20)
+            .HasDefaultValue(nameof(AreaAccentColor.Blue));
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 

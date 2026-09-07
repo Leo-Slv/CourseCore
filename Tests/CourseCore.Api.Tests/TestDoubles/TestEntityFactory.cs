@@ -54,6 +54,7 @@ public static class TestEntityFactory
             "Area",
             active,
             displayOrder: 0,
+            CourseCore.Api.Modules.Access.Domain.Enums.AreaAccentColor.Blue,
             now,
             now);
     }

@@ -16,11 +16,20 @@ public class AreaOutput
 
     public int DisplayOrder { get; init; }
 
+    public string AccentColor { get; init; } = string.Empty;
+
+    public int CourseCount { get; init; }
+
+    public IReadOnlyCollection<AreaCourseSummaryOutput> Courses { get; init; } = Array.Empty<AreaCourseSummaryOutput>();
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }
 
-    public static AreaOutput FromArea(Area area)
+    public static AreaOutput FromArea(
+        Area area,
+        int courseCount = 0,
+        IReadOnlyCollection<AreaCourseSummaryOutput>? courses = null)
     {
         return new AreaOutput
         {
@@ -30,6 +39,9 @@ public class AreaOutput
             Description = area.Description,
             Active = area.Active,
             DisplayOrder = area.DisplayOrder,
+            AccentColor = area.AccentColor.ToString(),
+            CourseCount = courseCount,
+            Courses = courses ?? Array.Empty<AreaCourseSummaryOutput>(),
             CreatedAt = area.CreatedAt,
             UpdatedAt = area.UpdatedAt
         };

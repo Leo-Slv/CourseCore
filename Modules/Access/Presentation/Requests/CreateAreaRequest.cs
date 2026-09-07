@@ -9,4 +9,6 @@ public class CreateAreaRequest
     public string Description { get; init; } = string.Empty;
 
     public int DisplayOrder { get; init; }
+
+    public string AccentColor { get; init; } = "Blue";
 }

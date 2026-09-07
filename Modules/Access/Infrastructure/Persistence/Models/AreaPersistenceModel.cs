@@ -16,6 +16,8 @@ public class AreaPersistenceModel
 
     public int DisplayOrder { get; set; }
 
+    public string AccentColor { get; set; } = string.Empty;
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

@@ -720,6 +720,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Description = "Integration test area",
             Active = true,
             DisplayOrder = 0,
+            AccentColor = "Blue",
             CreatedAt = now,
             UpdatedAt = now
         };

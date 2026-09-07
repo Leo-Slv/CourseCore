@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
@@ -159,6 +160,7 @@ public sealed class CourseCoreDatabaseSeeder
                 {
                     Id = Guid.NewGuid(),
                     Slug = seedArea.Slug,
+                    AccentColor = nameof(AreaAccentColor.Blue),
                     CreatedAt = now
                 };
 

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Tests.Integration.Infrastructure;
+using System.Linq;
 
 namespace CourseCore.Api.Tests.Integration.Access;
 
@@ -253,6 +254,79 @@ public class AreaManagementIntegrationTests : IClassFixture<CourseCoreApiFactory
         });
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateArea_WithAccentColor_ShouldPersistAndReturnIt()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/areas", new
+        {
+            name = "Integration Area",
+            slug = $"area-{Guid.NewGuid():N}",
+            description = "Description",
+            displayOrder = 0,
+            accentColor = "Green"
+        });
+        var content = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(content);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal("Green", json.RootElement.GetProperty("accentColor").GetString());
+    }
+
+    [Fact]
+    public async Task CreateArea_WithInvalidAccentColor_ShouldReturnBadRequest()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.PostAsJsonAsync("/api/areas", new
+        {
+            name = "Integration Area",
+            slug = $"area-{Guid.NewGuid():N}",
+            description = "Description",
+            displayOrder = 0,
+            accentColor = "Rainbow"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAreaById_ShouldIncludeCourseCountAndLinkedCourses()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+
+        var response = await client.GetAsync($"/api/areas/{course.AreaId}");
+        var content = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(json.RootElement.GetProperty("courseCount").GetInt32() >= 1);
+        var courses = json.RootElement.GetProperty("courses").EnumerateArray().ToList();
+        Assert.Contains(courses, c => c.GetProperty("id").GetGuid() == course.CourseId);
+    }
+
+    [Fact]
+    public async Task ListAreas_ShouldIncludeCourseCountPerArea()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+
+        var response = await client.GetAsync("/api/areas");
+        var content = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var areaElement = json.RootElement.EnumerateArray()
+            .Single(element => element.GetProperty("id").GetGuid() == course.AreaId);
+        Assert.True(areaElement.GetProperty("courseCount").GetInt32() >= 1);
     }
 
     private static async Task<Guid> CreateAreaAsync(HttpClient client)

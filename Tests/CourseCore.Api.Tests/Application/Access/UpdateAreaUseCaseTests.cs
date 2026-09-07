@@ -66,6 +66,48 @@ public class UpdateAreaUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenAccentColorChanges_ShouldUpdateAccentColor()
+    {
+        var areas = new FakeAreaRepository();
+        var area = TestEntityFactory.Area();
+        areas.Areas.Add(area);
+        var useCase = new UpdateAreaUseCase(areas, new FakeUnitOfWork(), new FakeAuditLogService());
+
+        var output = await useCase.ExecuteAsync(new UpdateAreaInput
+        {
+            AreaId = area.Id,
+            Name = "Area",
+            Slug = area.Slug.Value,
+            Description = "Description",
+            DisplayOrder = 0,
+            Active = true,
+            AccentColor = "Orange"
+        });
+
+        Assert.Equal("Orange", output.AccentColor);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenAccentColorIsInvalid_ShouldThrow()
+    {
+        var areas = new FakeAreaRepository();
+        var area = TestEntityFactory.Area();
+        areas.Areas.Add(area);
+        var useCase = new UpdateAreaUseCase(areas, new FakeUnitOfWork(), new FakeAuditLogService());
+
+        await Assert.ThrowsAsync<ApplicationValidationException>(() => useCase.ExecuteAsync(new UpdateAreaInput
+        {
+            AreaId = area.Id,
+            Name = "Area",
+            Slug = area.Slug.Value,
+            Description = "Description",
+            DisplayOrder = 0,
+            Active = true,
+            AccentColor = "Rainbow"
+        }));
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenAreaDoesNotExist_ShouldThrowNotFound()
     {
         var useCase = new UpdateAreaUseCase(new FakeAreaRepository(), new FakeUnitOfWork(), new FakeAuditLogService());

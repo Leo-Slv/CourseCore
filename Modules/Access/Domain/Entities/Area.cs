@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Shared.Domain.Entities;
 using CourseCore.Api.Shared.Domain.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
@@ -6,13 +7,14 @@ namespace CourseCore.Api.Modules.Access.Domain.Entities;
 
 public class Area : EntityBase
 {
-    private Area(string name, Slug slug, string description, bool active, int displayOrder)
+    private Area(string name, Slug slug, string description, bool active, int displayOrder, AreaAccentColor accentColor)
     {
         Name = ValidateRequired(name, nameof(Name));
         Slug = slug ?? throw new DomainException("Slug is required.");
         Description = NormalizeDescription(description);
         Active = active;
         DisplayOrder = ValidateDisplayOrder(displayOrder);
+        AccentColor = ValidateAccentColor(accentColor);
     }
 
     public string Name { get; private set; }
@@ -25,9 +27,16 @@ public class Area : EntityBase
 
     public int DisplayOrder { get; private set; }
 
-    public static Area Create(string name, Slug slug, string description, int displayOrder)
+    public AreaAccentColor AccentColor { get; private set; }
+
+    public static Area Create(
+        string name,
+        Slug slug,
+        string description,
+        int displayOrder,
+        AreaAccentColor accentColor = AreaAccentColor.Blue)
     {
-        return new Area(name, slug, description, active: true, displayOrder);
+        return new Area(name, slug, description, active: true, displayOrder, accentColor);
     }
 
     public static Area Restore(
@@ -37,10 +46,11 @@ public class Area : EntityBase
         string description,
         bool active,
         int displayOrder,
+        AreaAccentColor accentColor,
         DateTime createdAt,
         DateTime updatedAt)
     {
-        return new Area(name, slug, description, active, displayOrder)
+        return new Area(name, slug, description, active, displayOrder, accentColor)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -69,6 +79,12 @@ public class Area : EntityBase
     public void ChangeDisplayOrder(int order)
     {
         DisplayOrder = ValidateDisplayOrder(order);
+        MarkAsUpdated();
+    }
+
+    public void ChangeAccentColor(AreaAccentColor accentColor)
+    {
+        AccentColor = ValidateAccentColor(accentColor);
         MarkAsUpdated();
     }
 
@@ -107,5 +123,15 @@ public class Area : EntityBase
         }
 
         return displayOrder;
+    }
+
+    private static AreaAccentColor ValidateAccentColor(AreaAccentColor accentColor)
+    {
+        if (!Enum.IsDefined(accentColor))
+        {
+            throw new DomainException("AccentColor is invalid.");
+        }
+
+        return accentColor;
     }
 }

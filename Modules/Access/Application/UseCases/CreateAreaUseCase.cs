@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Application.Validation;
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
@@ -48,6 +49,7 @@ public class CreateAreaUseCase
         }
 
         var slug = Slug.Create(input.Slug);
+        var accentColor = ParseAccentColor(input.AccentColor);
 
         return _unitOfWork.ExecuteAsync(async () =>
         {
@@ -56,7 +58,7 @@ public class CreateAreaUseCase
                 throw new ConflictException("An area with this slug already exists.");
             }
 
-            var area = Area.Create(input.Name, slug, description, input.DisplayOrder);
+            var area = Area.Create(input.Name, slug, description, input.DisplayOrder, accentColor);
 
             await _areas.CreateAsync(area, cancellationToken);
             await _auditLogs.RecordAsync(
@@ -68,5 +70,15 @@ public class CreateAreaUseCase
 
             return AreaOutput.FromArea(area);
         }, cancellationToken);
+    }
+
+    private static AreaAccentColor ParseAccentColor(string accentColor)
+    {
+        if (Enum.TryParse<AreaAccentColor>(accentColor, ignoreCase: true, out var parsed))
+        {
+            return parsed;
+        }
+
+        throw new ApplicationValidationException("AccentColor is invalid.");
     }
 }

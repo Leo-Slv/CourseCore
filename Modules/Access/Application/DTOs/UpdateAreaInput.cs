@@ -13,4 +13,6 @@ public class UpdateAreaInput
     public int DisplayOrder { get; init; }
 
     public bool Active { get; init; }
+
+    public string AccentColor { get; init; } = "Blue";
 }

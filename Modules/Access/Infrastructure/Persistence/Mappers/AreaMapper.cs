@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 
@@ -15,6 +16,7 @@ public static class AreaMapper
             model.Description,
             model.Active,
             model.DisplayOrder,
+            ParseAccentColor(model.AccentColor),
             model.CreatedAt,
             model.UpdatedAt);
     }
@@ -29,6 +31,7 @@ public static class AreaMapper
             Description = area.Description,
             Active = area.Active,
             DisplayOrder = area.DisplayOrder,
+            AccentColor = area.AccentColor.ToString(),
             CreatedAt = area.CreatedAt,
             UpdatedAt = area.UpdatedAt
         };
@@ -41,6 +44,17 @@ public static class AreaMapper
         model.Description = area.Description;
         model.Active = area.Active;
         model.DisplayOrder = area.DisplayOrder;
+        model.AccentColor = area.AccentColor.ToString();
         model.UpdatedAt = area.UpdatedAt;
+    }
+
+    private static AreaAccentColor ParseAccentColor(string value)
+    {
+        if (Enum.TryParse<AreaAccentColor>(value, ignoreCase: true, out var accentColor))
+        {
+            return accentColor;
+        }
+
+        throw new InvalidOperationException($"Unknown area accent color '{value}'.");
     }
 }

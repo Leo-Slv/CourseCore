@@ -86,6 +86,37 @@ public class CreateAreaUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenAccentColorIsValid_ShouldStoreAccentColor()
+    {
+        var areas = new FakeAreaRepository();
+        var useCase = new CreateAreaUseCase(areas, new FakeUnitOfWork(), new FakeAuditLogService());
+
+        var output = await useCase.ExecuteAsync(new CreateAreaInput
+        {
+            Name = "Courses",
+            Slug = "courses",
+            DisplayOrder = 0,
+            AccentColor = "Purple"
+        });
+
+        Assert.Equal("Purple", output.AccentColor);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenAccentColorIsInvalid_ShouldThrow()
+    {
+        var useCase = new CreateAreaUseCase(new FakeAreaRepository(), new FakeUnitOfWork(), new FakeAuditLogService());
+
+        await Assert.ThrowsAsync<ApplicationValidationException>(() => useCase.ExecuteAsync(new CreateAreaInput
+        {
+            Name = "Courses",
+            Slug = "courses",
+            DisplayOrder = 0,
+            AccentColor = "Rainbow"
+        }));
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenSlugAlreadyExistsAndIsActive_ShouldThrowConflict()
     {
         var areas = new FakeAreaRepository();
