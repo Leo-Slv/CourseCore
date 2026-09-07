@@ -79,6 +79,39 @@ public class GetPublicCatalogSummaryUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenACourseIsFeatured_ShouldReturnHighlightedCourse()
+    {
+        var areas = new FakeAreaRepository();
+        var courses = new FakeCourseRepository();
+        var area = TestEntityFactory.Area();
+        areas.Areas.Add(area);
+        courses.Courses.Add(TestEntityFactory.PublishedCourse(area.Id));
+        var featuredCourse = TestEntityFactory.PublishedCourse(area.Id, isFeatured: true);
+        courses.Courses.Add(featuredCourse);
+        var useCase = new GetPublicCatalogSummaryUseCase(courses, areas);
+
+        var output = await useCase.ExecuteAsync();
+
+        Assert.NotNull(output.HighlightedCourse);
+        Assert.Equal(featuredCourse.Id, output.HighlightedCourse!.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenNoCourseIsFeatured_ShouldReturnNullHighlightedCourse()
+    {
+        var areas = new FakeAreaRepository();
+        var courses = new FakeCourseRepository();
+        var area = TestEntityFactory.Area();
+        areas.Areas.Add(area);
+        courses.Courses.Add(TestEntityFactory.PublishedCourse(area.Id));
+        var useCase = new GetPublicCatalogSummaryUseCase(courses, areas);
+
+        var output = await useCase.ExecuteAsync();
+
+        Assert.Null(output.HighlightedCourse);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldReturnPerAreaPublishedCourseCounts()
     {
         var areas = new FakeAreaRepository();

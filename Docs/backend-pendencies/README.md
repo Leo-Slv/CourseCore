@@ -21,7 +21,7 @@ require, the workaround shipped instead, and a rough severity:
 
 | Screen | File | Worst severity |
 |---|---|---|
-| Landing (`/`) | [landing/landing-page.md](landing/landing-page.md) | Feature gap |
+| Landing (`/`) | [landing/landing-page.md](landing/landing-page.md) | Resolved (2026-09-07) |
 | Register (`/register`) | [auth/register.md](auth/register.md) | Config |
 | Login (`/login`) | [auth/login.md](auth/login.md) | Feature gap |
 | Confirm email (`/confirm-email`) | [auth/confirm-email.md](auth/confirm-email.md) | Feature gap |

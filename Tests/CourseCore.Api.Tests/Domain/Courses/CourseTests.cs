@@ -94,6 +94,24 @@ public class CourseTests
     }
 
     [Fact]
+    public void Create_WhenIsFeaturedIsNotSpecified_ShouldDefaultToFalse()
+    {
+        var course = CreateCourse();
+
+        Assert.False(course.IsFeatured);
+    }
+
+    [Fact]
+    public void ChangeFeatured_WhenCalled_ShouldUpdateFlag()
+    {
+        var course = CreateCourse();
+
+        course.ChangeFeatured(true);
+
+        Assert.True(course.IsFeatured);
+    }
+
+    [Fact]
     public void Create_WhenEnrollmentControlledWithPriceAmount_ShouldThrowDomainException()
     {
         Assert.Throws<DomainException>(() => Course.Create(

@@ -26,6 +26,8 @@ public class CourseOutput
 
     public bool IssuesCertificate { get; init; }
 
+    public bool IsFeatured { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public DateTime CreatedAt { get; init; }
@@ -47,6 +49,7 @@ public class CourseOutput
             PricingModel = course.PricingModel.ToString(),
             PriceAmount = course.PriceAmount,
             IssuesCertificate = course.IssuesCertificate,
+            IsFeatured = course.IsFeatured,
             AreaIds = course.AreaIds.ToList(),
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt

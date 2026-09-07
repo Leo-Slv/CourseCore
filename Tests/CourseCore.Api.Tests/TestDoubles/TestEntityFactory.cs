@@ -59,14 +59,15 @@ public static class TestEntityFactory
             now);
     }
 
-    public static Course PublishedCourse(Guid areaId, CoursePricingModel pricingModel = CoursePricingModel.Paid)
+    public static Course PublishedCourse(Guid areaId, CoursePricingModel pricingModel = CoursePricingModel.Paid, bool isFeatured = false)
     {
         var course = Course.Create(
             "Course",
             Slug.Create($"course-{Guid.NewGuid():N}"),
             "Course",
             displayOrder: 0,
-            pricingModel: pricingModel);
+            pricingModel: pricingModel,
+            isFeatured: isFeatured);
 
         course.AttachArea(areaId);
         course.Publish();

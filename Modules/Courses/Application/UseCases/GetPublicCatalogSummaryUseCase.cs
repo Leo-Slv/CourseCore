@@ -22,6 +22,7 @@ public class GetPublicCatalogSummaryUseCase
         var areas = await _areas.ListAsync(cancellationToken);
         var activeAreas = areas.Where(area => area.Active).ToList();
         var publishedCourses = await _courses.ListPublishedAsync(cancellationToken);
+        var highlightedCourse = publishedCourses.FirstOrDefault(course => course.IsFeatured);
 
         return new PublicCatalogSummaryOutput
         {
@@ -31,6 +32,7 @@ public class GetPublicCatalogSummaryUseCase
                 .Take(FeaturedCourseCount)
                 .Select(PublicFeaturedCourseOutput.FromCourse)
                 .ToList(),
+            HighlightedCourse = highlightedCourse is null ? null : PublicFeaturedCourseOutput.FromCourse(highlightedCourse),
             Areas = activeAreas
                 .OrderBy(area => area.DisplayOrder)
                 .ThenBy(area => area.Name)

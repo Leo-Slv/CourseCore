@@ -13,6 +13,7 @@ public static class CoursePresenter
             ActiveAreaCount = output.ActiveAreaCount,
             PublishedCourseCount = output.PublishedCourseCount,
             FeaturedCourses = output.FeaturedCourses.Select(ToResponse).ToList(),
+            HighlightedCourse = output.HighlightedCourse is null ? null : ToResponse(output.HighlightedCourse),
             Areas = output.Areas.Select(ToResponse).ToList()
         };
     }
@@ -52,6 +53,7 @@ public static class CoursePresenter
             PricingModel = request.PricingModel,
             PriceAmount = request.PriceAmount,
             IssuesCertificate = request.IssuesCertificate,
+            IsFeatured = request.IsFeatured,
             AreaIds = request.AreaIds.ToList(),
             Modules = request.Modules.Select(ToInput).ToList()
         };
@@ -92,6 +94,7 @@ public static class CoursePresenter
             PricingModel = request.PricingModel,
             PriceAmount = request.PriceAmount,
             IssuesCertificate = request.IssuesCertificate,
+            IsFeatured = request.IsFeatured,
             AreaIds = request.AreaIds.ToList()
         };
     }
@@ -191,6 +194,7 @@ public static class CoursePresenter
             PricingModel = output.PricingModel,
             PriceAmount = output.PriceAmount,
             IssuesCertificate = output.IssuesCertificate,
+            IsFeatured = output.IsFeatured,
             AreaIds = output.AreaIds.ToList(),
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt

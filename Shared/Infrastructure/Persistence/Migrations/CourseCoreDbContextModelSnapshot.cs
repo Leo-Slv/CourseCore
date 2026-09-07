@@ -552,6 +552,11 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsFeatured")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IssuesCertificate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -787,6 +792,47 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("user_lesson_progress", (string)null);
+                });
+
+            modelBuilder.Entity("CourseCore.Api.Modules.Testimonials.Infrastructure.Persistence.Models.TestimonialPersistenceModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AuthorName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Published")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Quote")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("Published");
+
+                    b.ToTable("testimonials", (string)null);
                 });
 
             modelBuilder.Entity("CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models.UserPersistenceModel", b =>
@@ -1075,6 +1121,16 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.Navigation("Lesson");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CourseCore.Api.Modules.Testimonials.Infrastructure.Persistence.Models.TestimonialPersistenceModel", b =>
+                {
+                    b.HasOne("CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models.CoursePersistenceModel", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Course");
                 });
 
             modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.AreaPersistenceModel", b =>

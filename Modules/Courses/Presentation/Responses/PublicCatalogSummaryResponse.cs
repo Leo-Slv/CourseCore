@@ -9,6 +9,8 @@ public class PublicCatalogSummaryResponse
     public IReadOnlyCollection<PublicFeaturedCourseResponse> FeaturedCourses { get; init; }
         = Array.Empty<PublicFeaturedCourseResponse>();
 
+    public PublicFeaturedCourseResponse? HighlightedCourse { get; init; }
+
     public IReadOnlyCollection<PublicAreaSummaryResponse> Areas { get; init; }
         = Array.Empty<PublicAreaSummaryResponse>();
 }

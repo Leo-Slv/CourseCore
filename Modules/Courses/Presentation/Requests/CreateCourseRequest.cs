@@ -18,6 +18,8 @@ public class CreateCourseRequest
 
     public bool IssuesCertificate { get; init; } = true;
 
+    public bool IsFeatured { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CreateCourseModuleRequest> Modules { get; init; } = Array.Empty<CreateCourseModuleRequest>();

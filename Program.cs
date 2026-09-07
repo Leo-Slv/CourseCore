@@ -2,6 +2,7 @@ using CourseCore.Api.Modules.Access;
 using CourseCore.Api.Modules.AuditLogs;
 using CourseCore.Api.Modules.Auth;
 using CourseCore.Api.Modules.Certificates;
+using CourseCore.Api.Modules.Testimonials;
 using CourseCore.Api.Modules.Courses;
 using CourseCore.Api.Modules.Media;
 using CourseCore.Api.Modules.Progress;
@@ -78,6 +79,7 @@ builder.Services.AddMediaModule(builder.Configuration, builder.Environment);
 builder.Services.AddProgressModule(builder.Configuration);
 builder.Services.AddAuditLogsModule();
 builder.Services.AddCertificatesModule();
+builder.Services.AddTestimonialsModule();
 
 var app = builder.Build();
 

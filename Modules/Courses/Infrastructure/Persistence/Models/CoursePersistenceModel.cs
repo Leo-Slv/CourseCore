@@ -26,6 +26,8 @@ public class CoursePersistenceModel
 
     public bool IssuesCertificate { get; set; }
 
+    public bool IsFeatured { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

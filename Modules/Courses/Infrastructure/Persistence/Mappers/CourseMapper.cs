@@ -24,6 +24,7 @@ public static class CourseMapper
             ParsePricingModel(model.PricingModel),
             model.PriceAmount,
             model.IssuesCertificate,
+            model.IsFeatured,
             modules,
             areaIds,
             model.CreatedAt,
@@ -45,6 +46,7 @@ public static class CourseMapper
             PricingModel = course.PricingModel.ToString(),
             PriceAmount = course.PriceAmount,
             IssuesCertificate = course.IssuesCertificate,
+            IsFeatured = course.IsFeatured,
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt,
             CourseAreas = ToCourseAreas(course).ToList(),
@@ -64,6 +66,7 @@ public static class CourseMapper
         model.PricingModel = course.PricingModel.ToString();
         model.PriceAmount = course.PriceAmount;
         model.IssuesCertificate = course.IssuesCertificate;
+        model.IsFeatured = course.IsFeatured;
         model.UpdatedAt = course.UpdatedAt;
 
         model.CourseAreas.Clear();

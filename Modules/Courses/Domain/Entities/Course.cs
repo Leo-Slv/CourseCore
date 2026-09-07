@@ -20,7 +20,8 @@ public class Course : EntityBase
         DateTime? publishedAt,
         CoursePricingModel pricingModel,
         decimal? priceAmount,
-        bool issuesCertificate)
+        bool issuesCertificate,
+        bool isFeatured)
     {
         Title = ValidateRequired(title, nameof(Title));
         Slug = slug ?? throw new DomainException("Slug is required.");
@@ -32,6 +33,7 @@ public class Course : EntityBase
         PricingModel = pricingModel;
         PriceAmount = ValidatePriceAmount(pricingModel, priceAmount);
         IssuesCertificate = issuesCertificate;
+        IsFeatured = isFeatured;
     }
 
     public string Title { get; private set; }
@@ -54,6 +56,8 @@ public class Course : EntityBase
 
     public bool IssuesCertificate { get; private set; }
 
+    public bool IsFeatured { get; private set; }
+
     public IReadOnlyCollection<CourseModule> Modules => _modules.AsReadOnly();
 
     public IReadOnlyCollection<Guid> AreaIds => _areaIds.AsReadOnly();
@@ -66,9 +70,10 @@ public class Course : EntityBase
         string? thumbnailUrl = null,
         CoursePricingModel pricingModel = CoursePricingModel.Paid,
         decimal? priceAmount = null,
-        bool issuesCertificate = true)
+        bool issuesCertificate = true,
+        bool isFeatured = false)
     {
-        return new Course(title, slug, description, thumbnailUrl, published: false, displayOrder, publishedAt: null, pricingModel, priceAmount, issuesCertificate);
+        return new Course(title, slug, description, thumbnailUrl, published: false, displayOrder, publishedAt: null, pricingModel, priceAmount, issuesCertificate, isFeatured);
     }
 
     public static Course Restore(
@@ -83,12 +88,13 @@ public class Course : EntityBase
         CoursePricingModel pricingModel,
         decimal? priceAmount,
         bool issuesCertificate,
+        bool isFeatured,
         IEnumerable<CourseModule>? modules,
         IEnumerable<Guid>? areaIds,
         DateTime createdAt,
         DateTime updatedAt)
     {
-        var course = new Course(title, slug, description, thumbnailUrl, published, displayOrder, publishedAt, pricingModel, priceAmount, issuesCertificate)
+        var course = new Course(title, slug, description, thumbnailUrl, published, displayOrder, publishedAt, pricingModel, priceAmount, issuesCertificate, isFeatured)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -159,6 +165,12 @@ public class Course : EntityBase
     public void ChangeCertificateIssuance(bool issuesCertificate)
     {
         IssuesCertificate = issuesCertificate;
+        MarkAsUpdated();
+    }
+
+    public void ChangeFeatured(bool isFeatured)
+    {
+        IsFeatured = isFeatured;
         MarkAsUpdated();
     }
 

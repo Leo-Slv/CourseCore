@@ -24,6 +24,8 @@ public class CourseResponse
 
     public bool IssuesCertificate { get; init; }
 
+    public bool IsFeatured { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public DateTime CreatedAt { get; init; }

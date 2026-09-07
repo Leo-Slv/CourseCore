@@ -26,6 +26,7 @@ public class CourseConfiguration : IEntityTypeConfiguration<CoursePersistenceMod
             .HasDefaultValue(nameof(CoursePricingModel.Paid));
         builder.Property(x => x.PriceAmount).HasPrecision(10, 2);
         builder.Property(x => x.IssuesCertificate).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.IsFeatured).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 

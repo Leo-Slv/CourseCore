@@ -18,5 +18,7 @@ public class UpdateCourseRequest
 
     public bool IssuesCertificate { get; init; } = true;
 
+    public bool IsFeatured { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 }
