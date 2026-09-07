@@ -23,7 +23,7 @@ require, the workaround shipped instead, and a rough severity:
 |---|---|---|
 | Landing (`/`) | [landing/landing-page.md](landing/landing-page.md) | Cosmetic |
 | Register (`/register`) | [auth/register.md](auth/register.md) | Config |
-| Login (`/login`) | [auth/login.md](auth/login.md) | Cosmetic |
+| Login (`/login`) | [auth/login.md](auth/login.md) | Closed |
 | Confirm email (`/confirm-email`) | [auth/confirm-email.md](auth/confirm-email.md) | Closed |
 | Catalog (`/catalog`) | [catalog/course-catalog.md](catalog/course-catalog.md) | Feature gap |
 | Course detail (`/courses/[slug]`) | [catalog/course-detail.md](catalog/course-detail.md) | Feature gap |

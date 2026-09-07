@@ -44,6 +44,42 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.False(login.HasRefreshTokenInBody);
         Assert.Contains("httponly", login.RefreshCookieHeader, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("path=/api/auth", login.RefreshCookieHeader, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("max-age", login.RefreshCookieHeader, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Login_WhenRememberMeIsFalse_ShouldSetSessionCookieWithNoMaxAge()
+    {
+        using var client = CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = CourseCoreApiFactory.AdminEmail,
+            password = CourseCoreApiFactory.AdminPassword,
+            rememberMe = false
+        });
+        var cookieHeader = GetSetCookieHeader(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("max-age", cookieHeader, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", cookieHeader, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Login_WhenRememberMeIsTrue_ShouldSetPersistentCookieWithMaxAge()
+    {
+        using var client = CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = CourseCoreApiFactory.AdminEmail,
+            password = CourseCoreApiFactory.AdminPassword,
+            rememberMe = true
+        });
+        var cookieHeader = GetSetCookieHeader(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("max-age", cookieHeader, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

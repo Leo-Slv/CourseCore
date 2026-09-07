@@ -30,7 +30,7 @@ Spec: [`Docs/specs/auth/login.md`](../../specs/auth/login.md)
   mechanism `UpdateUserUseCase` already uses for other security-relevant
   account changes) — a successful reset logs every other session out.
 
-## 2. "Remember me" has no backend concept
+## 2. "Remember me" has no backend concept — CLOSED
 
 - **Mockup expects**: a "Continuar conectado neste aparelho" checkbox that
   extends how long the session lasts.
@@ -46,3 +46,14 @@ Spec: [`Docs/specs/auth/login.md`](../../specs/auth/login.md)
 - **Severity**: Cosmetic — low priority; decorative parity with the
   reference project was already an accepted outcome, not treated as a gap
   to fill.
+- **Resolved, 2026-09-07**: `LoginRequest.RememberMe` (default `true` —
+  preserves today's behavior for any caller that doesn't send it yet) now
+  controls the refresh-token cookie's lifetime in
+  `RefreshTokenCookieService`. `true` keeps the existing persistent cookie
+  (`MaxAgeDays`, 7 days by default); `false` omits `MaxAge` entirely,
+  producing a real session cookie the browser discards on close. Register
+  and refresh-token responses are unaffected — they keep issuing the
+  persistent cookie unconditionally, since neither has a "remember me"
+  concept in the mockups. The refresh token's own server-side expiry
+  (`RefreshTokenExpirationDays`) is unchanged either way — this only
+  changes how long the *browser* holds onto the cookie.

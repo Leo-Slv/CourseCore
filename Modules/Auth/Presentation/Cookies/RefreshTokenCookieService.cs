@@ -17,12 +17,12 @@ public sealed class RefreshTokenCookieService : IRefreshTokenCookieService
         _environment = environment;
     }
 
-    public void Append(HttpResponse response, string refreshToken)
+    public void Append(HttpResponse response, string refreshToken, bool rememberMe = true)
     {
         response.Cookies.Append(
             GetCookieName(),
             refreshToken,
-            BuildCookieOptions());
+            BuildCookieOptions(rememberMe));
     }
 
     public string? Read(HttpRequest request)
@@ -37,7 +37,7 @@ public sealed class RefreshTokenCookieService : IRefreshTokenCookieService
         response.Cookies.Delete(GetCookieName(), BuildDeleteCookieOptions());
     }
 
-    private CookieOptions BuildCookieOptions()
+    private CookieOptions BuildCookieOptions(bool rememberMe)
     {
         var secure = IsSecure();
         var sameSite = ParseSameSiteMode(_options.SameSite);
@@ -54,7 +54,8 @@ public sealed class RefreshTokenCookieService : IRefreshTokenCookieService
             SameSite = sameSite,
             Path = GetCookiePath(),
             Domain = string.IsNullOrWhiteSpace(_options.Domain) ? null : _options.Domain.Trim(),
-            MaxAge = TimeSpan.FromDays(Math.Max(1, _options.MaxAgeDays))
+            // No MaxAge when rememberMe is false — a session cookie, discarded when the browser closes.
+            MaxAge = rememberMe ? TimeSpan.FromDays(Math.Max(1, _options.MaxAgeDays)) : null
         };
     }
 

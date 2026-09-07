@@ -76,7 +76,7 @@ public class AuthController : ControllerBase
     {
         var output = await _loginUseCase.ExecuteAsync(AuthPresenter.ToInput(request), cancellationToken);
 
-        AppendRefreshTokenCookie(output);
+        AppendRefreshTokenCookie(output, request.RememberMe);
 
         return Ok(AuthPresenter.ToResponse(output, ShouldExposeRefreshTokenInBody()));
     }
@@ -219,11 +219,11 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
-    private void AppendRefreshTokenCookie(AuthOutput output)
+    private void AppendRefreshTokenCookie(AuthOutput output, bool rememberMe = true)
     {
         if (!string.IsNullOrWhiteSpace(output.Token.RefreshToken))
         {
-            _refreshTokenCookieService.Append(Response, output.Token.RefreshToken);
+            _refreshTokenCookieService.Append(Response, output.Token.RefreshToken, rememberMe);
         }
     }
 
