@@ -18,5 +18,7 @@ public class UpdateCourseInput
 
     public decimal? PriceAmount { get; init; }
 
+    public bool IssuesCertificate { get; init; } = true;
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 }

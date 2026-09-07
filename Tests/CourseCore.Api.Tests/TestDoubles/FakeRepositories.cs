@@ -350,6 +350,94 @@ public sealed class FakeLessonRepository : ILessonRepository
     {
         return Task.FromResult<IReadOnlyCollection<Lesson>>([]);
     }
+
+    public Task AddAsync(Lesson lesson, CancellationToken cancellationToken = default)
+    {
+        Lessons.Add(lesson);
+
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(Lesson lesson, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(Guid lessonId, CancellationToken cancellationToken = default)
+    {
+        Lessons.RemoveAll(lesson => lesson.Id == lessonId);
+
+        return Task.CompletedTask;
+    }
+
+    public Task ReorderAsync(Guid moduleId, IReadOnlyList<Guid> orderedLessonIds, CancellationToken cancellationToken = default)
+    {
+        var ordered = orderedLessonIds
+            .Select((id, index) => (id, index))
+            .ToDictionary(pair => pair.id, pair => pair.index);
+
+        foreach (var lesson in Lessons.Where(lesson => lesson.ModuleId == moduleId))
+        {
+            if (ordered.TryGetValue(lesson.Id, out var index))
+            {
+                lesson.ChangeDisplayOrder(index);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class FakeCourseModuleRepository : ICourseModuleRepository
+{
+    public List<CourseModule> Modules { get; } = [];
+
+    public Task<CourseModule?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Modules.FirstOrDefault(module => module.Id == id));
+    }
+
+    public Task<IReadOnlyCollection<CourseModule>> ListByCourseIdAsync(Guid courseId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<CourseModule>>(
+            Modules.Where(module => module.CourseId == courseId).ToArray());
+    }
+
+    public Task AddAsync(CourseModule module, CancellationToken cancellationToken = default)
+    {
+        Modules.Add(module);
+
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(CourseModule module, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(Guid moduleId, CancellationToken cancellationToken = default)
+    {
+        Modules.RemoveAll(module => module.Id == moduleId);
+
+        return Task.CompletedTask;
+    }
+
+    public Task ReorderAsync(Guid courseId, IReadOnlyList<Guid> orderedModuleIds, CancellationToken cancellationToken = default)
+    {
+        var ordered = orderedModuleIds
+            .Select((id, index) => (id, index))
+            .ToDictionary(pair => pair.id, pair => pair.index);
+
+        foreach (var module in Modules.Where(module => module.CourseId == courseId))
+        {
+            if (ordered.TryGetValue(module.Id, out var index))
+            {
+                module.ChangeDisplayOrder(index);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
 }
 
 public sealed class FakeProgressRepository : IProgressRepository
@@ -408,6 +496,11 @@ public sealed class FakeProgressRepository : IProgressRepository
         _courseProgresses[(progress.UserId, progress.CourseId)] = progress;
 
         return Task.CompletedTask;
+    }
+
+    public Task<bool> ExistsAnyForLessonAsync(Guid lessonId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_lessonProgresses.Values.Any(progress => progress.LessonId == lessonId));
     }
 }
 

@@ -1,0 +1,103 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.AuditLogs.Application.Services;
+using CourseCore.Api.Modules.Courses.Domain.Repositories;
+using CourseCore.Api.Modules.Media.Application.DTOs;
+using CourseCore.Api.Modules.Media.Application.Validation;
+using CourseCore.Api.Modules.Media.Domain.Entities;
+using CourseCore.Api.Modules.Media.Domain.Enums;
+using CourseCore.Api.Modules.Media.Domain.Repositories;
+using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
+
+namespace CourseCore.Api.Modules.Media.Application.UseCases;
+
+public class ReplaceLessonVideoUseCase
+{
+    private readonly IVideoRepository _videos;
+    private readonly ILessonRepository _lessons;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogs;
+
+    public ReplaceLessonVideoUseCase(
+        IVideoRepository videos,
+        ILessonRepository lessons,
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogs)
+    {
+        _videos = videos;
+        _lessons = lessons;
+        _unitOfWork = unitOfWork;
+        _auditLogs = auditLogs;
+    }
+
+    public Task<VideoOutput> ExecuteAsync(
+        CreateVideoInput input,
+        CancellationToken cancellationToken = default)
+    {
+        MediaInputValidator.Validate(input);
+        var storageProvider = ParseStorageProvider(input.StorageProvider);
+
+        return _unitOfWork.ExecuteAsync(async () =>
+        {
+            var lesson = await _lessons.FindByIdAsync(input.LessonId, cancellationToken);
+
+            if (lesson is null)
+            {
+                throw new NotFoundException("Lesson not found.");
+            }
+
+            var existingVideo = await _videos.FindByLessonIdAsync(input.LessonId, cancellationToken);
+
+            if (existingVideo is null)
+            {
+                var newVideo = Video.Create(
+                    input.LessonId,
+                    input.Title,
+                    input.Description,
+                    storageProvider,
+                    input.StorageKey,
+                    input.DurationSeconds,
+                    input.SizeBytes,
+                    input.ThumbnailUrl);
+
+                await _videos.CreateAsync(newVideo, cancellationToken);
+                await _auditLogs.RecordAsync(
+                    AuditLogActionNames.VideoReplaced,
+                    "Video",
+                    newVideo.Id,
+                    new Dictionary<string, string?> { ["lessonId"] = input.LessonId.ToString(), ["created"] = "true" },
+                    cancellationToken: cancellationToken);
+
+                return VideoOutput.FromVideo(newVideo);
+            }
+
+            existingVideo.ChangeTitle(input.Title);
+            existingVideo.ChangeDescription(input.Description);
+            existingVideo.ChangeThumbnailUrl(input.ThumbnailUrl);
+            existingVideo.ChangeStorage(storageProvider, input.StorageKey);
+            existingVideo.ChangeDuration(input.DurationSeconds);
+            existingVideo.ChangeSize(input.SizeBytes);
+            existingVideo.MarkAsProcessing();
+
+            await _videos.UpdateAsync(existingVideo, cancellationToken);
+            await _auditLogs.RecordAsync(
+                AuditLogActionNames.VideoReplaced,
+                "Video",
+                existingVideo.Id,
+                new Dictionary<string, string?> { ["lessonId"] = input.LessonId.ToString(), ["created"] = "false" },
+                cancellationToken: cancellationToken);
+
+            return VideoOutput.FromVideo(existingVideo);
+        }, cancellationToken);
+    }
+
+    private static VideoStorageProvider ParseStorageProvider(string storageProvider)
+    {
+        if (Enum.TryParse<VideoStorageProvider>(storageProvider, ignoreCase: true, out var provider))
+        {
+            return provider;
+        }
+
+        throw new ArgumentException("StorageProvider is invalid.");
+    }
+}

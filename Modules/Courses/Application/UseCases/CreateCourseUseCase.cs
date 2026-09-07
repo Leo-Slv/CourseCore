@@ -50,7 +50,8 @@ public class CreateCourseUseCase
                 input.DisplayOrder,
                 input.ThumbnailUrl,
                 pricingModel,
-                input.PriceAmount);
+                input.PriceAmount,
+                input.IssuesCertificate);
 
             foreach (var areaId in NormalizeIds(input.AreaIds))
             {

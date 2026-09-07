@@ -76,6 +76,32 @@ public class CourseTests
     }
 
     [Fact]
+    public void Create_WhenIssuesCertificateIsNotSpecified_ShouldDefaultToTrue()
+    {
+        var course = CreateCourse();
+
+        Assert.True(course.IssuesCertificate);
+    }
+
+    [Fact]
+    public void ChangeCertificateIssuance_WhenCalled_ShouldUpdateFlag()
+    {
+        var course = CreateCourse();
+
+        course.ChangeCertificateIssuance(false);
+
+        Assert.False(course.IssuesCertificate);
+    }
+
+    [Fact]
+    public void Create_WhenEnrollmentControlledWithPriceAmount_ShouldThrowDomainException()
+    {
+        Assert.Throws<DomainException>(() => Course.Create(
+            "Course", Slug.Create("enrollment-controlled-course"), "Description", 0,
+            pricingModel: CoursePricingModel.EnrollmentControlled, priceAmount: 10m));
+    }
+
+    [Fact]
     public void Publish_WhenCourseExists_ShouldPublishCourse()
     {
         var course = CreateCourse();

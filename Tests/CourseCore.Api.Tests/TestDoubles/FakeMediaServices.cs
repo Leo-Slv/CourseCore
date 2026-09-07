@@ -54,6 +54,13 @@ public sealed class FakeVideoRepository : IVideoRepository
     {
         return Task.CompletedTask;
     }
+
+    public Task RemoveAsync(Guid videoId, CancellationToken cancellationToken = default)
+    {
+        Videos.RemoveAll(video => video.Id == videoId);
+
+        return Task.CompletedTask;
+    }
 }
 
 public sealed class FakeVideoStorageService : IVideoStorageService

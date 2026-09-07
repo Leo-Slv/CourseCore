@@ -24,6 +24,8 @@ public class CourseOutput
 
     public decimal? PriceAmount { get; init; }
 
+    public bool IssuesCertificate { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public DateTime CreatedAt { get; init; }
@@ -44,6 +46,7 @@ public class CourseOutput
             PublishedAt = course.PublishedAt,
             PricingModel = course.PricingModel.ToString(),
             PriceAmount = course.PriceAmount,
+            IssuesCertificate = course.IssuesCertificate,
             AreaIds = course.AreaIds.ToList(),
             CreatedAt = course.CreatedAt,
             UpdatedAt = course.UpdatedAt

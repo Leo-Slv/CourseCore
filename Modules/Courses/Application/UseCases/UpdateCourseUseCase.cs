@@ -62,6 +62,7 @@ public class UpdateCourseUseCase
             course.ChangeDisplayOrder(input.DisplayOrder);
             course.ChangePricingModel(pricingModel);
             course.ChangePriceAmount(input.PriceAmount);
+            course.ChangeCertificateIssuance(input.IssuesCertificate);
 
             SyncAreas(course.AreaIds, NormalizeIds(input.AreaIds), course.AttachArea, course.DetachArea);
 

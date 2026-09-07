@@ -51,6 +51,7 @@ public static class CoursePresenter
             DisplayOrder = request.DisplayOrder,
             PricingModel = request.PricingModel,
             PriceAmount = request.PriceAmount,
+            IssuesCertificate = request.IssuesCertificate,
             AreaIds = request.AreaIds.ToList(),
             Modules = request.Modules.Select(ToInput).ToList()
         };
@@ -90,7 +91,70 @@ public static class CoursePresenter
             DisplayOrder = request.DisplayOrder,
             PricingModel = request.PricingModel,
             PriceAmount = request.PriceAmount,
+            IssuesCertificate = request.IssuesCertificate,
             AreaIds = request.AreaIds.ToList()
+        };
+    }
+
+    public static AddCourseModuleInput ToInput(Guid courseId, AddCourseModuleRequest request)
+    {
+        return new AddCourseModuleInput
+        {
+            CourseId = courseId,
+            Title = request.Title,
+            Description = request.Description
+        };
+    }
+
+    public static UpdateCourseModuleInput ToInput(Guid moduleId, UpdateCourseModuleRequest request)
+    {
+        return new UpdateCourseModuleInput
+        {
+            ModuleId = moduleId,
+            Title = request.Title,
+            Description = request.Description,
+            Published = request.Published
+        };
+    }
+
+    public static ReorderCourseModulesInput ToInput(Guid courseId, ReorderCourseModulesRequest request)
+    {
+        return new ReorderCourseModulesInput
+        {
+            CourseId = courseId,
+            OrderedModuleIds = request.ModuleIds.ToList()
+        };
+    }
+
+    public static AddLessonInput ToInput(Guid moduleId, AddLessonRequest request)
+    {
+        return new AddLessonInput
+        {
+            ModuleId = moduleId,
+            Title = request.Title,
+            Description = request.Description,
+            FreePreview = request.FreePreview
+        };
+    }
+
+    public static UpdateLessonInput ToInput(Guid lessonId, UpdateLessonRequest request)
+    {
+        return new UpdateLessonInput
+        {
+            LessonId = lessonId,
+            Title = request.Title,
+            Description = request.Description,
+            FreePreview = request.FreePreview,
+            Published = request.Published
+        };
+    }
+
+    public static ReorderLessonsInput ToInput(Guid moduleId, ReorderLessonsRequest request)
+    {
+        return new ReorderLessonsInput
+        {
+            ModuleId = moduleId,
+            OrderedLessonIds = request.LessonIds.ToList()
         };
     }
 
@@ -126,6 +190,7 @@ public static class CoursePresenter
             PublishedAt = output.PublishedAt,
             PricingModel = output.PricingModel,
             PriceAmount = output.PriceAmount,
+            IssuesCertificate = output.IssuesCertificate,
             AreaIds = output.AreaIds.ToList(),
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt

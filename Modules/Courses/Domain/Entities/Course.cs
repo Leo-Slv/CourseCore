@@ -19,7 +19,8 @@ public class Course : EntityBase
         int displayOrder,
         DateTime? publishedAt,
         CoursePricingModel pricingModel,
-        decimal? priceAmount)
+        decimal? priceAmount,
+        bool issuesCertificate)
     {
         Title = ValidateRequired(title, nameof(Title));
         Slug = slug ?? throw new DomainException("Slug is required.");
@@ -30,6 +31,7 @@ public class Course : EntityBase
         PublishedAt = publishedAt;
         PricingModel = pricingModel;
         PriceAmount = ValidatePriceAmount(pricingModel, priceAmount);
+        IssuesCertificate = issuesCertificate;
     }
 
     public string Title { get; private set; }
@@ -50,6 +52,8 @@ public class Course : EntityBase
 
     public decimal? PriceAmount { get; private set; }
 
+    public bool IssuesCertificate { get; private set; }
+
     public IReadOnlyCollection<CourseModule> Modules => _modules.AsReadOnly();
 
     public IReadOnlyCollection<Guid> AreaIds => _areaIds.AsReadOnly();
@@ -61,9 +65,10 @@ public class Course : EntityBase
         int displayOrder,
         string? thumbnailUrl = null,
         CoursePricingModel pricingModel = CoursePricingModel.Paid,
-        decimal? priceAmount = null)
+        decimal? priceAmount = null,
+        bool issuesCertificate = true)
     {
-        return new Course(title, slug, description, thumbnailUrl, published: false, displayOrder, publishedAt: null, pricingModel, priceAmount);
+        return new Course(title, slug, description, thumbnailUrl, published: false, displayOrder, publishedAt: null, pricingModel, priceAmount, issuesCertificate);
     }
 
     public static Course Restore(
@@ -77,12 +82,13 @@ public class Course : EntityBase
         DateTime? publishedAt,
         CoursePricingModel pricingModel,
         decimal? priceAmount,
+        bool issuesCertificate,
         IEnumerable<CourseModule>? modules,
         IEnumerable<Guid>? areaIds,
         DateTime createdAt,
         DateTime updatedAt)
     {
-        var course = new Course(title, slug, description, thumbnailUrl, published, displayOrder, publishedAt, pricingModel, priceAmount)
+        var course = new Course(title, slug, description, thumbnailUrl, published, displayOrder, publishedAt, pricingModel, priceAmount, issuesCertificate)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -147,6 +153,12 @@ public class Course : EntityBase
     public void ChangePriceAmount(decimal? priceAmount)
     {
         PriceAmount = ValidatePriceAmount(PricingModel, priceAmount);
+        MarkAsUpdated();
+    }
+
+    public void ChangeCertificateIssuance(bool issuesCertificate)
+    {
+        IssuesCertificate = issuesCertificate;
         MarkAsUpdated();
     }
 
@@ -270,9 +282,9 @@ public class Course : EntityBase
             throw new DomainException("PriceAmount cannot be negative.");
         }
 
-        if (pricingModel == CoursePricingModel.Free)
+        if (pricingModel is CoursePricingModel.Free or CoursePricingModel.EnrollmentControlled)
         {
-            throw new DomainException("PriceAmount must not be set for free courses.");
+            throw new DomainException("PriceAmount must not be set for free or enrollment-controlled courses.");
         }
 
         return priceAmount;

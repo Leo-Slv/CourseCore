@@ -22,6 +22,8 @@ public class CourseResponse
 
     public decimal? PriceAmount { get; init; }
 
+    public bool IssuesCertificate { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public DateTime CreatedAt { get; init; }

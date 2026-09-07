@@ -24,6 +24,8 @@ public class CoursePersistenceModel
 
     public decimal? PriceAmount { get; set; }
 
+    public bool IssuesCertificate { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

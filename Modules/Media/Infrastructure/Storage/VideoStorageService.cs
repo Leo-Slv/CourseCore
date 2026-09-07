@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Application.Options;
 using CourseCore.Api.Modules.Media.Domain.Entities;
+using CourseCore.Api.Modules.Media.Domain.Enums;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Media.Infrastructure.Storage;
@@ -30,6 +31,13 @@ public class VideoStorageService : IVideoStorageService
         if (userId == Guid.Empty)
         {
             throw new ArgumentException("UserId is required.", nameof(userId));
+        }
+
+        if (video.StorageProvider == VideoStorageProvider.YouTube)
+        {
+            var embedUrl = $"https://www.youtube-nocookie.com/embed/{Uri.EscapeDataString(video.StorageKey)}";
+
+            return Task.FromResult(new VideoPlaybackUrl(embedUrl, DateTime.UtcNow.AddYears(1)));
         }
 
         var expiresAt = DateTime.UtcNow.AddMinutes(_options.SignedUrlExpirationMinutes);

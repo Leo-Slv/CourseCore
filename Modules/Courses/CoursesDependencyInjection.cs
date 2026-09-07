@@ -10,6 +10,7 @@ public static class CoursesDependencyInjection
     {
         services.AddScoped<ICourseRepository, EfCourseRepository>();
         services.AddScoped<ILessonRepository, EfLessonRepository>();
+        services.AddScoped<ICourseModuleRepository, EfCourseModuleRepository>();
         services.AddScoped<CreateCourseUseCase>();
         services.AddScoped<UpdateCourseUseCase>();
         services.AddScoped<PublishCourseUseCase>();
@@ -18,6 +19,14 @@ public static class CoursesDependencyInjection
         services.AddScoped<ListAvailableCoursesUseCase>();
         services.AddScoped<ListAllCoursesUseCase>();
         services.AddScoped<GetPublicCatalogSummaryUseCase>();
+        services.AddScoped<CreateCourseModuleUseCase>();
+        services.AddScoped<UpdateCourseModuleUseCase>();
+        services.AddScoped<RemoveCourseModuleUseCase>();
+        services.AddScoped<ReorderCourseModulesUseCase>();
+        services.AddScoped<CreateLessonUseCase>();
+        services.AddScoped<UpdateLessonUseCase>();
+        services.AddScoped<RemoveLessonUseCase>();
+        services.AddScoped<ReorderLessonsUseCase>();
 
         return services;
     }

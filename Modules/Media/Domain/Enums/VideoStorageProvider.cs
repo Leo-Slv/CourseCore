@@ -7,5 +7,6 @@ public enum VideoStorageProvider
     AzureBlob,
     CloudflareR2,
     Vimeo,
-    Mux
+    Mux,
+    YouTube
 }

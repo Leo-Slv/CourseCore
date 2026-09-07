@@ -22,6 +22,21 @@ public static class VideoPresenter
         };
     }
 
+    public static CreateVideoInput ToInput(Guid lessonId, ReplaceLessonVideoRequest request)
+    {
+        return new CreateVideoInput
+        {
+            LessonId = lessonId,
+            Title = request.Title,
+            Description = request.Description,
+            StorageProvider = request.StorageProvider,
+            StorageKey = request.StorageKey,
+            ThumbnailUrl = request.ThumbnailUrl,
+            DurationSeconds = request.DurationSeconds,
+            SizeBytes = request.SizeBytes
+        };
+    }
+
     public static VideoResponse ToResponse(VideoOutput output)
     {
         return new VideoResponse

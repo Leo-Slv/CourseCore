@@ -46,11 +46,7 @@ public static class CourseModuleMapper
         model.Published = module.Published;
         model.UpdatedAt = module.UpdatedAt;
 
-        model.Lessons.Clear();
-
-        foreach (var lesson in module.Lessons)
-        {
-            model.Lessons.Add(LessonMapper.ToPersistence(lesson));
-        }
+        // Module updates do not edit lesson structure.
+        // Preserve existing required child rows to avoid severing EF relationships.
     }
 }

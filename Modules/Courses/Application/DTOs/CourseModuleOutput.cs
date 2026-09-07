@@ -18,6 +18,23 @@ public class CourseModuleOutput
 
     public IReadOnlyCollection<LessonOutput> Lessons { get; init; } = Array.Empty<LessonOutput>();
 
+    public static CourseModuleOutput FromModule(CourseModule module)
+    {
+        return new CourseModuleOutput
+        {
+            Id = module.Id,
+            CourseId = module.CourseId,
+            Title = module.Title,
+            Description = module.Description,
+            DisplayOrder = module.DisplayOrder,
+            Published = module.Published,
+            Lessons = module.Lessons
+                .OrderBy(lesson => lesson.DisplayOrder)
+                .Select(lesson => LessonOutput.FromLesson(lesson, videoId: null, durationSeconds: null))
+                .ToList()
+        };
+    }
+
     public static CourseModuleOutput FromModule(
         CourseModule module,
         IReadOnlyDictionary<Guid, (Guid VideoId, int DurationSeconds)> videoInfoByLessonId,

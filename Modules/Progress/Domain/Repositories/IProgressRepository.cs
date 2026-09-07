@@ -26,4 +26,8 @@ public interface IProgressRepository
     Task SaveCourseProgressAsync(
         UserCourseProgress progress,
         CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsAnyForLessonAsync(
+        Guid lessonId,
+        CancellationToken cancellationToken = default);
 }

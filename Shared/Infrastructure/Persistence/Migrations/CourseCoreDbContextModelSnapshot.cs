@@ -545,6 +545,11 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IssuesCertificate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<decimal?>("PriceAmount")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");

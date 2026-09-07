@@ -134,7 +134,7 @@ public class RegisterLessonProgressUseCase
                     course.Id,
                     cancellationToken);
 
-                if (existingCertificate is null)
+                if (existingCertificate is null && course.IssuesCertificate)
                 {
                     await _certificates.CreateAsync(
                         Certificate.Issue(input.UserId, course.Id),

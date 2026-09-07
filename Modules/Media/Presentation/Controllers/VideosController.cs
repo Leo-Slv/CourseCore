@@ -19,17 +19,26 @@ public class VideosController : ControllerBase
     private readonly CreateVideoUseCase _createVideoUseCase;
     private readonly MarkVideoReadyUseCase _markVideoReadyUseCase;
     private readonly RequestVideoPlaybackUseCase _requestVideoPlaybackUseCase;
+    private readonly GetLessonVideoUseCase _getLessonVideoUseCase;
+    private readonly ReplaceLessonVideoUseCase _replaceLessonVideoUseCase;
+    private readonly RemoveLessonVideoUseCase _removeLessonVideoUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public VideosController(
         CreateVideoUseCase createVideoUseCase,
         MarkVideoReadyUseCase markVideoReadyUseCase,
         RequestVideoPlaybackUseCase requestVideoPlaybackUseCase,
+        GetLessonVideoUseCase getLessonVideoUseCase,
+        ReplaceLessonVideoUseCase replaceLessonVideoUseCase,
+        RemoveLessonVideoUseCase removeLessonVideoUseCase,
         ICurrentUserService currentUserService)
     {
         _createVideoUseCase = createVideoUseCase;
         _markVideoReadyUseCase = markVideoReadyUseCase;
         _requestVideoPlaybackUseCase = requestVideoPlaybackUseCase;
+        _getLessonVideoUseCase = getLessonVideoUseCase;
+        _replaceLessonVideoUseCase = replaceLessonVideoUseCase;
+        _removeLessonVideoUseCase = removeLessonVideoUseCase;
         _currentUserService = currentUserService;
     }
 
@@ -92,6 +101,58 @@ public class VideosController : ControllerBase
             cancellationToken);
 
         return Ok(VideoPresenter.ToResponse(output));
+    }
+
+    [HttpGet("lessons/{lessonId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(VideoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<VideoResponse>> GetLessonVideoAsync(
+        Guid lessonId,
+        CancellationToken cancellationToken)
+    {
+        var output = await _getLessonVideoUseCase.ExecuteAsync(lessonId, cancellationToken);
+
+        return Ok(VideoPresenter.ToResponse(output));
+    }
+
+    [HttpPut("lessons/{lessonId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(VideoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<VideoResponse>> ReplaceLessonVideoAsync(
+        Guid lessonId,
+        ReplaceLessonVideoRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _replaceLessonVideoUseCase.ExecuteAsync(
+            VideoPresenter.ToInput(lessonId, request),
+            cancellationToken);
+
+        return Ok(VideoPresenter.ToResponse(output));
+    }
+
+    [HttpDelete("lessons/{lessonId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RemoveLessonVideoAsync(
+        Guid lessonId,
+        CancellationToken cancellationToken)
+    {
+        await _removeLessonVideoUseCase.ExecuteAsync(lessonId, cancellationToken);
+
+        return NoContent();
     }
 
     private Guid GetCurrentUserId()

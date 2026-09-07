@@ -272,6 +272,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             DisplayOrder = 0,
             PublishedAt = now,
             PricingModel = pricingModel.ToString(),
+            IssuesCertificate = true,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -347,6 +348,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             DisplayOrder = 0,
             PublishedAt = now,
             PricingModel = pricingModel.ToString(),
+            IssuesCertificate = true,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -571,6 +573,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["Media:Playback:SigningSecret"] = "integration-test-media-signing-secret-32-characters-minimum",
                 ["Media:Playback:BaseUrl"] = "/media",
                 ["Media:Playback:AllowedStorageProviders:0"] = "Local",
+                ["Media:Playback:AllowedStorageProviders:1"] = "YouTube",
                 ["Cors:AllowedOrigins:0"] = "https://localhost",
                 ["Seed:Admin:Enabled"] = "false"
             };

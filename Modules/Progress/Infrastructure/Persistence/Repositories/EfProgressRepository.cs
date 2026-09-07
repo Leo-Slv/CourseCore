@@ -84,4 +84,13 @@ public class EfProgressRepository : IProgressRepository
 
         ProgressMapper.ApplyChanges(progress, model);
     }
+
+    public async Task<bool> ExistsAnyForLessonAsync(
+        Guid lessonId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.UserLessonProgress
+            .AsNoTracking()
+            .AnyAsync(x => x.LessonId == lessonId, cancellationToken);
+    }
 }

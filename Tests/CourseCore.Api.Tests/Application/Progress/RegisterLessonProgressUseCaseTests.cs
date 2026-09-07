@@ -258,6 +258,22 @@ public class RegisterLessonProgressUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenCourseDoesNotIssueCertificates_ShouldNotIssueCertificate()
+    {
+        var fixture = CreateFixture(grantAccess: true, lessonCount: 1, issuesCertificate: false);
+        fixture.Videos.Videos.Add(CreateReadyVideo(fixture.Lesson.Id, durationSeconds: 100));
+
+        await fixture.UseCase.ExecuteAsync(new RegisterLessonProgressInput
+        {
+            UserId = fixture.UserId,
+            LessonId = fixture.Lesson.Id,
+            WatchedSeconds = 90
+        });
+
+        Assert.Empty(fixture.Certificates.CreatedCertificates);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenLessonHasNoVideo_ShouldNotCompleteLesson()
     {
         var fixture = CreateFixture(grantAccess: true);
@@ -294,7 +310,8 @@ public class RegisterLessonProgressUseCaseTests
     private static RegisterLessonProgressFixture CreateFixture(
         bool grantAccess,
         bool addCourse = true,
-        int lessonCount = 1)
+        int lessonCount = 1,
+        bool issuesCertificate = true)
     {
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
@@ -307,7 +324,7 @@ public class RegisterLessonProgressUseCaseTests
         var unitOfWork = new FakeUnitOfWork();
         var user = TestEntityFactory.User();
         var area = TestEntityFactory.Area();
-        var (course, lesson) = CreatePublishedCourseWithLesson(area.Id, lessonCount);
+        var (course, lesson) = CreatePublishedCourseWithLesson(area.Id, lessonCount, issuesCertificate);
 
         users.Add(user);
         areas.Areas.Add(area);
@@ -341,13 +358,17 @@ public class RegisterLessonProgressUseCaseTests
         return new RegisterLessonProgressFixture(useCase, courses, videos, progress, certificates, user.Id, course, lesson);
     }
 
-    private static (Course Course, Lesson Lesson) CreatePublishedCourseWithLesson(Guid areaId, int lessonCount)
+    private static (Course Course, Lesson Lesson) CreatePublishedCourseWithLesson(
+        Guid areaId,
+        int lessonCount,
+        bool issuesCertificate = true)
     {
         var course = Course.Create(
             "Course",
             Slug.Create($"course-{Guid.NewGuid():N}"),
             "Description",
-            displayOrder: 0);
+            displayOrder: 0,
+            issuesCertificate: issuesCertificate);
         var module = CourseModule.Create(course.Id, "Module", "Description", displayOrder: 0);
         Lesson? firstLesson = null;
 

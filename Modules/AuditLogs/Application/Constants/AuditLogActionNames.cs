@@ -29,6 +29,16 @@ public static class AuditLogActionNames
     public const string CourseUpdated = "CourseUpdated";
     public const string CoursePublished = "CoursePublished";
     public const string CourseUnpublished = "CourseUnpublished";
+    public const string CourseModuleCreated = "CourseModuleCreated";
+    public const string CourseModuleUpdated = "CourseModuleUpdated";
+    public const string CourseModuleDeleted = "CourseModuleDeleted";
+    public const string CourseModuleReordered = "CourseModuleReordered";
+    public const string LessonCreated = "LessonCreated";
+    public const string LessonUpdated = "LessonUpdated";
+    public const string LessonDeleted = "LessonDeleted";
+    public const string LessonReordered = "LessonReordered";
     public const string VideoCreated = "VideoCreated";
     public const string VideoMarkedReady = "VideoMarkedReady";
+    public const string VideoReplaced = "VideoReplaced";
+    public const string VideoRemoved = "VideoRemoved";
 }

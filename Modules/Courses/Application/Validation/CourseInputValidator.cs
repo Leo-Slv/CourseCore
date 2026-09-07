@@ -42,6 +42,24 @@ public static class CourseInputValidator
         ValidateCourseFields(input.Title, input.Slug, input.Description, input.ThumbnailUrl, input.PricingModel, input.AreaIds);
     }
 
+    public static void ValidateModuleFields(string title, string description)
+    {
+        if (!IsValidRequired(title, CourseValidationLimits.ModuleTitleMaxLength)
+            || !IsValidOptional(description, CourseValidationLimits.ModuleDescriptionMaxLength))
+        {
+            throw InvalidPayload();
+        }
+    }
+
+    public static void ValidateLessonFields(string title, string description)
+    {
+        if (!IsValidRequired(title, CourseValidationLimits.LessonTitleMaxLength)
+            || !IsValidOptional(description, CourseValidationLimits.LessonDescriptionMaxLength))
+        {
+            throw InvalidPayload();
+        }
+    }
+
     private static void ValidateCourseFields(
         string title,
         string slug,

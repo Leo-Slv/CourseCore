@@ -85,4 +85,17 @@ public class EfVideoRepository : IVideoRepository
 
         VideoMapper.ApplyChanges(video, model);
     }
+
+    public async Task RemoveAsync(Guid videoId, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.Videos
+            .FirstOrDefaultAsync(x => x.Id == videoId, cancellationToken);
+
+        if (model is null)
+        {
+            throw new InvalidOperationException("Video not found.");
+        }
+
+        _dbContext.Videos.Remove(model);
+    }
 }
