@@ -23,6 +23,8 @@ public class CourseCoreDbContext : DbContext
 
     public DbSet<EmailVerificationTokenPersistenceModel> EmailVerificationTokens => Set<EmailVerificationTokenPersistenceModel>();
 
+    public DbSet<PasswordResetTokenPersistenceModel> PasswordResetTokens => Set<PasswordResetTokenPersistenceModel>();
+
     public DbSet<RolePersistenceModel> Roles => Set<RolePersistenceModel>();
 
     public DbSet<PermissionPersistenceModel> Permissions => Set<PermissionPersistenceModel>();

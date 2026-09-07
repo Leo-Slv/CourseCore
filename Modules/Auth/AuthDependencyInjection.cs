@@ -26,6 +26,7 @@ public static class AuthDependencyInjection
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.Configure<AuthResponseOptions>(configuration.GetSection("Auth"));
+        services.Configure<FrontendOptions>(configuration.GetSection("Frontend"));
         services.Configure<RefreshTokenCookieOptions>(configuration.GetSection("Auth:RefreshTokenCookie"));
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
@@ -37,6 +38,9 @@ public static class AuthDependencyInjection
         services.AddScoped<IEmailVerificationTokenHasher, Sha256EmailVerificationTokenHasher>();
         services.AddScoped<IEmailVerificationTokenGenerator, SecureEmailVerificationTokenGenerator>();
         services.AddScoped<IEmailVerificationTokenRepository, EfEmailVerificationTokenRepository>();
+        services.AddScoped<IPasswordResetTokenHasher, Sha256PasswordResetTokenHasher>();
+        services.AddScoped<IPasswordResetTokenGenerator, SecurePasswordResetTokenGenerator>();
+        services.AddScoped<IPasswordResetTokenRepository, EfPasswordResetTokenRepository>();
         services.AddScoped<SessionIssuer>();
         services.AddScoped<LoginUseCase>();
         services.AddScoped<RefreshTokenUseCase>();
@@ -44,6 +48,8 @@ public static class AuthDependencyInjection
         services.AddScoped<RegisterUseCase>();
         services.AddScoped<ConfirmEmailUseCase>();
         services.AddScoped<ResendEmailConfirmationUseCase>();
+        services.AddScoped<RequestPasswordResetUseCase>();
+        services.AddScoped<ConfirmPasswordResetUseCase>();
 
         services.Configure<TurnstileOptions>(configuration.GetSection("Turnstile"));
         services.AddHttpClient<ICaptchaVerificationService, TurnstileCaptchaVerificationService>(client =>

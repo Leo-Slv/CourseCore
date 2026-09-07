@@ -2,7 +2,7 @@
 
 Spec: [`Docs/specs/auth/login.md`](../../specs/auth/login.md)
 
-## 1. No forgot-password / password-recovery endpoint
+## 1. No forgot-password / password-recovery endpoint — CLOSED
 
 - **Mockup expects**: an "Esqueci minha senha" link leading to a real
   recovery flow (the reference project this repo is adapted from has one,
@@ -19,6 +19,16 @@ Spec: [`Docs/specs/auth/login.md`](../../specs/auth/login.md)
 - **Severity**: Feature gap — no partial version of this is possible until
   the backend adds it; revisit only if it gets specced on the CourseCore
   side first.
+- **Resolved, 2026-09-07**: `POST /api/auth/forgot-password` (request a
+  reset — always 204 regardless of whether the email exists, to avoid
+  account enumeration; captcha-protected and rate-limited like Register)
+  and `POST /api/auth/reset-password` (accept token + new password). New
+  `PasswordResetToken` concept, a structural mirror of the existing,
+  working `EmailVerificationToken` flow (same hash/expiry/consume
+  lifecycle, 1-hour expiry). On success: password changed, `TokenVersion`
+  incremented and all refresh tokens revoked (same session-invalidation
+  mechanism `UpdateUserUseCase` already uses for other security-relevant
+  account changes) — a successful reset logs every other session out.
 
 ## 2. "Remember me" has no backend concept
 

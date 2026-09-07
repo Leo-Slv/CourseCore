@@ -25,6 +25,8 @@ public class AuthController : ControllerBase
     private readonly RegisterUseCase _registerUseCase;
     private readonly ConfirmEmailUseCase _confirmEmailUseCase;
     private readonly ResendEmailConfirmationUseCase _resendEmailConfirmationUseCase;
+    private readonly RequestPasswordResetUseCase _requestPasswordResetUseCase;
+    private readonly ConfirmPasswordResetUseCase _confirmPasswordResetUseCase;
     private readonly IRefreshTokenCookieService _refreshTokenCookieService;
     private readonly ICurrentUserService _currentUserService;
     private readonly AuthResponseOptions _authResponseOptions;
@@ -37,6 +39,8 @@ public class AuthController : ControllerBase
         RegisterUseCase registerUseCase,
         ConfirmEmailUseCase confirmEmailUseCase,
         ResendEmailConfirmationUseCase resendEmailConfirmationUseCase,
+        RequestPasswordResetUseCase requestPasswordResetUseCase,
+        ConfirmPasswordResetUseCase confirmPasswordResetUseCase,
         IRefreshTokenCookieService refreshTokenCookieService,
         ICurrentUserService currentUserService,
         IOptions<AuthResponseOptions> authResponseOptions,
@@ -48,6 +52,8 @@ public class AuthController : ControllerBase
         _registerUseCase = registerUseCase;
         _confirmEmailUseCase = confirmEmailUseCase;
         _resendEmailConfirmationUseCase = resendEmailConfirmationUseCase;
+        _requestPasswordResetUseCase = requestPasswordResetUseCase;
+        _confirmPasswordResetUseCase = confirmPasswordResetUseCase;
         _refreshTokenCookieService = refreshTokenCookieService;
         _currentUserService = currentUserService;
         _authResponseOptions = authResponseOptions.Value;
@@ -120,6 +126,38 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ResendConfirmationAsync(CancellationToken cancellationToken)
     {
         await _resendEmailConfirmationUseCase.ExecuteAsync(GetCurrentUserId(), cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicyNames.AuthForgotPassword)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ForgotPasswordAsync(
+        RequestPasswordResetRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _requestPasswordResetUseCase.ExecuteAsync(AuthPresenter.ToInput(request), cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicyNames.AuthResetPassword)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ResetPasswordAsync(
+        ConfirmPasswordResetRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _confirmPasswordResetUseCase.ExecuteAsync(AuthPresenter.ToInput(request), cancellationToken);
 
         return NoContent();
     }

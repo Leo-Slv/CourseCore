@@ -150,7 +150,8 @@ public class RegisterUseCaseTests
             sessionIssuer,
             emailSender,
             unitOfWork,
-            auditLogs);
+            auditLogs,
+            Options.Create(new FrontendOptions { BaseUrl = "https://app.coursecore.local" }));
 
         return new RegisterFixture(useCase, users, emailVerificationTokens, emailSender, unitOfWork, auditLogs, captcha);
     }

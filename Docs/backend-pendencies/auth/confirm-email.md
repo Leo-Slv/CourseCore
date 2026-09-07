@@ -2,7 +2,7 @@
 
 Spec: [`Docs/specs/auth/confirm-email.md`](../../specs/auth/confirm-email.md)
 
-## 1. Verification email has no clickable link
+## 1. Verification email has no clickable link — CLOSED
 
 - **Mockup expects**: "Enviamos um link para {email}" with "Reenviar link" /
   "Trocar e-mail" as the only actions — assumes the email contains a
@@ -23,6 +23,16 @@ Spec: [`Docs/specs/auth/confirm-email.md`](../../specs/auth/confirm-email.md)
   frontend change required** at that point.
 - **Severity**: Feature gap, non-blocking — confirmation fully works today
   via copy/paste, it's just a worse experience than a clickable link.
+- **Resolved, 2026-09-07**: new `Frontend:BaseUrl` config
+  (`appsettings.Development.json`: `http://localhost:3000`, matching the
+  existing dev CORS origin; empty in `appsettings.json`, needs a real value
+  in Production) plus a shared `AuthEmailTemplates` builder (deduplicating
+  the byte-for-byte-identical private template method that used to live in
+  both `RegisterUseCase` and `ResendEmailConfirmationUseCase`). The email
+  now wraps the token in `<a href="{baseUrl}/confirm-email?token=...">`
+  **and** still shows the raw token as `<strong>{token}</strong>` — exactly
+  what this pendency's own note already anticipated ("a real emailed link
+  would work transparently... with no frontend change required").
 
 ## 2. No self-service email-change endpoint
 

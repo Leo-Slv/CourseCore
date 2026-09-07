@@ -115,3 +115,86 @@ public sealed class FakeEmailVerificationTokenRepository : IEmailVerificationTok
         return Task.CompletedTask;
     }
 }
+
+public sealed class FakePasswordResetTokenHasher : IPasswordResetTokenHasher
+{
+    public string Hash(string token)
+    {
+        return $"hash:{token}";
+    }
+}
+
+public sealed class FakePasswordResetTokenGenerator : IPasswordResetTokenGenerator
+{
+    private readonly Queue<string> _tokens;
+
+    public FakePasswordResetTokenGenerator(params string[] tokens)
+    {
+        _tokens = new Queue<string>(tokens);
+    }
+
+    public string Generate()
+    {
+        return _tokens.Count > 0 ? _tokens.Dequeue() : Guid.NewGuid().ToString("N");
+    }
+}
+
+public sealed class FakePasswordResetTokenRepository : IPasswordResetTokenRepository
+{
+    private readonly Dictionary<string, PasswordResetToken> _tokens = [];
+
+    public List<PasswordResetToken> Added { get; } = [];
+
+    public void AddExisting(PasswordResetToken token)
+    {
+        _tokens[token.TokenHash] = token;
+    }
+
+    public Task<PasswordResetToken?> FindByTokenHashAsync(
+        string tokenHash,
+        CancellationToken cancellationToken = default)
+    {
+        _tokens.TryGetValue(tokenHash, out var token);
+
+        return Task.FromResult(token);
+    }
+
+    public Task AddAsync(PasswordResetToken token, CancellationToken cancellationToken = default)
+    {
+        Added.Add(token);
+        _tokens[token.TokenHash] = token;
+
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> TryConsumeAsync(
+        Guid tokenId,
+        string currentTokenHash,
+        DateTime consumedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_tokens.TryGetValue(currentTokenHash, out var token)
+            || token.Id != tokenId
+            || !token.IsActive)
+        {
+            return Task.FromResult(false);
+        }
+
+        token.Consume(consumedAt);
+
+        return Task.FromResult(true);
+    }
+
+    public Task InvalidateActiveByUserIdAsync(
+        Guid userId,
+        DateTime consumedAt,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var token in _tokens.Values.Where(token => token.UserId == userId && token.IsActive))
+        {
+            token.Consume(consumedAt);
+        }
+
+        return Task.CompletedTask;
+    }
+}

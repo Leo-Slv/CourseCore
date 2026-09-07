@@ -46,6 +46,16 @@ public static class RateLimiterExtensions
                 context => CreateFixedWindowPartition(
                     context,
                     GetOptions(context).ResendConfirmation));
+            rateLimiterOptions.AddPolicy(
+                RateLimitPolicyNames.AuthForgotPassword,
+                context => CreateFixedWindowPartition(
+                    context,
+                    GetOptions(context).ForgotPassword));
+            rateLimiterOptions.AddPolicy(
+                RateLimitPolicyNames.AuthResetPassword,
+                context => CreateFixedWindowPartition(
+                    context,
+                    GetOptions(context).ResetPassword));
         });
 
         return services;

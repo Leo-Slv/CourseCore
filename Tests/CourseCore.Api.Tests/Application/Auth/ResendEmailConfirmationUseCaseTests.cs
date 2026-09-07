@@ -1,8 +1,10 @@
 using CourseCore.Api.Modules.Auth.Domain.Entities;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
+using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Tests.TestDoubles;
+using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Tests.Application.Auth;
 
@@ -74,7 +76,8 @@ public class ResendEmailConfirmationUseCaseTests
             new FakeEmailVerificationTokenGenerator("new-verification-token"),
             emailSender,
             unitOfWork,
-            auditLogs);
+            auditLogs,
+            Options.Create(new FrontendOptions { BaseUrl = "https://app.coursecore.local" }));
 
         return new ResendFixture(useCase, users, emailVerificationTokens, emailSender, auditLogs);
     }

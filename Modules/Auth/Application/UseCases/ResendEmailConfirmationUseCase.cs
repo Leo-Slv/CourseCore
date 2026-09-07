@@ -1,11 +1,14 @@
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
+using CourseCore.Api.Modules.Auth.Application.Services;
 using CourseCore.Api.Modules.Auth.Domain.Entities;
 using CourseCore.Api.Modules.Auth.Domain.Repositories;
+using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
+using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Auth.Application.UseCases;
 
@@ -20,6 +23,7 @@ public class ResendEmailConfirmationUseCase
     private readonly IEmailSender _emailSender;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
+    private readonly FrontendOptions _frontendOptions;
 
     public ResendEmailConfirmationUseCase(
         IUserRepository users,
@@ -28,7 +32,8 @@ public class ResendEmailConfirmationUseCase
         IEmailVerificationTokenGenerator emailVerificationTokenGenerator,
         IEmailSender emailSender,
         IUnitOfWork unitOfWork,
-        IAuditLogService auditLogs)
+        IAuditLogService auditLogs,
+        IOptions<FrontendOptions> frontendOptions)
     {
         _users = users;
         _emailVerificationTokens = emailVerificationTokens;
@@ -37,6 +42,7 @@ public class ResendEmailConfirmationUseCase
         _emailSender = emailSender;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
+        _frontendOptions = frontendOptions.Value;
     }
 
     public async Task ExecuteAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -85,12 +91,7 @@ public class ResendEmailConfirmationUseCase
         await _emailSender.SendAsync(
             user.Email.Value,
             "Confirme seu e-mail",
-            BuildVerificationEmailHtml(verificationTokenValue),
+            AuthEmailTemplates.BuildEmailConfirmationHtml(_frontendOptions.BaseUrl, verificationTokenValue),
             cancellationToken);
-    }
-
-    private static string BuildVerificationEmailHtml(string token)
-    {
-        return $"<p>Use o código a seguir para confirmar seu e-mail:</p><p><strong>{token}</strong></p>";
     }
 }

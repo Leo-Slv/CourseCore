@@ -7,4 +7,6 @@ public static class RateLimitPolicyNames
     public const string AuthLogout = "AuthLogout";
     public const string AuthRegister = "AuthRegister";
     public const string AuthResendConfirmation = "AuthResendConfirmation";
+    public const string AuthForgotPassword = "AuthForgotPassword";
+    public const string AuthResetPassword = "AuthResetPassword";
 }

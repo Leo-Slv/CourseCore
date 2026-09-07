@@ -35,6 +35,24 @@ public static class AuthPresenter
         };
     }
 
+    public static RequestPasswordResetInput ToInput(RequestPasswordResetRequest request)
+    {
+        return new RequestPasswordResetInput
+        {
+            Email = request.Email,
+            CaptchaToken = request.CaptchaToken
+        };
+    }
+
+    public static ConfirmPasswordResetInput ToInput(ConfirmPasswordResetRequest request)
+    {
+        return new ConfirmPasswordResetInput
+        {
+            Token = request.Token,
+            NewPassword = request.NewPassword
+        };
+    }
+
     public static string ToRefreshToken(RefreshTokenRequest request)
     {
         return request.RefreshToken;

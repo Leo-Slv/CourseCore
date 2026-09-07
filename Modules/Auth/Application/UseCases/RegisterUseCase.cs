@@ -8,9 +8,11 @@ using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Application.Validation;
 using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
+using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
+using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Auth.Application.UseCases;
 
@@ -30,6 +32,7 @@ public class RegisterUseCase
     private readonly IEmailSender _emailSender;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
+    private readonly FrontendOptions _frontendOptions;
 
     public RegisterUseCase(
         IUserRepository users,
@@ -43,7 +46,8 @@ public class RegisterUseCase
         SessionIssuer sessionIssuer,
         IEmailSender emailSender,
         IUnitOfWork unitOfWork,
-        IAuditLogService auditLogs)
+        IAuditLogService auditLogs,
+        IOptions<FrontendOptions> frontendOptions)
     {
         _users = users;
         _passwordHasher = passwordHasher;
@@ -57,6 +61,7 @@ public class RegisterUseCase
         _emailSender = emailSender;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
+        _frontendOptions = frontendOptions.Value;
     }
 
     public async Task<AuthOutput> ExecuteAsync(
@@ -122,14 +127,9 @@ public class RegisterUseCase
         await _emailSender.SendAsync(
             email.Value,
             "Confirme seu e-mail",
-            BuildVerificationEmailHtml(verificationTokenValue),
+            AuthEmailTemplates.BuildEmailConfirmationHtml(_frontendOptions.BaseUrl, verificationTokenValue),
             cancellationToken);
 
         return authOutput!;
-    }
-
-    private static string BuildVerificationEmailHtml(string token)
-    {
-        return $"<p>Use o código a seguir para confirmar seu e-mail:</p><p><strong>{token}</strong></p>";
     }
 }
