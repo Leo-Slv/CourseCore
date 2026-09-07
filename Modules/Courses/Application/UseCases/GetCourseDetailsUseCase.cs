@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Access.Application.Services;
+using CourseCore.Api.Modules.Certificates.Domain.Repositories;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
@@ -11,15 +12,18 @@ public class GetCourseDetailsUseCase
     private readonly ICourseRepository _courses;
     private readonly CourseAccessService _courseAccessService;
     private readonly IVideoRepository _videos;
+    private readonly ICertificateRepository _certificates;
 
     public GetCourseDetailsUseCase(
         ICourseRepository courses,
         CourseAccessService courseAccessService,
-        IVideoRepository videos)
+        IVideoRepository videos,
+        ICertificateRepository certificates)
     {
         _courses = courses;
         _courseAccessService = courseAccessService;
         _videos = videos;
+        _certificates = certificates;
     }
 
     public async Task<CourseDetailsOutput> ExecuteAsync(
@@ -66,6 +70,9 @@ public class GetCourseDetailsUseCase
             entry => entry.Key,
             entry => (entry.Value.Id, entry.Value.DurationSeconds));
 
-        return CourseDetailsOutput.FromCourse(course, access.CanAccess, videoInfoByLessonId);
+        var certificate = await _certificates.FindByUserAndCourseAsync(
+            input.UserId, input.CourseId, cancellationToken);
+
+        return CourseDetailsOutput.FromCourse(course, access.CanAccess, certificate is not null, videoInfoByLessonId);
     }
 }

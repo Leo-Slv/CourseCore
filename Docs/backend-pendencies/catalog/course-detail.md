@@ -81,12 +81,15 @@ Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.
   already returned by `GET /api/courses/{id}`, no further backend field
   needed.
 
-## 4. No certificate concept
+## 4. No certificate concept — CLOSED (minimum scope)
 
 - Same gap as [catalog/course-catalog.md](course-catalog.md) pendency 5 —
   "Sim" / certificado in the mockup has nothing behind it anywhere in the
   backend.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-07**: same fix as `course-catalog.md` pendency 5 —
+  `CourseDetailsResponse.CertificateIssued` now reports whether the current
+  user has an issued `Certificate` for this course.
 
 ## 5. No price amount or installments — PARTIALLY CLOSED
 

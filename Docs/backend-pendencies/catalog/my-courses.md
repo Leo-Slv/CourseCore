@@ -33,7 +33,7 @@ detail than a catalog card does).
   the existing `GET /api/progress/courses/{id}` response's per-lesson
   `WatchedSeconds` — no further backend change needed for that specifically.
 
-## 2. No certificate concept
+## 2. No certificate concept — CLOSED (minimum scope)
 
 - **Mockup expects**: "Certificado emitido" on a 100%-complete course's
   card.
@@ -43,6 +43,9 @@ detail than a catalog card does).
 - **Workaround shipped**: completed cards show "100% concluído · rever"
   only, no certificate badge.
 - **Severity**: Feature gap.
+- **Resolved, 2026-09-07**: same fix as `course-catalog.md` pendency 5 —
+  `CourseCatalogItemResponse.CertificateIssued` (this screen is assembled
+  from the catalog endpoint, so it needed no separate work).
 
 ## 3. No per-card action backing the "⋮" kebab
 

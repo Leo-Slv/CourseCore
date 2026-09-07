@@ -31,11 +31,14 @@ public class CourseCatalogItemOutput
 
     public int DurationSeconds { get; init; }
 
+    public bool CertificateIssued { get; init; }
+
     public static CourseCatalogItemOutput FromCatalogEntry(
         CourseCatalogEntry entry,
         int moduleCount,
         int lessonCount,
-        int durationSeconds)
+        int durationSeconds,
+        bool certificateIssued)
     {
         var course = entry.Course;
 
@@ -53,7 +56,8 @@ public class CourseCatalogItemOutput
             HasAccess = entry.HasAccess,
             ModuleCount = moduleCount,
             LessonCount = lessonCount,
-            DurationSeconds = durationSeconds
+            DurationSeconds = durationSeconds,
+            CertificateIssued = certificateIssued
         };
     }
 }

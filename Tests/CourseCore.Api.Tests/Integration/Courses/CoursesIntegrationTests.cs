@@ -475,6 +475,32 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Equal(0, item.DurationSeconds);
     }
 
+    [Fact]
+    public async Task CourseEndpoints_AfterCourseCompletion_ShouldReportCertificateIssued()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        await _factory.SeedReadyVideoAsync(course.LessonId, durationSeconds: 100);
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        await client.PostAsJsonAsync("/api/progress/lessons", new
+        {
+            lessonId = course.LessonId,
+            watchedSeconds = 90
+        });
+
+        var catalogResponse = await client.GetAsync("/api/courses/available");
+        var catalogBody = await catalogResponse.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+        Assert.NotNull(catalogBody);
+        Assert.True(catalogBody!.Courses.Single(c => c.Id == course.CourseId).CertificateIssued);
+
+        var detailsResponse = await client.GetAsync($"/api/courses/{course.CourseId}");
+        var detailsBody = await detailsResponse.Content.ReadFromJsonAsync<CourseDetailsResponse>();
+        Assert.NotNull(detailsBody);
+        Assert.True(detailsBody!.CertificateIssued);
+    }
+
     private HttpClient CreateClient()
     {
         return _factory.CreateClient(new WebApplicationFactoryClientOptions

@@ -1,0 +1,14 @@
+namespace CourseCore.Api.Modules.Certificates.Presentation.Responses;
+
+public class CertificateResponse
+{
+    public Guid Id { get; init; }
+
+    public Guid CourseId { get; init; }
+
+    public string CourseTitle { get; init; } = string.Empty;
+
+    public string CourseSlug { get; init; } = string.Empty;
+
+    public DateTime IssuedAt { get; init; }
+}

@@ -97,6 +97,23 @@ public class EfCourseRepository : ICourseRepository
         return models.Select(CourseMapper.ToDomain).ToList();
     }
 
+    public async Task<IReadOnlyCollection<Course>> ListByIdsAsync(
+        IReadOnlyCollection<Guid> courseIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (courseIds.Count == 0)
+        {
+            return [];
+        }
+
+        var models = await CourseQuery()
+            .AsNoTracking()
+            .Where(x => courseIds.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        return models.Select(CourseMapper.ToDomain).ToList();
+    }
+
     public async Task<IReadOnlyCollection<CourseContentSummary>> ListContentSummariesAsync(
         IReadOnlyCollection<Guid> courseIds,
         CancellationToken cancellationToken = default)

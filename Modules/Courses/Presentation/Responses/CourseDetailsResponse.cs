@@ -24,6 +24,8 @@ public class CourseDetailsResponse
 
     public bool HasAccess { get; init; }
 
+    public bool CertificateIssued { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CourseModuleResponse> Modules { get; init; } = Array.Empty<CourseModuleResponse>();

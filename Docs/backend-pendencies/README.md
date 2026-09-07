@@ -28,7 +28,7 @@ require, the workaround shipped instead, and a rough severity:
 | Catalog (`/catalog`) | [catalog/course-catalog.md](catalog/course-catalog.md) | Feature gap |
 | Course detail (`/courses/[slug]`) | [catalog/course-detail.md](catalog/course-detail.md) | Feature gap |
 | Lesson player (`/courses/[slug]/lessons/[lessonId]`) | [catalog/lesson-player.md](catalog/lesson-player.md) | Feature gap |
-| My courses (`/my-courses`) | [catalog/my-courses.md](catalog/my-courses.md) | Feature gap |
+| My courses (`/my-courses`) | [catalog/my-courses.md](catalog/my-courses.md) | Cosmetic |
 
 ## Skipped screens
 

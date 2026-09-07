@@ -89,7 +89,7 @@ Everything below is mockup content with nothing in that shape behind it.
   locked) — see the spec's "Access states" section.
 - **Severity**: Cosmetic — folded into a simpler, honest model instead.
 
-## 5. No certificate concept
+## 5. No certificate concept — CLOSED (minimum scope)
 
 - **Mockup expects**: "Certificado emitido" / "Certificado ao concluir"
   badges, plus a "Certificados" nav item.
@@ -100,6 +100,22 @@ Everything below is mockup content with nothing in that shape behind it.
 - **Workaround shipped**: "Certificados" nav item renders inert.
 - **Severity**: Feature gap — largest single missing feature in this
   screen's mockup.
+- **Resolved, 2026-09-07, minimum scope**: new `Certificates` module.
+  `Certificate(UserId, CourseId, IssuedAt)` is issued automatically, once,
+  the moment `RegisterLessonProgressUseCase` recalculates a course to 100%
+  (idempotent — a course already at 100% updating again doesn't duplicate
+  it). `CourseCatalogItemResponse`/`CourseDetailsResponse` both gained a
+  `CertificateIssued: bool`, sourced from a bulk/single lookup against the
+  new module (no N+1). `GET /api/certificates/mine` lists the current
+  user's issued certificates (course title/slug + issue date) — the real
+  data behind the "Certificados" nav item. **Deliberately not built**, per
+  explicit scope agreement: a public verification code/URL, PDF generation,
+  and any admin issuance/revoke tooling — none of those were asked for by
+  the "minimum" scope choice, so their absence isn't an oversight. This
+  extends beyond `Docs/coursecore-course-authoring-essential-features-plan.md`,
+  which lists certificates under "Não implementar neste plano" — the same
+  kind of deliberate, user-confirmed scope extension already made once this
+  session for the price-amount field.
 
 ## 6. No request-access / "Solicitar acesso" endpoint — CLOSED
 

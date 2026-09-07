@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Access.Application.Services;
+using CourseCore.Api.Modules.Certificates.Domain.Repositories;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
@@ -10,15 +11,18 @@ public class ListAvailableCoursesUseCase
     private readonly CourseAccessService _courseAccessService;
     private readonly ICourseRepository _courses;
     private readonly IVideoRepository _videos;
+    private readonly ICertificateRepository _certificates;
 
     public ListAvailableCoursesUseCase(
         CourseAccessService courseAccessService,
         ICourseRepository courses,
-        IVideoRepository videos)
+        IVideoRepository videos,
+        ICertificateRepository certificates)
     {
         _courseAccessService = courseAccessService;
         _courses = courses;
         _videos = videos;
+        _certificates = certificates;
     }
 
     public async Task<CourseCatalogOutput> ExecuteAsync(
@@ -49,6 +53,8 @@ public class ListAvailableCoursesUseCase
             .Distinct()
             .ToList();
         var durationsByLessonId = await _videos.ListDurationSecondsByLessonIdsAsync(lessonIds, cancellationToken);
+        var certificatesByCourseId = await _certificates.ListByUserIdAndCourseIdsAsync(
+            input.UserId, courseIds, cancellationToken);
 
         return new CourseCatalogOutput
         {
@@ -64,9 +70,10 @@ public class ListAvailableCoursesUseCase
                     var summary = summariesByCourseId[entry.Course.Id];
                     var durationSeconds = summary.LessonIds.Sum(lessonId =>
                         durationsByLessonId.GetValueOrDefault(lessonId, 0));
+                    var certificateIssued = certificatesByCourseId.ContainsKey(entry.Course.Id);
 
                     return CourseCatalogItemOutput.FromCatalogEntry(
-                        entry, summary.ModuleCount, summary.LessonCount, durationSeconds);
+                        entry, summary.ModuleCount, summary.LessonCount, durationSeconds, certificateIssued);
                 })
                 .ToList()
         };

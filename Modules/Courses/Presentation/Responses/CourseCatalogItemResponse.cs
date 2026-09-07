@@ -27,4 +27,6 @@ public class CourseCatalogItemResponse
     public int LessonCount { get; init; }
 
     public int DurationSeconds { get; init; }
+
+    public bool CertificateIssued { get; init; }
 }

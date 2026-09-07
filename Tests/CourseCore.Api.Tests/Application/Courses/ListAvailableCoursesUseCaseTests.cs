@@ -60,6 +60,7 @@ public class ListAvailableCoursesUseCaseTests
         var areas = new FakeAreaRepository();
         var courses = new FakeCourseRepository();
         var videos = new FakeVideoRepository();
+        var certificates = new FakeCertificateRepository();
         var user = TestEntityFactory.User(email: $"user-{Guid.NewGuid():N}@coursecore.local");
         var area = TestEntityFactory.Area();
         var course = TestEntityFactory.PublishedCourse(area.Id, CoursePricingModel.Free);
@@ -69,9 +70,9 @@ public class ListAvailableCoursesUseCaseTests
         courses.Courses.Add(course);
 
         var courseAccessService = new CourseAccessService(users, roles, areas, courses);
-        var useCase = new ListAvailableCoursesUseCase(courseAccessService, courses, videos);
+        var useCase = new ListAvailableCoursesUseCase(courseAccessService, courses, videos, certificates);
 
-        return new ListAvailableCoursesFixture(useCase, user.Id, course.Id, course, videos);
+        return new ListAvailableCoursesFixture(useCase, user.Id, course.Id, course, videos, certificates);
     }
 
     private sealed record ListAvailableCoursesFixture(
@@ -79,5 +80,6 @@ public class ListAvailableCoursesUseCaseTests
         Guid UserId,
         Guid CourseId,
         Course Course,
-        FakeVideoRepository Videos);
+        FakeVideoRepository Videos,
+        FakeCertificateRepository Certificates);
 }

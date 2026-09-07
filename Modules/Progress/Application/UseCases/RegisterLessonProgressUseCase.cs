@@ -1,4 +1,6 @@
 using CourseCore.Api.Modules.Access.Application.Services;
+using CourseCore.Api.Modules.Certificates.Domain.Entities;
+using CourseCore.Api.Modules.Certificates.Domain.Repositories;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Domain.Entities;
@@ -22,6 +24,7 @@ public class RegisterLessonProgressUseCase
     private readonly ICourseRepository _courses;
     private readonly IVideoRepository _videos;
     private readonly IProgressRepository _progress;
+    private readonly ICertificateRepository _certificates;
     private readonly CourseAccessService _courseAccessService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ProgressOptions _options;
@@ -32,6 +35,7 @@ public class RegisterLessonProgressUseCase
         ICourseRepository courses,
         IVideoRepository videos,
         IProgressRepository progress,
+        ICertificateRepository certificates,
         CourseAccessService courseAccessService,
         IUnitOfWork unitOfWork,
         IOptions<ProgressOptions> options)
@@ -41,6 +45,7 @@ public class RegisterLessonProgressUseCase
         _courses = courses;
         _videos = videos;
         _progress = progress;
+        _certificates = certificates;
         _courseAccessService = courseAccessService;
         _unitOfWork = unitOfWork;
         _options = options.Value;
@@ -123,6 +128,18 @@ public class RegisterLessonProgressUseCase
             if (progressPercent == 100)
             {
                 courseProgress.MarkAsCompleted();
+
+                var existingCertificate = await _certificates.FindByUserAndCourseAsync(
+                    input.UserId,
+                    course.Id,
+                    cancellationToken);
+
+                if (existingCertificate is null)
+                {
+                    await _certificates.CreateAsync(
+                        Certificate.Issue(input.UserId, course.Id),
+                        cancellationToken);
+                }
             }
 
             await _progress.SaveCourseProgressAsync(courseProgress, cancellationToken);

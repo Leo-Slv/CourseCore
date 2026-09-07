@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.AuditLogs.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Auth.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Certificates.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Progress.Infrastructure.Persistence.Models;
@@ -53,6 +54,8 @@ public class CourseCoreDbContext : DbContext
     public DbSet<UserLessonProgressPersistenceModel> UserLessonProgress => Set<UserLessonProgressPersistenceModel>();
 
     public DbSet<AuditLogPersistenceModel> AuditLogs => Set<AuditLogPersistenceModel>();
+
+    public DbSet<CertificatePersistenceModel> Certificates => Set<CertificatePersistenceModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -278,6 +278,16 @@ public sealed class FakeCourseRepository : ICourseRepository
             Courses.Where(course => course.Published && course.AreaIds.Any(areaIdSet.Contains)).ToArray());
     }
 
+    public Task<IReadOnlyCollection<Course>> ListByIdsAsync(
+        IReadOnlyCollection<Guid> courseIds,
+        CancellationToken cancellationToken = default)
+    {
+        var courseIdSet = courseIds.ToHashSet();
+
+        return Task.FromResult<IReadOnlyCollection<Course>>(
+            Courses.Where(course => courseIdSet.Contains(course.Id)).ToArray());
+    }
+
     public Task<IReadOnlyCollection<CourseContentSummary>> ListContentSummariesAsync(
         IReadOnlyCollection<Guid> courseIds,
         CancellationToken cancellationToken = default)

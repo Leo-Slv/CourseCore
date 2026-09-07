@@ -180,7 +180,8 @@ public class GetCourseDetailsUseCaseTests
 
         var courseAccessService = new CourseAccessService(users, roles, areas, courses);
         var videos = new FakeVideoRepository();
-        var useCase = new GetCourseDetailsUseCase(courses, courseAccessService, videos);
+        var certificates = new FakeCertificateRepository();
+        var useCase = new GetCourseDetailsUseCase(courses, courseAccessService, videos, certificates);
 
         return new GetCourseDetailsFixture(
             useCase,
@@ -189,7 +190,8 @@ public class GetCourseDetailsUseCaseTests
             course.Id,
             area.Id,
             course,
-            videos);
+            videos,
+            certificates);
     }
 
     private sealed record GetCourseDetailsFixture(
@@ -199,5 +201,6 @@ public class GetCourseDetailsUseCaseTests
         Guid CourseId,
         Guid AreaId,
         Course Course,
-        FakeVideoRepository Videos);
+        FakeVideoRepository Videos,
+        FakeCertificateRepository Certificates);
 }

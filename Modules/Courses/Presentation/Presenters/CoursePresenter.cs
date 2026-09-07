@@ -113,6 +113,7 @@ public static class CoursePresenter
             PricingModel = output.PricingModel,
             PriceAmount = output.PriceAmount,
             HasAccess = output.HasAccess,
+            CertificateIssued = output.CertificateIssued,
             AreaIds = output.AreaIds.ToList(),
             Modules = output.Modules.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,
@@ -147,7 +148,8 @@ public static class CoursePresenter
             HasAccess = output.HasAccess,
             ModuleCount = output.ModuleCount,
             LessonCount = output.LessonCount,
-            DurationSeconds = output.DurationSeconds
+            DurationSeconds = output.DurationSeconds,
+            CertificateIssued = output.CertificateIssued
         };
     }
 

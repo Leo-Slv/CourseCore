@@ -26,6 +26,8 @@ public class CourseDetailsOutput
 
     public bool HasAccess { get; init; }
 
+    public bool CertificateIssued { get; init; }
+
     public IReadOnlyCollection<Guid> AreaIds { get; init; } = Array.Empty<Guid>();
 
     public IReadOnlyCollection<CourseModuleOutput> Modules { get; init; } = Array.Empty<CourseModuleOutput>();
@@ -37,6 +39,7 @@ public class CourseDetailsOutput
     public static CourseDetailsOutput FromCourse(
         Course course,
         bool hasAccess,
+        bool certificateIssued,
         IReadOnlyDictionary<Guid, (Guid VideoId, int DurationSeconds)> videoInfoByLessonId)
     {
         return new CourseDetailsOutput
@@ -52,6 +55,7 @@ public class CourseDetailsOutput
             PricingModel = course.PricingModel.ToString(),
             PriceAmount = course.PriceAmount,
             HasAccess = hasAccess,
+            CertificateIssued = certificateIssued,
             AreaIds = course.AreaIds.ToList(),
             Modules = course.Modules
                 .OrderBy(module => module.DisplayOrder)

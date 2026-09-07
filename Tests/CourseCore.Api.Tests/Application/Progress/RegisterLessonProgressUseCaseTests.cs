@@ -1,5 +1,6 @@
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Certificates.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Media.Domain.Entities;
 using CourseCore.Api.Modules.Media.Domain.Enums;
@@ -216,6 +217,47 @@ public class RegisterLessonProgressUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenCourseReachesFullCompletion_ShouldIssueCertificate()
+    {
+        var fixture = CreateFixture(grantAccess: true, lessonCount: 1);
+        fixture.Videos.Videos.Add(CreateReadyVideo(fixture.Lesson.Id, durationSeconds: 100));
+
+        await fixture.UseCase.ExecuteAsync(new RegisterLessonProgressInput
+        {
+            UserId = fixture.UserId,
+            LessonId = fixture.Lesson.Id,
+            WatchedSeconds = 90
+        });
+
+        var certificate = Assert.Single(fixture.Certificates.CreatedCertificates);
+        Assert.Equal(fixture.UserId, certificate.UserId);
+        Assert.Equal(fixture.Course.Id, certificate.CourseId);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenCourseAlreadyHasCertificate_ShouldNotIssueDuplicate()
+    {
+        var fixture = CreateFixture(grantAccess: true, lessonCount: 1);
+        fixture.Videos.Videos.Add(CreateReadyVideo(fixture.Lesson.Id, durationSeconds: 100));
+        await fixture.Certificates.CreateAsync(Certificate.Issue(fixture.UserId, fixture.Course.Id));
+
+        await fixture.UseCase.ExecuteAsync(new RegisterLessonProgressInput
+        {
+            UserId = fixture.UserId,
+            LessonId = fixture.Lesson.Id,
+            WatchedSeconds = 90
+        });
+        await fixture.UseCase.ExecuteAsync(new RegisterLessonProgressInput
+        {
+            UserId = fixture.UserId,
+            LessonId = fixture.Lesson.Id,
+            WatchedSeconds = 95
+        });
+
+        Assert.Single(fixture.Certificates.CreatedCertificates);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenLessonHasNoVideo_ShouldNotCompleteLesson()
     {
         var fixture = CreateFixture(grantAccess: true);
@@ -261,6 +303,7 @@ public class RegisterLessonProgressUseCaseTests
         var lessons = new FakeLessonRepository();
         var videos = new FakeVideoRepository();
         var progress = new FakeProgressRepository();
+        var certificates = new FakeCertificateRepository();
         var unitOfWork = new FakeUnitOfWork();
         var user = TestEntityFactory.User();
         var area = TestEntityFactory.Area();
@@ -290,11 +333,12 @@ public class RegisterLessonProgressUseCaseTests
             courses,
             videos,
             progress,
+            certificates,
             courseAccessService,
             unitOfWork,
             Options.Create(new ProgressOptions()));
 
-        return new RegisterLessonProgressFixture(useCase, courses, videos, progress, user.Id, course, lesson);
+        return new RegisterLessonProgressFixture(useCase, courses, videos, progress, certificates, user.Id, course, lesson);
     }
 
     private static (Course Course, Lesson Lesson) CreatePublishedCourseWithLesson(Guid areaId, int lessonCount)
@@ -346,6 +390,7 @@ public class RegisterLessonProgressUseCaseTests
         FakeCourseRepository Courses,
         FakeVideoRepository Videos,
         FakeProgressRepository Progress,
+        FakeCertificateRepository Certificates,
         Guid UserId,
         Course Course,
         Lesson Lesson);
