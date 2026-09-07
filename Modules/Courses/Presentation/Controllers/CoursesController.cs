@@ -23,6 +23,7 @@ public class CoursesController : ControllerBase
     private readonly GetCourseDetailsUseCase _getCourseDetailsUseCase;
     private readonly ListAvailableCoursesUseCase _listAvailableCoursesUseCase;
     private readonly ListAllCoursesUseCase _listAllCoursesUseCase;
+    private readonly GetPublicCatalogSummaryUseCase _getPublicCatalogSummaryUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public CoursesController(
@@ -33,6 +34,7 @@ public class CoursesController : ControllerBase
         GetCourseDetailsUseCase getCourseDetailsUseCase,
         ListAvailableCoursesUseCase listAvailableCoursesUseCase,
         ListAllCoursesUseCase listAllCoursesUseCase,
+        GetPublicCatalogSummaryUseCase getPublicCatalogSummaryUseCase,
         ICurrentUserService currentUserService)
     {
         _createCourseUseCase = createCourseUseCase;
@@ -42,6 +44,7 @@ public class CoursesController : ControllerBase
         _getCourseDetailsUseCase = getCourseDetailsUseCase;
         _listAvailableCoursesUseCase = listAvailableCoursesUseCase;
         _listAllCoursesUseCase = listAllCoursesUseCase;
+        _getPublicCatalogSummaryUseCase = getPublicCatalogSummaryUseCase;
         _currentUserService = currentUserService;
     }
 
@@ -170,6 +173,18 @@ public class CoursesController : ControllerBase
         var output = await _listAvailableCoursesUseCase.ExecuteAsync(
             CoursePresenter.ToInput(GetCurrentUserId(), request),
             cancellationToken);
+
+        return Ok(CoursePresenter.ToResponse(output));
+    }
+
+    [HttpGet("public-summary")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(PublicCatalogSummaryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<PublicCatalogSummaryResponse>> GetPublicSummaryAsync(
+        CancellationToken cancellationToken)
+    {
+        var output = await _getPublicCatalogSummaryUseCase.ExecuteAsync(cancellationToken);
 
         return Ok(CoursePresenter.ToResponse(output));
     }

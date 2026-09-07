@@ -6,6 +6,40 @@ namespace CourseCore.Api.Modules.Courses.Presentation.Presenters;
 
 public static class CoursePresenter
 {
+    public static PublicCatalogSummaryResponse ToResponse(PublicCatalogSummaryOutput output)
+    {
+        return new PublicCatalogSummaryResponse
+        {
+            ActiveAreaCount = output.ActiveAreaCount,
+            PublishedCourseCount = output.PublishedCourseCount,
+            FeaturedCourses = output.FeaturedCourses.Select(ToResponse).ToList(),
+            Areas = output.Areas.Select(ToResponse).ToList()
+        };
+    }
+
+    public static PublicFeaturedCourseResponse ToResponse(PublicFeaturedCourseOutput output)
+    {
+        return new PublicFeaturedCourseResponse
+        {
+            Id = output.Id,
+            Title = output.Title,
+            Slug = output.Slug,
+            Description = output.Description,
+            ThumbnailUrl = output.ThumbnailUrl
+        };
+    }
+
+    public static PublicAreaSummaryResponse ToResponse(PublicAreaSummaryOutput output)
+    {
+        return new PublicAreaSummaryResponse
+        {
+            Id = output.Id,
+            Name = output.Name,
+            Slug = output.Slug,
+            PublishedCourseCount = output.PublishedCourseCount
+        };
+    }
+
     public static CreateCourseInput ToInput(CreateCourseRequest request)
     {
         return new CreateCourseInput

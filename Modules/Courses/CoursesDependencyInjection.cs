@@ -17,6 +17,7 @@ public static class CoursesDependencyInjection
         services.AddScoped<GetCourseDetailsUseCase>();
         services.AddScoped<ListAvailableCoursesUseCase>();
         services.AddScoped<ListAllCoursesUseCase>();
+        services.AddScoped<GetPublicCatalogSummaryUseCase>();
 
         return services;
     }

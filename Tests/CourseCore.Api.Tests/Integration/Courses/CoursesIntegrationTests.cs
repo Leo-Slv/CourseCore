@@ -343,6 +343,37 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task GetPublicSummary_WhenAnonymous_ShouldReturnOkWithRealCounts()
+    {
+        using var client = CreateClient();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+
+        var response = await client.GetAsync("/api/courses/public-summary");
+        var body = await response.Content.ReadFromJsonAsync<PublicCatalogSummaryResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.True(body!.ActiveAreaCount >= 1);
+        Assert.True(body.PublishedCourseCount >= 1);
+        Assert.NotEmpty(body.FeaturedCourses);
+        var area = Assert.Single(body.Areas, a => a.Id == course.AreaId);
+        Assert.True(area.PublishedCourseCount >= 1);
+    }
+
+    [Fact]
+    public async Task GetPublicSummary_ShouldNotExposeAccessOrPricingFields()
+    {
+        using var client = CreateClient();
+
+        var response = await client.GetAsync("/api/courses/public-summary");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("hasAccess", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("priceAmount", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task GetCourseDetails_WhenUserHasNoAccess_ShouldReturnPreview()
     {
         using var client = CreateClient();
