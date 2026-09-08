@@ -18,17 +18,35 @@ public class CourseModulesController : ControllerBase
     private readonly UpdateCourseModuleUseCase _updateCourseModuleUseCase;
     private readonly RemoveCourseModuleUseCase _removeCourseModuleUseCase;
     private readonly ReorderCourseModulesUseCase _reorderCourseModulesUseCase;
+    private readonly ListCourseModulesUseCase _listCourseModulesUseCase;
 
     public CourseModulesController(
         CreateCourseModuleUseCase createCourseModuleUseCase,
         UpdateCourseModuleUseCase updateCourseModuleUseCase,
         RemoveCourseModuleUseCase removeCourseModuleUseCase,
-        ReorderCourseModulesUseCase reorderCourseModulesUseCase)
+        ReorderCourseModulesUseCase reorderCourseModulesUseCase,
+        ListCourseModulesUseCase listCourseModulesUseCase)
     {
         _createCourseModuleUseCase = createCourseModuleUseCase;
         _updateCourseModuleUseCase = updateCourseModuleUseCase;
         _removeCourseModuleUseCase = removeCourseModuleUseCase;
         _reorderCourseModulesUseCase = reorderCourseModulesUseCase;
+        _listCourseModulesUseCase = listCourseModulesUseCase;
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyCollection<CourseModuleResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IReadOnlyCollection<CourseModuleResponse>>> ListAsync(
+        Guid courseId,
+        CancellationToken cancellationToken)
+    {
+        var outputs = await _listCourseModulesUseCase.ExecuteAsync(courseId, cancellationToken);
+
+        return Ok(outputs.Select(CoursePresenter.ToResponse).ToList());
     }
 
     [HttpPost]

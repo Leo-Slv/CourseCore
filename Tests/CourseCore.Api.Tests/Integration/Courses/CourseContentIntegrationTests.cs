@@ -79,6 +79,47 @@ public class CourseContentIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task ListCourseModules_WhenAdminHasNoPersonalCourseAccess_ShouldStillReturnModules()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        // grantUserAccess left null: the admin has no personal area/course access to this
+        // locked paid course — this endpoint must not gate on the caller's own access.
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+
+        var response = await client.GetAsync($"/api/courses/{course.CourseId}/modules");
+        var body = await response.Content.ReadFromJsonAsync<List<CourseModuleResponse>>();
+
+        await AssertStatusAsync(HttpStatusCode.OK, response);
+        Assert.NotNull(body);
+        Assert.Contains(body!, m => m.Id == course.ModuleId);
+        var moduleResponse = body!.Single(m => m.Id == course.ModuleId);
+        Assert.Contains(moduleResponse.Lessons, l => l.Id == course.LessonId);
+    }
+
+    [Fact]
+    public async Task ListCourseModules_WhenCourseDoesNotExist_ShouldReturnNotFound()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.GetAsync($"/api/courses/{Guid.NewGuid()}/modules");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListCourseModules_WhenAnonymous_ShouldReturnUnauthorized()
+    {
+        using var client = CreateClient();
+        var course = await _factory.SeedPublishedCourseWithoutContentAsync();
+
+        var response = await client.GetAsync($"/api/courses/{course.CourseId}/modules");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RemoveCourseModule_WhenModuleHasLessons_ShouldReturnConflict()
     {
         using var client = CreateClient();

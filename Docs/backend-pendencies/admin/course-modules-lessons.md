@@ -114,6 +114,51 @@ the new "Painel admin — CRUDs de entidades" mockup group.
   YouTube videos stay access-controlled the same way any other lesson
   video is.
 
+## 4. No admin-facing endpoint to read a course's modules/lessons — CLOSED
+
+- **Mockup expects**: artboard `1n`'s "Conteúdo" panel shows "8 módulos ·
+  41 aulas" — a live count — plus the "Gerenciar módulos →" link into
+  `1o`, which itself needs to render the full module/lesson tree to be
+  useful at all.
+- **Backend today**: `CourseModulesController` and `LessonsController`
+  (added resolving pendency 1 above) only expose `POST`/`PUT`/`DELETE`/
+  reorder — no `[HttpGet]` anywhere on either. The only place module/
+  lesson data comes back in a response body is
+  `GetCourseDetailsUseCase` (`GET /api/courses/{id}`, nested `Modules`
+  on `CourseDetailsResponse`) — but that's the *student-facing* detail
+  endpoint: it calls `CourseAccessService.CanUserAccessCourseAsync` for
+  the requesting user and throws `ForbiddenException` (403) when they
+  can't access the course. An admin with `ManageCourses` but no personal
+  enrollment in a given paid/restricted course would get a 403 calling
+  it — not a viable admin read path.
+- **What's needed**: a `GET` on `CourseModulesController` (or a
+  `Modules` field added back onto the admin `CourseResponse`/a new
+  admin-facing course-details response) that doesn't gate on the
+  caller's own course access.
+- **Workaround shipped**: the admin course create/edit screen omits the
+  live "X módulos · Y aulas" count and ships "Gerenciar módulos →" as an
+  inert link (module management itself, artboard `1o`, isn't specced
+  yet either) — see `Docs/specs/admin/course-form.md`.
+- **Severity**: Cosmetic for `1n` alone (the count is decorative); would
+  become Blocking for `1o` whenever that screen gets built, for the same
+  reason pendency 1 was originally blocking here — no read endpoint,
+  nothing to render.
+- **Resolved (2026-09-08)**: added `GET /api/courses/{courseId}/modules`
+  on `CourseModulesController`, behind `ManageCourses` — new
+  `ListCourseModulesUseCase` loads the course via
+  `ICourseRepository.FindDetailsByIdAsync` and does **not** call
+  `CourseAccessService`, so an admin with `ManageCourses` but no personal
+  enrollment in the course gets the full module/lesson tree instead of a
+  403. Reuses the existing `CourseModuleOutput.FromModule(module,
+  videoInfoByLessonId, hasAccess: true)` overload (same one
+  `GetCourseDetailsUseCase` uses for the student-facing endpoint) with
+  `hasAccess` hardcoded `true` — an admin's response always includes each
+  lesson's video info (`VideoId`/`DurationSeconds`) regardless of
+  `FreePreview`, unlike the gated student view. Modules ordered by
+  `DisplayOrder`. This also gives artboard `1n`'s "X módulos · Y aulas"
+  count a real source (`Modules.Count` / sum of `Lessons.Count`) and
+  unblocks `1o`'s module/lesson tree whenever that screen gets specced.
+
 ## What's already real
 
 - Lesson-level `FreePreview` (`Modules/Courses/Presentation/Requests/CreateLessonRequest.cs`)

@@ -23,6 +23,7 @@ public static class CoursesDependencyInjection
         services.AddScoped<UpdateCourseModuleUseCase>();
         services.AddScoped<RemoveCourseModuleUseCase>();
         services.AddScoped<ReorderCourseModulesUseCase>();
+        services.AddScoped<ListCourseModulesUseCase>();
         services.AddScoped<CreateLessonUseCase>();
         services.AddScoped<UpdateLessonUseCase>();
         services.AddScoped<RemoveLessonUseCase>();
