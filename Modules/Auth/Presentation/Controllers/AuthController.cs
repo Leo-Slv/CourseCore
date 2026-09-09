@@ -28,6 +28,8 @@ public class AuthController : ControllerBase
     private readonly RequestPasswordResetUseCase _requestPasswordResetUseCase;
     private readonly ConfirmPasswordResetUseCase _confirmPasswordResetUseCase;
     private readonly GetCurrentUserUseCase _getCurrentUserUseCase;
+    private readonly UpdateOwnProfileUseCase _updateOwnProfileUseCase;
+    private readonly ChangeOwnPasswordUseCase _changeOwnPasswordUseCase;
     private readonly IRefreshTokenCookieService _refreshTokenCookieService;
     private readonly ICurrentUserService _currentUserService;
     private readonly AuthResponseOptions _authResponseOptions;
@@ -43,6 +45,8 @@ public class AuthController : ControllerBase
         RequestPasswordResetUseCase requestPasswordResetUseCase,
         ConfirmPasswordResetUseCase confirmPasswordResetUseCase,
         GetCurrentUserUseCase getCurrentUserUseCase,
+        UpdateOwnProfileUseCase updateOwnProfileUseCase,
+        ChangeOwnPasswordUseCase changeOwnPasswordUseCase,
         IRefreshTokenCookieService refreshTokenCookieService,
         ICurrentUserService currentUserService,
         IOptions<AuthResponseOptions> authResponseOptions,
@@ -57,6 +61,8 @@ public class AuthController : ControllerBase
         _requestPasswordResetUseCase = requestPasswordResetUseCase;
         _confirmPasswordResetUseCase = confirmPasswordResetUseCase;
         _getCurrentUserUseCase = getCurrentUserUseCase;
+        _updateOwnProfileUseCase = updateOwnProfileUseCase;
+        _changeOwnPasswordUseCase = changeOwnPasswordUseCase;
         _refreshTokenCookieService = refreshTokenCookieService;
         _currentUserService = currentUserService;
         _authResponseOptions = authResponseOptions.Value;
@@ -176,6 +182,42 @@ public class AuthController : ControllerBase
         var output = await _getCurrentUserUseCase.ExecuteAsync(GetCurrentUserId(), cancellationToken);
 
         return Ok(AuthPresenter.ToResponse(output));
+    }
+
+    [HttpPut("me")]
+    [ProducesResponseType(typeof(CurrentUserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<CurrentUserResponse>> UpdateProfileAsync(
+        UpdateProfileRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _updateOwnProfileUseCase.ExecuteAsync(
+            AuthPresenter.ToInput(GetCurrentUserId(), request),
+            cancellationToken);
+
+        return Ok(AuthPresenter.ToResponse(output));
+    }
+
+    [HttpPost("change-password")]
+    [EnableRateLimiting(RateLimitPolicyNames.AuthChangePassword)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _changeOwnPasswordUseCase.ExecuteAsync(
+            AuthPresenter.ToInput(GetCurrentUserId(), request),
+            cancellationToken);
+
+        return NoContent();
     }
 
     [HttpPost("refresh-token")]

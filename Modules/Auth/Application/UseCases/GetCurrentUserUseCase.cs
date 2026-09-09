@@ -39,6 +39,8 @@ public class GetCurrentUserUseCase
             Email = user.Email.Value,
             Active = user.Active,
             EmailVerifiedAt = user.EmailVerifiedAt,
+            Phone = user.Phone,
+            AvatarUrl = user.AvatarUrl,
             Roles = roles.Select(role => role.Name).ToList()
         };
     }

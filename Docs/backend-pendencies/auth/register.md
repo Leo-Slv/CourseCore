@@ -23,3 +23,11 @@ Spec: [`Docs/specs/auth/register.md`](../../specs/auth/register.md)
   just starts rendering.
 - **Severity**: Config — this is a credentials request to whoever owns the
   Cloudflare/Resend accounts, not backend engineering work.
+- **Partially resolved (2026-09-09)**: a real **Resend API key** was
+  supplied and configured locally in the developer's own gitignored `.env`
+  (`Resend__ApiKey`/`Resend__FromName`; `Resend__FromAddress` still needs a
+  real verified sender address) — no code change, `ResendEmailSender`
+  already sends for real once `Resend:ApiKey` is non-blank. The secret was
+  never written to any tracked file or committed. **Turnstile keys (public
+  site key + secret key) are still outstanding** — that half of this
+  pendency remains open.

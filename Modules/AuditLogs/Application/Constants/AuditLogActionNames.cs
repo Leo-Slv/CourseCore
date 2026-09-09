@@ -12,6 +12,8 @@ public static class AuditLogActionNames
     public const string EmailVerificationResent = "EmailVerificationResent";
     public const string PasswordResetRequested = "PasswordResetRequested";
     public const string PasswordResetSucceeded = "PasswordResetSucceeded";
+    public const string PasswordChanged = "PasswordChanged";
+    public const string UserProfileUpdated = "UserProfileUpdated";
     public const string UserCreated = "UserCreated";
     public const string UserUpdated = "UserUpdated";
     public const string UserTokenVersionIncremented = "UserTokenVersionIncremented";

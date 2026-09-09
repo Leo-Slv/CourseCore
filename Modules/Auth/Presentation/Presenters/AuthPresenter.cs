@@ -53,6 +53,27 @@ public static class AuthPresenter
         };
     }
 
+    public static UpdateOwnProfileInput ToInput(Guid userId, UpdateProfileRequest request)
+    {
+        return new UpdateOwnProfileInput
+        {
+            UserId = userId,
+            Name = request.Name,
+            Phone = request.Phone,
+            AvatarUrl = request.AvatarUrl
+        };
+    }
+
+    public static ChangeOwnPasswordInput ToInput(Guid userId, ChangePasswordRequest request)
+    {
+        return new ChangeOwnPasswordInput
+        {
+            UserId = userId,
+            CurrentPassword = request.CurrentPassword,
+            NewPassword = request.NewPassword
+        };
+    }
+
     public static string ToRefreshToken(RefreshTokenRequest request)
     {
         return request.RefreshToken;
@@ -84,6 +105,8 @@ public static class AuthPresenter
             Email = output.Email,
             Active = output.Active,
             EmailVerifiedAt = output.EmailVerifiedAt,
+            Phone = output.Phone,
+            AvatarUrl = output.AvatarUrl,
             Roles = output.Roles.ToList()
         };
     }

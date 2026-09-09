@@ -43,6 +43,12 @@ public sealed class RateLimitOptions
         PermitLimit = 5,
         WindowSeconds = 60
     };
+
+    public RateLimitPolicyOptions ChangePassword { get; init; } = new()
+    {
+        PermitLimit = 5,
+        WindowSeconds = 60
+    };
 }
 
 public sealed class RateLimitPolicyOptions

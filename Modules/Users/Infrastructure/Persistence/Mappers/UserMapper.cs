@@ -17,7 +17,9 @@ public static class UserMapper
             model.EmailVerifiedAt,
             model.TokenVersion,
             model.CreatedAt,
-            model.UpdatedAt);
+            model.UpdatedAt,
+            model.Phone,
+            model.AvatarUrl);
     }
 
     public static UserPersistenceModel ToPersistence(User user)
@@ -31,6 +33,8 @@ public static class UserMapper
             Active = user.Active,
             EmailVerifiedAt = user.EmailVerifiedAt,
             TokenVersion = user.TokenVersion,
+            Phone = user.Phone,
+            AvatarUrl = user.AvatarUrl,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
         };
@@ -44,6 +48,8 @@ public static class UserMapper
         model.Active = user.Active;
         model.EmailVerifiedAt = user.EmailVerifiedAt;
         model.TokenVersion = user.TokenVersion;
+        model.Phone = user.Phone;
+        model.AvatarUrl = user.AvatarUrl;
         model.UpdatedAt = user.UpdatedAt;
     }
 }

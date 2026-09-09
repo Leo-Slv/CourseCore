@@ -6,7 +6,15 @@ namespace CourseCore.Api.Modules.Users.Domain.Entities;
 
 public class User : EntityBase
 {
-    private User(string name, Email email, string passwordHash, bool active, DateTime? emailVerifiedAt, int tokenVersion)
+    private User(
+        string name,
+        Email email,
+        string passwordHash,
+        bool active,
+        DateTime? emailVerifiedAt,
+        int tokenVersion,
+        string? phone,
+        string? avatarUrl)
     {
         Name = ValidateRequired(name, nameof(Name));
         Email = email ?? throw new DomainException("Email is required.");
@@ -14,6 +22,8 @@ public class User : EntityBase
         Active = active;
         EmailVerifiedAt = emailVerifiedAt;
         TokenVersion = ValidateTokenVersion(tokenVersion);
+        Phone = NormalizeOptional(phone);
+        AvatarUrl = NormalizeOptional(avatarUrl);
     }
 
     public string Name { get; private set; }
@@ -28,9 +38,15 @@ public class User : EntityBase
 
     public int TokenVersion { get; private set; }
 
+    public string? Phone { get; private set; }
+
+    public string? AvatarUrl { get; private set; }
+
     public static User Create(string name, Email email, string passwordHash)
     {
-        return new User(name, email, passwordHash, active: true, emailVerifiedAt: null, tokenVersion: 0);
+        return new User(
+            name, email, passwordHash, active: true, emailVerifiedAt: null, tokenVersion: 0,
+            phone: null, avatarUrl: null);
     }
 
     public static User Restore(
@@ -42,9 +58,11 @@ public class User : EntityBase
         DateTime? emailVerifiedAt,
         int tokenVersion,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt,
+        string? phone = null,
+        string? avatarUrl = null)
     {
-        return new User(name, email, passwordHash, active, emailVerifiedAt, tokenVersion)
+        return new User(name, email, passwordHash, active, emailVerifiedAt, tokenVersion, phone, avatarUrl)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -55,6 +73,18 @@ public class User : EntityBase
     public void ChangeName(string name)
     {
         Name = ValidateRequired(name, nameof(Name));
+        MarkAsUpdated();
+    }
+
+    public void ChangePhone(string? phone)
+    {
+        Phone = NormalizeOptional(phone);
+        MarkAsUpdated();
+    }
+
+    public void ChangeAvatarUrl(string? avatarUrl)
+    {
+        AvatarUrl = NormalizeOptional(avatarUrl);
         MarkAsUpdated();
     }
 
@@ -112,5 +142,10 @@ public class User : EntityBase
         }
 
         return tokenVersion;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }
