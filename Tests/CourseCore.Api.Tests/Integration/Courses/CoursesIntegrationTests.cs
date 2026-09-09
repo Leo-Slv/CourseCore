@@ -361,7 +361,7 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
-    public async Task GetPublicSummary_ShouldNotExposeAccessOrPricingFields()
+    public async Task GetPublicSummary_ShouldNotExposeAccessFields()
     {
         using var client = CreateClient();
 
@@ -370,7 +370,30 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.DoesNotContain("hasAccess", body, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("priceAmount", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetPublicSummary_ShouldIncludePricingModuleLessonDurationAndAreaFields()
+    {
+        using var client = CreateClient();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(
+            pricingModel: CoursePricingModel.Free, isFeatured: true);
+        await _factory.SeedReadyVideoAsync(course.LessonId, durationSeconds: 300);
+
+        var response = await client.GetAsync("/api/courses/public-summary");
+        var body = await response.Content.ReadFromJsonAsync<PublicCatalogSummaryResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        var highlighted = body!.HighlightedCourse;
+        Assert.NotNull(highlighted);
+        Assert.Equal(course.CourseId, highlighted!.Id);
+        Assert.Equal("Free", highlighted.PricingModel);
+        Assert.Null(highlighted.PriceAmount);
+        Assert.Equal(1, highlighted.ModuleCount);
+        Assert.Equal(1, highlighted.LessonCount);
+        Assert.Equal(300, highlighted.DurationSeconds);
+        Assert.Equal("Integration Area", highlighted.AreaName);
     }
 
     [Fact]

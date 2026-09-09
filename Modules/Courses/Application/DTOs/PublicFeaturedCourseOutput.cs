@@ -14,7 +14,24 @@ public class PublicFeaturedCourseOutput
 
     public string? ThumbnailUrl { get; init; }
 
-    public static PublicFeaturedCourseOutput FromCourse(Course course)
+    public string PricingModel { get; init; } = string.Empty;
+
+    public decimal? PriceAmount { get; init; }
+
+    public int ModuleCount { get; init; }
+
+    public int LessonCount { get; init; }
+
+    public int DurationSeconds { get; init; }
+
+    public string? AreaName { get; init; }
+
+    public static PublicFeaturedCourseOutput FromCourse(
+        Course course,
+        int moduleCount,
+        int lessonCount,
+        int durationSeconds,
+        string? areaName)
     {
         return new PublicFeaturedCourseOutput
         {
@@ -22,7 +39,13 @@ public class PublicFeaturedCourseOutput
             Title = course.Title,
             Slug = course.Slug.Value,
             Description = course.Description,
-            ThumbnailUrl = course.ThumbnailUrl
+            ThumbnailUrl = course.ThumbnailUrl,
+            PricingModel = course.PricingModel.ToString(),
+            PriceAmount = course.PriceAmount,
+            ModuleCount = moduleCount,
+            LessonCount = lessonCount,
+            DurationSeconds = durationSeconds,
+            AreaName = areaName
         };
     }
 }

@@ -2,6 +2,60 @@
 
 Spec: [`Docs/specs/landing/landing-page.md`](../../specs/landing/landing-page.md)
 
+## 4. `PublicFeaturedCourseResponse` has no pricing, duration, lesson-count, or area fields — CLOSED
+
+- **Mockup expects** (`1a`'s "Comece por aqui" cards): a price badge
+  ("Gratuito" / "R$ 149"), a duration + lesson-count line ("24 aulas ·
+  7h"), and a category/module-count line ("Discipulado · 6 módulos") per
+  card.
+- **Backend today**: `PublicFeaturedCourseResponse`
+  (`Modules/Courses/Presentation/Responses/PublicFeaturedCourseResponse.cs`)
+  only carries `Id`, `Title`, `Slug`, `Description`, `ThumbnailUrl` —
+  deliberately, per pendency 1's own resolution ("safe public subset
+  only — no `HasAccess`/pricing/area/certificate fields"). There's also
+  no lesson-count or total-duration aggregate anywhere on the course
+  entity/DTO at all (authenticated or not) — that would need to be
+  computed from modules/lessons, which the public summary use case
+  doesn't touch.
+- **What's needed**: if a fully-live "Comece por aqui" card is ever
+  wanted, `PublicFeaturedCourseResponse` needs at minimum `PricingModel`/
+  `PriceAmount` (both already public-safe concepts — a price isn't
+  sensitive) and *some* duration/lesson-count aggregate; the category/
+  area name would need at least one area's `Name` (course `AreaIds` is
+  currently omitted from this response entirely, and it's plural anyway
+  — the mockup shows one category, but a course can belong to more than
+  one area).
+- **Workaround shipped**: `Docs/specs/landing/landing-page.md` keeps the
+  "Comece por aqui" cards editorial (hardcoded price/duration/module
+  copy for 3 specific picks) and only uses `FeaturedCourses` to confirm
+  a pick still exists and to pull its real cover image — see that spec's
+  "Open decisions" for why a fully-live version isn't attempted even
+  though the identity fields are now available.
+- **Severity**: Cosmetic — the page works and shows real course
+  identity/images without this; the cost is that "Comece por aqui"
+  can't become a fully data-driven "top 3 published courses" section
+  until this is closed.
+- **Resolved (2026-09-09)**: `PublicFeaturedCourseResponse`/
+  `PublicFeaturedCourseOutput` gained `PricingModel` (string), `PriceAmount`
+  (`decimal?`), `ModuleCount`, `LessonCount`, `DurationSeconds`, and
+  `AreaName` (`string?`, the lowest-`DisplayOrder` *active* area among the
+  course's `AreaIds`, `null` if none are active). No schema change, no new
+  repository method, no migration — `GetPublicCatalogSummaryUseCase` now
+  also takes `IVideoRepository` and, for the (deduped) union of
+  `FeaturedCourses` + `HighlightedCourse`, batch-calls the already-existing
+  `ICourseRepository.ListContentSummariesAsync` +
+  `IVideoRepository.ListDurationSecondsByLessonIdsAsync` — the exact same
+  pattern `ListAvailableCoursesUseCase` already uses for the authenticated
+  catalog, so no N+1 regardless of how many featured/highlighted courses
+  there are. `PricingModel`/`PriceAmount` were already public-safe (per
+  this pendency's own note, and precedent: `CourseCatalogItemOutput` already
+  exposes both on the authenticated `/api/courses/available`). This also
+  enriches `HighlightedCourse` (pendency 2) for free, since it reuses the
+  same output type. The "Comece por aqui" cards and the "Formação em
+  destaque" panel can now be fully data-driven; whether the frontend
+  actually switches off the hardcoded editorial copy is a frontend decision
+  from here.
+
 ## 1. No public/anonymous catalog or stats endpoint — CLOSED
 
 - **Mockup expects**: a hero stat row ("6 áreas de ensino", "18 cursos

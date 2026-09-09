@@ -26,7 +26,13 @@ public static class CoursePresenter
             Title = output.Title,
             Slug = output.Slug,
             Description = output.Description,
-            ThumbnailUrl = output.ThumbnailUrl
+            ThumbnailUrl = output.ThumbnailUrl,
+            PricingModel = output.PricingModel,
+            PriceAmount = output.PriceAmount,
+            ModuleCount = output.ModuleCount,
+            LessonCount = output.LessonCount,
+            DurationSeconds = output.DurationSeconds,
+            AreaName = output.AreaName
         };
     }
 

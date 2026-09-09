@@ -277,7 +277,8 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
     public async Task<TestCourseData> SeedPublishedCourseWithLessonAsync(
         Guid? grantUserAccess = null,
         CoursePricingModel pricingModel = CoursePricingModel.Paid,
-        bool lessonFreePreview = false)
+        bool lessonFreePreview = false,
+        bool isFeatured = false)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
@@ -294,6 +295,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             PublishedAt = now,
             PricingModel = pricingModel.ToString(),
             IssuesCertificate = true,
+            IsFeatured = isFeatured,
             CreatedAt = now,
             UpdatedAt = now
         };
