@@ -39,6 +39,24 @@ public class TestimonialTests
     }
 
     [Fact]
+    public void Create_WithoutSubmittedByUserId_ShouldDefaultToNull()
+    {
+        var testimonial = Testimonial.Create("Author", "Quote", null, null);
+
+        Assert.Null(testimonial.SubmittedByUserId);
+    }
+
+    [Fact]
+    public void Create_WithSubmittedByUserId_ShouldSetIt()
+    {
+        var userId = Guid.NewGuid();
+
+        var testimonial = Testimonial.Create("Author", "Quote", null, null, submittedByUserId: userId);
+
+        Assert.Equal(userId, testimonial.SubmittedByUserId);
+    }
+
+    [Fact]
     public void Publish_WhenCalled_ShouldMarkAsPublished()
     {
         var testimonial = Testimonial.Create("Author", "Quote", null, null);

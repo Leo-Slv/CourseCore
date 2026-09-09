@@ -115,4 +115,52 @@ public class TestimonialsIntegrationTests : IClassFixture<CourseCoreApiFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [Fact]
+    public async Task SubmitMine_WhenAuthenticatedNonAdmin_ShouldCreateUnpublishedTestimonialWithOwnIdentity()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/testimonials/mine", new
+        {
+            quote = "This platform changed how I study!"
+        });
+        var body = await response.Content.ReadFromJsonAsync<TestimonialResponse>();
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Equal("Integration User", body!.AuthorName);
+        Assert.False(body.Published);
+    }
+
+    [Fact]
+    public async Task SubmitMine_WhenAnonymous_ShouldReturnUnauthorized()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+
+        var response = await client.PostAsJsonAsync("/api/testimonials/mine", new
+        {
+            quote = "Quote"
+        });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTestimonial_WhenAuthenticatedNonAdmin_ShouldReturnForbidden()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/testimonials", new
+        {
+            authorName = "Impersonator",
+            quote = "Quote"
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
 }

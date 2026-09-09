@@ -14,6 +14,8 @@ public class TestimonialResponse
 
     public bool Published { get; init; }
 
+    public Guid? SubmittedByUserId { get; init; }
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }

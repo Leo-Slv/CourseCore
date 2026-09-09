@@ -16,6 +16,8 @@ public class TestimonialOutput
 
     public bool Published { get; init; }
 
+    public Guid? SubmittedByUserId { get; init; }
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }
@@ -30,6 +32,7 @@ public class TestimonialOutput
             AvatarUrl = testimonial.AvatarUrl,
             CourseId = testimonial.CourseId,
             Published = testimonial.Published,
+            SubmittedByUserId = testimonial.SubmittedByUserId,
             CreatedAt = testimonial.CreatedAt,
             UpdatedAt = testimonial.UpdatedAt
         };

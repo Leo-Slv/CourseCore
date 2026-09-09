@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Testimonials.Application.UseCases;
 using CourseCore.Api.Modules.Testimonials.Presentation.Presenters;
 using CourseCore.Api.Modules.Testimonials.Presentation.Requests;
 using CourseCore.Api.Modules.Testimonials.Presentation.Responses;
+using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,7 @@ namespace CourseCore.Api.Modules.Testimonials.Presentation.Controllers;
 
 [ApiController]
 [Route("api/testimonials")]
-[Authorize(Policy = AuthPolicyNames.ManageCourses)]
+[Authorize]
 public class TestimonialsController : ControllerBase
 {
     private readonly CreateTestimonialUseCase _createTestimonialUseCase;
@@ -20,6 +21,8 @@ public class TestimonialsController : ControllerBase
     private readonly UnpublishTestimonialUseCase _unpublishTestimonialUseCase;
     private readonly ListTestimonialsUseCase _listTestimonialsUseCase;
     private readonly ListPublicTestimonialsUseCase _listPublicTestimonialsUseCase;
+    private readonly SubmitTestimonialUseCase _submitTestimonialUseCase;
+    private readonly ICurrentUserService _currentUserService;
 
     public TestimonialsController(
         CreateTestimonialUseCase createTestimonialUseCase,
@@ -27,7 +30,9 @@ public class TestimonialsController : ControllerBase
         PublishTestimonialUseCase publishTestimonialUseCase,
         UnpublishTestimonialUseCase unpublishTestimonialUseCase,
         ListTestimonialsUseCase listTestimonialsUseCase,
-        ListPublicTestimonialsUseCase listPublicTestimonialsUseCase)
+        ListPublicTestimonialsUseCase listPublicTestimonialsUseCase,
+        SubmitTestimonialUseCase submitTestimonialUseCase,
+        ICurrentUserService currentUserService)
     {
         _createTestimonialUseCase = createTestimonialUseCase;
         _updateTestimonialUseCase = updateTestimonialUseCase;
@@ -35,9 +40,30 @@ public class TestimonialsController : ControllerBase
         _unpublishTestimonialUseCase = unpublishTestimonialUseCase;
         _listTestimonialsUseCase = listTestimonialsUseCase;
         _listPublicTestimonialsUseCase = listPublicTestimonialsUseCase;
+        _submitTestimonialUseCase = submitTestimonialUseCase;
+        _currentUserService = currentUserService;
+    }
+
+    [HttpPost("mine")]
+    [ProducesResponseType(typeof(TestimonialResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<TestimonialResponse>> SubmitMineAsync(
+        SubmitTestimonialRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _submitTestimonialUseCase.ExecuteAsync(
+            TestimonialPresenter.ToInput(GetCurrentUserId(), request),
+            cancellationToken);
+        var response = TestimonialPresenter.ToResponse(output);
+
+        return Created($"/api/testimonials/{response.Id}", response);
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     [ProducesResponseType(typeof(TestimonialResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -57,6 +83,7 @@ public class TestimonialsController : ControllerBase
     }
 
     [HttpPut("{testimonialId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     [ProducesResponseType(typeof(TestimonialResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -76,6 +103,7 @@ public class TestimonialsController : ControllerBase
     }
 
     [HttpPost("{testimonialId:guid}/publish")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     [ProducesResponseType(typeof(TestimonialResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -91,6 +119,7 @@ public class TestimonialsController : ControllerBase
     }
 
     [HttpPost("{testimonialId:guid}/unpublish")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     [ProducesResponseType(typeof(TestimonialResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -106,6 +135,7 @@ public class TestimonialsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
     [ProducesResponseType(typeof(IReadOnlyCollection<TestimonialResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -128,5 +158,17 @@ public class TestimonialsController : ControllerBase
         var outputs = await _listPublicTestimonialsUseCase.ExecuteAsync(cancellationToken);
 
         return Ok(outputs.Select(TestimonialPresenter.ToResponse).ToList());
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userId = _currentUserService.UserId;
+
+        if (userId is null || userId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Authenticated user was not found.");
+        }
+
+        return userId.Value;
     }
 }

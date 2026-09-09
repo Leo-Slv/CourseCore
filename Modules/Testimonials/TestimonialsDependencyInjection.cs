@@ -15,6 +15,7 @@ public static class TestimonialsDependencyInjection
         services.AddScoped<UnpublishTestimonialUseCase>();
         services.AddScoped<ListTestimonialsUseCase>();
         services.AddScoped<ListPublicTestimonialsUseCase>();
+        services.AddScoped<SubmitTestimonialUseCase>();
 
         return services;
     }

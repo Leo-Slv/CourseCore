@@ -50,6 +50,7 @@ public static class AuditLogActionNames
     public const string UserRoleUnassigned = "UserRoleUnassigned";
     public const string UserAreaAccessRevoked = "UserAreaAccessRevoked";
     public const string TestimonialCreated = "TestimonialCreated";
+    public const string TestimonialSubmitted = "TestimonialSubmitted";
     public const string TestimonialUpdated = "TestimonialUpdated";
     public const string TestimonialPublished = "TestimonialPublished";
     public const string TestimonialUnpublished = "TestimonialUnpublished";

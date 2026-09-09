@@ -16,6 +16,7 @@ public class TestimonialConfiguration : IEntityTypeConfiguration<TestimonialPers
         builder.Property(x => x.Quote).IsRequired().HasMaxLength(1000);
         builder.Property(x => x.AvatarUrl).IsRequired(false).HasMaxLength(1000);
         builder.Property(x => x.Published).IsRequired();
+        builder.Property(x => x.SubmittedByUserId).IsRequired(false);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 
@@ -25,6 +26,12 @@ public class TestimonialConfiguration : IEntityTypeConfiguration<TestimonialPers
             .HasOne(x => x.Course)
             .WithMany()
             .HasForeignKey(x => x.CourseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasOne(x => x.SubmittedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.SubmittedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

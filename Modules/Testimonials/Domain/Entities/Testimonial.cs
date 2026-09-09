@@ -10,13 +10,15 @@ public class Testimonial : EntityBase
         string quote,
         string? avatarUrl,
         Guid? courseId,
-        bool published)
+        bool published,
+        Guid? submittedByUserId)
     {
         AuthorName = ValidateRequired(authorName, nameof(AuthorName));
         Quote = ValidateRequired(quote, nameof(Quote));
         AvatarUrl = NormalizeOptional(avatarUrl);
         CourseId = courseId == Guid.Empty ? null : courseId;
         Published = published;
+        SubmittedByUserId = submittedByUserId == Guid.Empty ? null : submittedByUserId;
     }
 
     public string AuthorName { get; private set; }
@@ -29,13 +31,16 @@ public class Testimonial : EntityBase
 
     public bool Published { get; private set; }
 
+    public Guid? SubmittedByUserId { get; private set; }
+
     public static Testimonial Create(
         string authorName,
         string quote,
         string? avatarUrl,
-        Guid? courseId)
+        Guid? courseId,
+        Guid? submittedByUserId = null)
     {
-        return new Testimonial(authorName, quote, avatarUrl, courseId, published: false);
+        return new Testimonial(authorName, quote, avatarUrl, courseId, published: false, submittedByUserId);
     }
 
     public static Testimonial Restore(
@@ -46,9 +51,10 @@ public class Testimonial : EntityBase
         Guid? courseId,
         bool published,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt,
+        Guid? submittedByUserId = null)
     {
-        return new Testimonial(authorName, quote, avatarUrl, courseId, published)
+        return new Testimonial(authorName, quote, avatarUrl, courseId, published, submittedByUserId)
         {
             Id = id,
             CreatedAt = createdAt,

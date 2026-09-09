@@ -15,7 +15,8 @@ public static class TestimonialMapper
             model.CourseId,
             model.Published,
             model.CreatedAt,
-            model.UpdatedAt);
+            model.UpdatedAt,
+            model.SubmittedByUserId);
     }
 
     public static TestimonialPersistenceModel ToPersistence(Testimonial testimonial)
@@ -28,6 +29,7 @@ public static class TestimonialMapper
             AvatarUrl = testimonial.AvatarUrl,
             CourseId = testimonial.CourseId,
             Published = testimonial.Published,
+            SubmittedByUserId = testimonial.SubmittedByUserId,
             CreatedAt = testimonial.CreatedAt,
             UpdatedAt = testimonial.UpdatedAt
         };

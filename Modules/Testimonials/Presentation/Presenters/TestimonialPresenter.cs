@@ -29,6 +29,16 @@ public static class TestimonialPresenter
         };
     }
 
+    public static SubmitTestimonialInput ToInput(Guid userId, SubmitTestimonialRequest request)
+    {
+        return new SubmitTestimonialInput
+        {
+            UserId = userId,
+            Quote = request.Quote,
+            CourseId = request.CourseId
+        };
+    }
+
     public static TestimonialResponse ToResponse(TestimonialOutput output)
     {
         return new TestimonialResponse
@@ -39,6 +49,7 @@ public static class TestimonialPresenter
             AvatarUrl = output.AvatarUrl,
             CourseId = output.CourseId,
             Published = output.Published,
+            SubmittedByUserId = output.SubmittedByUserId,
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
         };
