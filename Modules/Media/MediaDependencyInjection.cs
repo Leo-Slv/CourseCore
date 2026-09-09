@@ -27,6 +27,9 @@ public static class MediaDependencyInjection
         services.AddScoped<GetLessonVideoUseCase>();
         services.AddScoped<ReplaceLessonVideoUseCase>();
         services.AddScoped<RemoveLessonVideoUseCase>();
+        services.AddScoped<ListVideosUseCase>();
+        services.AddScoped<ActivateVideoUseCase>();
+        services.AddScoped<UnlistVideoUseCase>();
 
         return services;
     }

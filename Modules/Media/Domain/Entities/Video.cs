@@ -20,7 +20,8 @@ public class Video : EntityBase
         string? thumbnailUrl,
         int durationSeconds,
         long sizeBytes,
-        VideoStatus status)
+        VideoStatus status,
+        VideoVisibility visibility)
     {
         LessonId = ValidateId(lessonId, nameof(LessonId));
         Title = ValidateRequired(title, nameof(Title));
@@ -32,6 +33,7 @@ public class Video : EntityBase
         DurationSeconds = ValidateNonNegative(durationSeconds, nameof(DurationSeconds));
         SizeBytes = ValidateNonNegative(sizeBytes, nameof(SizeBytes));
         Status = status;
+        Visibility = visibility;
     }
 
     public Guid LessonId { get; private set; }
@@ -54,6 +56,8 @@ public class Video : EntityBase
 
     public VideoStatus Status { get; private set; }
 
+    public VideoVisibility Visibility { get; private set; }
+
     public static Video Create(
         Guid lessonId,
         string title,
@@ -74,7 +78,8 @@ public class Video : EntityBase
             thumbnailUrl,
             durationSeconds,
             sizeBytes,
-            VideoStatus.Processing);
+            VideoStatus.Processing,
+            VideoVisibility.Active);
     }
 
     public static Video Restore(
@@ -89,6 +94,7 @@ public class Video : EntityBase
         int durationSeconds,
         long sizeBytes,
         VideoStatus status,
+        VideoVisibility visibility,
         DateTime createdAt,
         DateTime updatedAt)
     {
@@ -102,7 +108,8 @@ public class Video : EntityBase
             thumbnailUrl,
             durationSeconds,
             sizeBytes,
-            status)
+            status,
+            visibility)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -162,6 +169,18 @@ public class Video : EntityBase
     public void MarkAsFailed()
     {
         Status = VideoStatus.Failed;
+        MarkAsUpdated();
+    }
+
+    public void MarkAsActive()
+    {
+        Visibility = VideoVisibility.Active;
+        MarkAsUpdated();
+    }
+
+    public void MarkAsUnlisted()
+    {
+        Visibility = VideoVisibility.Unlisted;
         MarkAsUpdated();
     }
 

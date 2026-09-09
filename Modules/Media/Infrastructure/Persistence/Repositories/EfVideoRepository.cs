@@ -68,6 +68,23 @@ public class EfVideoRepository : IVideoRepository
         return models.ToDictionary(model => model.LessonId, VideoMapper.ToDomain);
     }
 
+    public async Task<(IReadOnlyCollection<Video> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Videos.AsNoTracking();
+        var totalCount = await query.CountAsync(cancellationToken);
+        var models = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (models.Select(VideoMapper.ToDomain).ToList(), totalCount);
+    }
+
     public async Task CreateAsync(Video video, CancellationToken cancellationToken = default)
     {
         await _dbContext.Videos.AddAsync(VideoMapper.ToPersistence(video), cancellationToken);

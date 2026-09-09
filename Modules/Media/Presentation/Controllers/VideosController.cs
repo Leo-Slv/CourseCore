@@ -22,6 +22,9 @@ public class VideosController : ControllerBase
     private readonly GetLessonVideoUseCase _getLessonVideoUseCase;
     private readonly ReplaceLessonVideoUseCase _replaceLessonVideoUseCase;
     private readonly RemoveLessonVideoUseCase _removeLessonVideoUseCase;
+    private readonly ListVideosUseCase _listVideosUseCase;
+    private readonly ActivateVideoUseCase _activateVideoUseCase;
+    private readonly UnlistVideoUseCase _unlistVideoUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public VideosController(
@@ -31,6 +34,9 @@ public class VideosController : ControllerBase
         GetLessonVideoUseCase getLessonVideoUseCase,
         ReplaceLessonVideoUseCase replaceLessonVideoUseCase,
         RemoveLessonVideoUseCase removeLessonVideoUseCase,
+        ListVideosUseCase listVideosUseCase,
+        ActivateVideoUseCase activateVideoUseCase,
+        UnlistVideoUseCase unlistVideoUseCase,
         ICurrentUserService currentUserService)
     {
         _createVideoUseCase = createVideoUseCase;
@@ -39,7 +45,58 @@ public class VideosController : ControllerBase
         _getLessonVideoUseCase = getLessonVideoUseCase;
         _replaceLessonVideoUseCase = replaceLessonVideoUseCase;
         _removeLessonVideoUseCase = removeLessonVideoUseCase;
+        _listVideosUseCase = listVideosUseCase;
+        _activateVideoUseCase = activateVideoUseCase;
+        _unlistVideoUseCase = unlistVideoUseCase;
         _currentUserService = currentUserService;
+    }
+
+    [HttpGet]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(PagedResponse<VideoResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<PagedResponse<VideoResponse>>> ListAsync(
+        [FromQuery] ListVideosRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _listVideosUseCase.ExecuteAsync(VideoPresenter.ToInput(request), cancellationToken);
+
+        return Ok(VideoPresenter.ToResponse(output));
+    }
+
+    [HttpPost("{videoId:guid}/activate")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(VideoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<VideoResponse>> ActivateAsync(
+        Guid videoId,
+        CancellationToken cancellationToken)
+    {
+        var output = await _activateVideoUseCase.ExecuteAsync(videoId, cancellationToken);
+
+        return Ok(VideoPresenter.ToResponse(output));
+    }
+
+    [HttpPost("{videoId:guid}/unlist")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(VideoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<VideoResponse>> UnlistAsync(
+        Guid videoId,
+        CancellationToken cancellationToken)
+    {
+        var output = await _unlistVideoUseCase.ExecuteAsync(videoId, cancellationToken);
+
+        return Ok(VideoPresenter.ToResponse(output));
     }
 
     [HttpPost]

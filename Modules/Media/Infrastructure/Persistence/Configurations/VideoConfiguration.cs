@@ -22,6 +22,7 @@ public class VideoConfiguration : IEntityTypeConfiguration<VideoPersistenceModel
         builder.Property(x => x.DurationSeconds).IsRequired();
         builder.Property(x => x.SizeBytes).IsRequired();
         builder.Property(x => x.Status).IsRequired().HasMaxLength(50);
+        builder.Property(x => x.Visibility).IsRequired().HasMaxLength(20).HasDefaultValue("Active");
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Modules.Media.Application.Validation;
+using CourseCore.Api.Shared.Presentation.Responses;
 using CourseCore.Api.Tests.Integration.Infrastructure;
 
 namespace CourseCore.Api.Tests.Integration.Media;
@@ -224,6 +225,114 @@ public class VideosIntegrationTests : IClassFixture<CourseCoreApiFactory>
         });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListVideos_WhenAdmin_ShouldReturnVideosAcrossDifferentLessons()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var firstCourse = await _factory.SeedPublishedCourseWithLessonAsync();
+        var secondCourse = await _factory.SeedPublishedCourseWithLessonAsync();
+        var firstCreate = await client.PostAsJsonAsync("/api/videos", CreateVideoRequest(firstCourse.LessonId));
+        var firstVideo = await firstCreate.Content.ReadFromJsonAsync<VideoResponse>();
+        var secondCreate = await client.PostAsJsonAsync("/api/videos", CreateVideoRequest(secondCourse.LessonId));
+        var secondVideo = await secondCreate.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.NotNull(firstVideo);
+        Assert.NotNull(secondVideo);
+
+        var response = await client.GetAsync("/api/videos?pageSize=100");
+        var body = await response.Content.ReadFromJsonAsync<PagedResponse<VideoResponse>>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Contains(body!.Items, v => v.Id == firstVideo!.Id);
+        Assert.Contains(body.Items, v => v.Id == secondVideo!.Id);
+    }
+
+    [Fact]
+    public async Task ListVideos_ShouldPageResults()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var firstPageResponse = await client.GetAsync("/api/videos?page=1&pageSize=1");
+        var firstPage = await firstPageResponse.Content.ReadFromJsonAsync<PagedResponse<VideoResponse>>();
+
+        Assert.Equal(HttpStatusCode.OK, firstPageResponse.StatusCode);
+        Assert.NotNull(firstPage);
+        Assert.True(firstPage!.Items.Count <= 1);
+        Assert.Equal(1, firstPage.Page);
+        Assert.Equal(1, firstPage.PageSize);
+    }
+
+    [Fact]
+    public async Task ListVideos_WhenAnonymous_ShouldReturnUnauthorized()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+
+        var response = await client.GetAsync("/api/videos");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListVideos_WhenUserHasNoManageVideosPermission_ShouldReturnForbidden()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/videos");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ActivateAndUnlistVideo_ShouldRoundTripVisibility()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        var create = await client.PostAsJsonAsync("/api/videos", CreateVideoRequest(course.LessonId));
+        var created = await create.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.NotNull(created);
+        Assert.Equal("Active", created!.Visibility);
+
+        var unlistResponse = await client.PostAsync($"/api/videos/{created.Id}/unlist", content: null);
+        var unlisted = await unlistResponse.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.Equal(HttpStatusCode.OK, unlistResponse.StatusCode);
+        Assert.Equal("Unlisted", unlisted!.Visibility);
+
+        var activateResponse = await client.PostAsync($"/api/videos/{created.Id}/activate", content: null);
+        var activated = await activateResponse.Content.ReadFromJsonAsync<VideoResponse>();
+        Assert.Equal(HttpStatusCode.OK, activateResponse.StatusCode);
+        Assert.Equal("Active", activated!.Visibility);
+    }
+
+    [Fact]
+    public async Task CreateVideo_WithYouTubeProvider_ShouldExposeDerivedYouTubeFields()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+
+        var response = await client.PostAsJsonAsync("/api/videos", new
+        {
+            lessonId = course.LessonId,
+            title = "YouTube Integration Video",
+            description = "Description",
+            storageProvider = "YouTube",
+            storageKey = "dQw4w9WgXcQ",
+            durationSeconds = 300,
+            sizeBytes = 0
+        });
+        var body = await response.Content.ReadFromJsonAsync<VideoResponse>();
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Equal("dQw4w9WgXcQ", body!.YouTubeVideoId);
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", body.YouTubeUrl);
     }
 
     private static object CreateVideoRequest(Guid lessonId)

@@ -21,6 +21,7 @@ public static class VideoMapper
             model.DurationSeconds,
             model.SizeBytes,
             ParseStatus(model.Status),
+            ParseVisibility(model.Visibility),
             model.CreatedAt,
             model.UpdatedAt);
     }
@@ -40,6 +41,7 @@ public static class VideoMapper
             DurationSeconds = video.DurationSeconds,
             SizeBytes = video.SizeBytes,
             Status = video.Status.ToString(),
+            Visibility = video.Visibility.ToString(),
             CreatedAt = video.CreatedAt,
             UpdatedAt = video.UpdatedAt
         };
@@ -57,6 +59,7 @@ public static class VideoMapper
         model.DurationSeconds = video.DurationSeconds;
         model.SizeBytes = video.SizeBytes;
         model.Status = video.Status.ToString();
+        model.Visibility = video.Visibility.ToString();
         model.UpdatedAt = video.UpdatedAt;
     }
 
@@ -78,5 +81,15 @@ public static class VideoMapper
         }
 
         throw new DomainException($"Invalid video status: {value}.");
+    }
+
+    private static VideoVisibility ParseVisibility(string value)
+    {
+        if (Enum.TryParse<VideoVisibility>(value, ignoreCase: true, out var visibility))
+        {
+            return visibility;
+        }
+
+        throw new DomainException($"Invalid video visibility: {value}.");
     }
 }

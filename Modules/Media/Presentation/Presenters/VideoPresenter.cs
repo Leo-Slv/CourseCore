@@ -1,11 +1,28 @@
 using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Presentation.Requests;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
+using CourseCore.Api.Shared.Application.DTOs;
+using CourseCore.Api.Shared.Presentation.Responses;
 
 namespace CourseCore.Api.Modules.Media.Presentation.Presenters;
 
 public static class VideoPresenter
 {
+    public static ListVideosInput ToInput(ListVideosRequest request) => new()
+    {
+        Page = request.Page,
+        PageSize = request.PageSize
+    };
+
+    public static PagedResponse<VideoResponse> ToResponse(PagedResult<VideoOutput> output) => new()
+    {
+        Items = output.Items.Select(ToResponse).ToList(),
+        Page = output.Page,
+        PageSize = output.PageSize,
+        TotalItems = output.TotalItems,
+        TotalPages = output.TotalPages
+    };
+
     public static CreateVideoInput ToInput(CreateVideoRequest request)
     {
         return new CreateVideoInput
@@ -52,6 +69,9 @@ public static class VideoPresenter
             DurationSeconds = output.DurationSeconds,
             SizeBytes = output.SizeBytes,
             Status = output.Status,
+            Visibility = output.Visibility,
+            YouTubeVideoId = output.YouTubeVideoId,
+            YouTubeUrl = output.YouTubeUrl,
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
         };

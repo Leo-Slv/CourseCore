@@ -16,6 +16,11 @@ public interface IVideoRepository
         IReadOnlyCollection<Guid> lessonIds,
         CancellationToken cancellationToken = default);
 
+    Task<(IReadOnlyCollection<Video> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
     Task CreateAsync(Video video, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Video video, CancellationToken cancellationToken = default);

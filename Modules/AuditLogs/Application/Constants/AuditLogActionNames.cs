@@ -44,6 +44,8 @@ public static class AuditLogActionNames
     public const string VideoMarkedReady = "VideoMarkedReady";
     public const string VideoReplaced = "VideoReplaced";
     public const string VideoRemoved = "VideoRemoved";
+    public const string VideoActivated = "VideoActivated";
+    public const string VideoUnlisted = "VideoUnlisted";
     public const string UserRoleAssigned = "UserRoleAssigned";
     public const string UserRoleUnassigned = "UserRoleUnassigned";
     public const string UserAreaAccessRevoked = "UserAreaAccessRevoked";

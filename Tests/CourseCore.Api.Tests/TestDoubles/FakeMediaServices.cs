@@ -43,6 +43,17 @@ public sealed class FakeVideoRepository : IVideoRepository
         return Task.FromResult(result);
     }
 
+    public Task<(IReadOnlyCollection<Video> Items, int TotalCount)> ListPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var ordered = Videos.OrderByDescending(video => video.CreatedAt).ToList();
+        var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        return Task.FromResult<(IReadOnlyCollection<Video> Items, int TotalCount)>((items, ordered.Count));
+    }
+
     public Task CreateAsync(Video video, CancellationToken cancellationToken = default)
     {
         Videos.Add(video);

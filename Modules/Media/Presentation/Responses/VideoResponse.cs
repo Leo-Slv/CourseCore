@@ -24,6 +24,12 @@ public class VideoResponse
 
     public string Status { get; init; } = string.Empty;
 
+    public string Visibility { get; init; } = string.Empty;
+
+    public string? YouTubeVideoId { get; init; }
+
+    public string? YouTubeUrl { get; init; }
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }

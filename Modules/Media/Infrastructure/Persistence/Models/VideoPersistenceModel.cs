@@ -26,6 +26,8 @@ public class VideoPersistenceModel
 
     public string Status { get; set; } = string.Empty;
 
+    public string Visibility { get; set; } = "Active";
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
