@@ -29,6 +29,7 @@ public static class AccessDependencyInjection
         services.AddScoped<RevokeUserAreaAccessUseCase>();
         services.AddScoped<GrantCourseAccessUseCase>();
         services.AddScoped<ListGrantedCourseAccessUseCase>();
+        services.AddScoped<ListRolesUseCase>();
 
         return services;
     }

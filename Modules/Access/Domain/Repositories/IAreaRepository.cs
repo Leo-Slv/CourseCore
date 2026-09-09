@@ -36,4 +36,8 @@ public interface IAreaRepository
     Task<IReadOnlyCollection<RoleAreaAccess>> ListRoleAreaAccessesAsync(
         IReadOnlyCollection<Guid> roleIds,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindGrantedAreaNamesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default);
 }

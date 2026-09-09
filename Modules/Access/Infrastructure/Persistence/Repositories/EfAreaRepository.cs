@@ -139,4 +139,26 @@ public class EfAreaRepository : IAreaRepository
 
         return models.Select(RoleAreaAccessMapper.ToDomain).ToList();
     }
+
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindGrantedAreaNamesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<Guid, IReadOnlyCollection<string>>();
+        }
+
+        var rows = await _dbContext.UserAreaAccesses
+            .AsNoTracking()
+            .Where(x => userIds.Contains(x.UserId) && x.CanView && x.Area != null && x.Area.Active)
+            .Select(x => new { x.UserId, AreaName = x.Area!.Name })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(row => row.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyCollection<string>)group.Select(row => row.AreaName).ToList());
+    }
 }

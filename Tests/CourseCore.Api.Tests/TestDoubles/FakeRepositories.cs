@@ -274,6 +274,23 @@ public sealed class FakeAreaRepository : IAreaRepository
         return Task.FromResult<IReadOnlyCollection<RoleAreaAccess>>(
             RoleAreaAccesses.Where(access => roleIdSet.Contains(access.RoleId)).ToArray());
     }
+
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindGrantedAreaNamesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        var userIdSet = userIds.ToHashSet();
+        var activeAreaIds = Areas.Where(area => area.Active).ToDictionary(area => area.Id, area => area.Name);
+
+        var result = UserAreaAccesses
+            .Where(access => userIdSet.Contains(access.UserId) && access.CanView && activeAreaIds.ContainsKey(access.AreaId))
+            .GroupBy(access => access.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyCollection<string>)group.Select(access => activeAreaIds[access.AreaId]).ToList());
+
+        return Task.FromResult<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>>(result);
+    }
 }
 
 public sealed class FakeCourseRepository : ICourseRepository

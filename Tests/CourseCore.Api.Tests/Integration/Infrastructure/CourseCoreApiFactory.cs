@@ -233,7 +233,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         return role.Id;
     }
 
-    public async Task<Guid> SeedRoleAsync(string? roleName = null)
+    public async Task<Guid> SeedRoleAsync(string? roleName = null, bool active = true)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
@@ -243,7 +243,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Id = Guid.NewGuid(),
             Name = roleName ?? $"role-{Guid.NewGuid():N}",
             Description = "Integration test role",
-            Active = true,
+            Active = active,
             CreatedAt = now,
             UpdatedAt = now
         };

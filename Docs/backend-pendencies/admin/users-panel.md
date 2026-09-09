@@ -176,6 +176,77 @@ new "Painel admin — CRUDs de entidades" mockup group.
   accepted as-is — no richer status model built. The dropdown should just
   render as a toggle.
 
+## 8. No batch endpoint to list area grants for multiple users at once — CLOSED
+
+- **Mockup expects** (`1q`): an "Áreas liberadas" column per row in a
+  potentially large user table.
+- **Backend today**: pendency 2's resolution added
+  `GET /api/access/user-area/{userId}` — one user at a time. There's no
+  `GET /api/access/user-area?userIds=...` or similar batch shape, unlike
+  pendency 1's role names (`FindRoleNamesByUserIdsAsync`, batch-fetched
+  server-side and included directly on `UserResponse`/the list endpoint).
+- **What's needed**: a batch read (e.g.
+  `GET /api/access/user-area?userIds=a,b,c` or folding granted-area ids
+  directly into `UserResponse`/`GET /api/users`, the same way `RoleNames`
+  already is) so a page of users doesn't cost one request per row.
+- **Workaround shipped**: `Docs/specs/admin/users-list.md` fetches area
+  access per row, scoped to the current page (typically ≤20 users) — see
+  that spec's "Open decisions" for why this is judged acceptable here
+  despite `courses-panel.md` rejecting the same N+1 shape for audit-log
+  enrichment (that case was unbounded and decorative; this one is bounded
+  to on-screen rows and is the literal reason the column exists).
+- **Severity**: Cosmetic today (page sizes are small); would become a
+  real performance concern if this list ever grows a much larger page
+  size or an "export all" view.
+- **Resolved (2026-09-09)**: took the second option — `UserOutput`/
+  `UserResponse` gained `AreaNames` (`IReadOnlyCollection<string>`),
+  folded into both `GET /api/users` (list) and `GET /api/users/{userId}`
+  (single), same shape/pattern as `RoleNames`. New
+  `IAreaRepository.FindGrantedAreaNamesByUserIdsAsync` mirrors
+  `IRoleRepository.FindRoleNamesByUserIdsAsync` exactly (one batched
+  `GroupBy(UserId)` query, no N+1 regardless of page size — this closes
+  the "would become a real performance concern" risk permanently, not
+  just for today's ≤20-row pages). `CanView` is the "granted" signal
+  (matches `RevokeUserAreaAccessUseCase.Revoke()`, which sets it `false`
+  — a revoked grant is naturally excluded); only active areas are
+  considered, and no `StartsAt`/`ExpiresAt` time-window filtering, both
+  consistent with the existing single-user
+  `GET /api/access/user-area/{userId}`. No schema change, no migration
+  — this is a read-side aggregation over existing tables. The frontend's
+  per-row `GET /api/access/user-area/{userId}` workaround can be dropped
+  once it picks up `areaNames` from the users list/detail response
+  directly — that's frontend work, not tracked further here.
+
+## 9. No endpoint to list roles or discover a role's id — CLOSED
+
+- **Mockup expects** (`1r`): "Papel" is drawn as a dropdown, implying the
+  admin can pick from the set of existing roles and reassign a user.
+- **Backend today**: pendency 1's resolution added
+  `POST/DELETE /api/users/{id}/roles/{roleId}` — real routes, but both
+  take a `roleId` (`Guid`) the frontend has no way to ever obtain. There
+  is no `RolesController`, no `GET /api/roles`, and `UserResponse.RoleNames`
+  returns names only (no paired ids). Role ids are also not fixed/
+  well-known — `CourseCoreDatabaseSeeder` generates the seeded `Admin`
+  role's id with `Guid.NewGuid()` at seed time, so it can't be hardcoded
+  client-side either.
+- **What's needed**: a `GET /api/roles` (or similar) returning
+  `{ id, name }` pairs, so a role picker has something to populate itself
+  and a value to submit.
+- **Workaround shipped**: `Docs/specs/admin/user-access-edit.md` renders
+  "Papel" read-only (`RoleNames` joined, or "Sem papel") — no dropdown,
+  no assign/remove wired up at all despite the routes existing.
+- **Severity**: Feature gap — the write path is real and unblocked the
+  moment a read/list path exists; until then it's simply unusable from a
+  UI.
+- **Resolved (2026-09-09)**: `GET /api/roles` (new `RolesController`,
+  `ListRolesUseCase`), same `ManageUsers` policy already gating
+  `POST/DELETE /api/users/{id}/roles/{roleId}` on `UsersController` — no
+  new policy introduced. Returns `{ id, name }` pairs for active roles
+  only (mirrors `ListAreasUseCase`'s "filter in the use case, not the
+  repository" convention), ordered by name — a role picker now has both
+  something to populate itself with and a real id to submit against the
+  already-existing write routes.
+
 ## What's already real
 
 - `POST /api/users` (create), `PUT /api/users/{id}` (update, including the

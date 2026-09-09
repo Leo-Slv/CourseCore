@@ -11,11 +11,13 @@ public class ListUsersUseCase
 {
     private readonly IUserRepository _users;
     private readonly IRoleRepository _roles;
+    private readonly IAreaRepository _areas;
 
-    public ListUsersUseCase(IUserRepository users, IRoleRepository roles)
+    public ListUsersUseCase(IUserRepository users, IRoleRepository roles, IAreaRepository areas)
     {
         _users = users;
         _roles = roles;
+        _areas = areas;
     }
 
     public async Task<UserListOutput> ExecuteAsync(
@@ -35,9 +37,9 @@ public class ListUsersUseCase
 
         var search = string.IsNullOrWhiteSpace(input.Search) ? null : input.Search.Trim();
         var (users, totalCount) = await _users.ListPagedAsync(input.Page, input.PageSize, search, cancellationToken);
-        var roleNamesByUserId = await _roles.FindRoleNamesByUserIdsAsync(
-            users.Select(user => user.Id).ToList(),
-            cancellationToken);
+        var userIds = users.Select(user => user.Id).ToList();
+        var roleNamesByUserId = await _roles.FindRoleNamesByUserIdsAsync(userIds, cancellationToken);
+        var areaNamesByUserId = await _areas.FindGrantedAreaNamesByUserIdsAsync(userIds, cancellationToken);
         var totalRegistered = await _users.CountAsync(cancellationToken);
         var totalConfirmed = await _users.CountConfirmedAsync(cancellationToken);
 
@@ -46,7 +48,8 @@ public class ListUsersUseCase
             Items = users
                 .Select(user => UserOutput.FromUser(
                     user,
-                    roleNamesByUserId.TryGetValue(user.Id, out var roleNames) ? roleNames : null))
+                    roleNamesByUserId.TryGetValue(user.Id, out var roleNames) ? roleNames : null,
+                    areaNamesByUserId.TryGetValue(user.Id, out var areaNames) ? areaNames : null))
                 .ToList(),
             Page = input.Page,
             PageSize = input.PageSize,

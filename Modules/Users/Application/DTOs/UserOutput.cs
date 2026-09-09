@@ -16,11 +16,16 @@ public class UserOutput
 
     public IReadOnlyCollection<string> RoleNames { get; init; } = Array.Empty<string>();
 
+    public IReadOnlyCollection<string> AreaNames { get; init; } = Array.Empty<string>();
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }
 
-    public static UserOutput FromUser(User user, IReadOnlyCollection<string>? roleNames = null)
+    public static UserOutput FromUser(
+        User user,
+        IReadOnlyCollection<string>? roleNames = null,
+        IReadOnlyCollection<string>? areaNames = null)
     {
         return new UserOutput
         {
@@ -30,6 +35,7 @@ public class UserOutput
             Active = user.Active,
             EmailVerifiedAt = user.EmailVerifiedAt,
             RoleNames = roleNames ?? Array.Empty<string>(),
+            AreaNames = areaNames ?? Array.Empty<string>(),
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
         };

@@ -278,6 +278,47 @@ public class UsersIntegrationTests : IClassFixture<CourseCoreApiFactory>
             role => role.GetString() == "Integration Role");
     }
 
+    [Fact]
+    public async Task GrantAndRevokeAreaAccess_ShouldReflectInAreaNames()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var user = await _factory.SeedUserAsync();
+        var areaId = await _factory.SeedAreaAsync();
+
+        var grantResponse = await client.PostAsJsonAsync("/api/access/user-area", new
+        {
+            userId = user.Id,
+            areaId,
+            canView = true,
+            canManage = false
+        });
+        Assert.Equal(HttpStatusCode.OK, grantResponse.StatusCode);
+
+        var afterGrantJson = await client.GetFromJsonAsync<JsonElement>($"/api/users/{user.Id}");
+        Assert.Contains(
+            afterGrantJson.GetProperty("areaNames").EnumerateArray(),
+            area => area.GetString() == "Integration Area");
+
+        var afterGrantListJson = await client.GetFromJsonAsync<JsonElement>("/api/users?pageSize=100");
+        var listedUser = afterGrantListJson
+            .GetProperty("page")
+            .GetProperty("items")
+            .EnumerateArray()
+            .Single(item => item.GetProperty("id").GetGuid() == user.Id);
+        Assert.Contains(
+            listedUser.GetProperty("areaNames").EnumerateArray(),
+            area => area.GetString() == "Integration Area");
+
+        var revokeResponse = await client.DeleteAsync($"/api/access/user-area/{user.Id}/{areaId}");
+        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+
+        var afterRevokeJson = await client.GetFromJsonAsync<JsonElement>($"/api/users/{user.Id}");
+        Assert.DoesNotContain(
+            afterRevokeJson.GetProperty("areaNames").EnumerateArray(),
+            area => area.GetString() == "Integration Area");
+    }
+
     private static object CreateUserRequest(string password = "IntegrationUser123!")
     {
         return new
