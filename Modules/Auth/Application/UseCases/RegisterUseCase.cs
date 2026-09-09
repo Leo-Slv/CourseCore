@@ -121,6 +121,7 @@ public class RegisterUseCase
                 AuditLogActionNames.UserRegistered,
                 "User",
                 user.Id,
+                new Dictionary<string, string?> { ["displayName"] = user.Name },
                 cancellationToken: cancellationToken);
         }, cancellationToken);
 

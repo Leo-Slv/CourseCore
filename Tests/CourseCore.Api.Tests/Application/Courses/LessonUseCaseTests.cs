@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
@@ -20,7 +21,8 @@ public class LessonUseCaseTests
         var module = CreateModule();
         module.AddLesson(Lesson.Create(module.Id, "Existing", "Description", 0));
         courseModules.Modules.Add(module);
-        var useCase = new CreateLessonUseCase(courseModules, lessons, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new CreateLessonUseCase(courseModules, lessons, new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(new AddLessonInput
         {
@@ -33,6 +35,8 @@ public class LessonUseCaseTests
         Assert.Equal(1, output.DisplayOrder);
         Assert.True(output.FreePreview);
         Assert.Contains(lessons.Lessons, lesson => lesson.Id == output.Id);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.LessonCreated);
+        Assert.Equal("New Lesson", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -56,7 +60,8 @@ public class LessonUseCaseTests
         var module = CreateModule();
         var lesson = Lesson.Create(module.Id, "Lesson", "Description", 0);
         lessons.Lessons.Add(lesson);
-        var useCase = new UpdateLessonUseCase(lessons, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new UpdateLessonUseCase(lessons, new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(new UpdateLessonInput
         {
@@ -70,6 +75,8 @@ public class LessonUseCaseTests
         Assert.Equal("Renamed", output.Title);
         Assert.True(output.FreePreview);
         Assert.True(output.Published);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.LessonUpdated);
+        Assert.Equal("Renamed", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -98,12 +105,15 @@ public class LessonUseCaseTests
         lessons.Lessons.Add(lesson);
         var video = Video.Create(lesson.Id, "Video", "Description", VideoStorageProvider.YouTube, "abc123XYZ_-", 100, 0);
         videos.Videos.Add(video);
-        var useCase = new RemoveLessonUseCase(lessons, videos, progress, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new RemoveLessonUseCase(lessons, videos, progress, new FakeUnitOfWork(), auditLogs);
 
         await useCase.ExecuteAsync(lesson.Id);
 
         Assert.DoesNotContain(lessons.Lessons, l => l.Id == lesson.Id);
         Assert.DoesNotContain(videos.Videos, v => v.Id == video.Id);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.LessonDeleted);
+        Assert.Equal("Lesson", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -119,7 +129,8 @@ public class LessonUseCaseTests
         courseModules.Modules.Add(module);
         lessons.Lessons.Add(first);
         lessons.Lessons.Add(second);
-        var useCase = new ReorderLessonsUseCase(courseModules, lessons, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new ReorderLessonsUseCase(courseModules, lessons, new FakeUnitOfWork(), auditLogs);
 
         await useCase.ExecuteAsync(new ReorderLessonsInput
         {
@@ -129,6 +140,8 @@ public class LessonUseCaseTests
 
         Assert.Equal(0, second.DisplayOrder);
         Assert.Equal(1, first.DisplayOrder);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.LessonReordered);
+        Assert.Equal(module.Title, auditLog.Metadata["displayName"]);
     }
 
     [Fact]

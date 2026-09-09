@@ -63,7 +63,11 @@ public class RemoveLessonUseCase
                 AuditLogActionNames.LessonDeleted,
                 "Lesson",
                 lessonId,
-                new Dictionary<string, string?> { ["moduleId"] = lesson.ModuleId.ToString() },
+                new Dictionary<string, string?>
+                {
+                    ["moduleId"] = lesson.ModuleId.ToString(),
+                    ["displayName"] = lesson.Title
+                },
                 cancellationToken: cancellationToken);
         }, cancellationToken);
     }

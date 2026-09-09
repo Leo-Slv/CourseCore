@@ -65,7 +65,12 @@ public class ReplaceLessonVideoUseCase
                     AuditLogActionNames.VideoReplaced,
                     "Video",
                     newVideo.Id,
-                    new Dictionary<string, string?> { ["lessonId"] = input.LessonId.ToString(), ["created"] = "true" },
+                    new Dictionary<string, string?>
+                    {
+                        ["lessonId"] = input.LessonId.ToString(),
+                        ["created"] = "true",
+                        ["displayName"] = newVideo.Title
+                    },
                     cancellationToken: cancellationToken);
 
                 return VideoOutput.FromVideo(newVideo);
@@ -84,7 +89,12 @@ public class ReplaceLessonVideoUseCase
                 AuditLogActionNames.VideoReplaced,
                 "Video",
                 existingVideo.Id,
-                new Dictionary<string, string?> { ["lessonId"] = input.LessonId.ToString(), ["created"] = "false" },
+                new Dictionary<string, string?>
+                {
+                    ["lessonId"] = input.LessonId.ToString(),
+                    ["created"] = "false",
+                    ["displayName"] = existingVideo.Title
+                },
                 cancellationToken: cancellationToken);
 
             return VideoOutput.FromVideo(existingVideo);

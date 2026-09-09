@@ -66,6 +66,7 @@ public class CreateUserUseCase
                 AuditLogActionNames.UserCreated,
                 "User",
                 user.Id,
+                new Dictionary<string, string?> { ["displayName"] = user.Name },
                 cancellationToken: cancellationToken);
 
             return UserOutput.FromUser(user);

@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Tests.TestDoubles;
@@ -15,16 +16,20 @@ public class ApproveAccessRequestUseCaseTests
         var areas = new FakeAreaRepository();
         var courses = new FakeCourseRepository();
         var accessRequests = new FakeAccessRequestRepository();
+        var users = new FakeUserRepository();
+        var auditLogs = new FakeAuditLogService();
         var area = TestEntityFactory.Area();
         var course = TestEntityFactory.PublishedCourse(area.Id, CoursePricingModel.Paid);
-        var request = AccessRequest.Create(Guid.NewGuid(), course.Id);
+        var requestingUser = TestEntityFactory.User(email: "requester@coursecore.local");
+        var request = AccessRequest.Create(requestingUser.Id, course.Id);
 
         areas.Areas.Add(area);
         courses.Courses.Add(course);
+        users.Add(requestingUser);
         accessRequests.Requests.Add(request);
 
         var useCase = new ApproveAccessRequestUseCase(
-            accessRequests, courses, areas, new FakeUnitOfWork(), new FakeAuditLogService());
+            accessRequests, courses, areas, users, new FakeUnitOfWork(), auditLogs);
         var decidedByUserId = Guid.NewGuid();
 
         var output = await useCase.ExecuteAsync(
@@ -35,6 +40,9 @@ public class ApproveAccessRequestUseCaseTests
         Assert.Equal(request.UserId, grant.UserId);
         Assert.Equal(area.Id, grant.AreaId);
         Assert.True(grant.CanView);
+
+        var entry = auditLogs.Entries.Single(e => e.Action == AuditLogActionNames.AccessRequestApproved);
+        Assert.Equal($"requester@coursecore.local → {course.Title}", entry.Metadata["displayName"]);
     }
 
     [Fact]
@@ -53,7 +61,7 @@ public class ApproveAccessRequestUseCaseTests
         accessRequests.Requests.Add(request);
 
         var useCase = new ApproveAccessRequestUseCase(
-            accessRequests, courses, areas, new FakeUnitOfWork(), new FakeAuditLogService());
+            accessRequests, courses, areas, new FakeUserRepository(), new FakeUnitOfWork(), new FakeAuditLogService());
 
         await Assert.ThrowsAsync<ConflictException>(() => useCase.ExecuteAsync(
             new ApproveAccessRequestInput { AccessRequestId = request.Id, DecidedByUserId = Guid.NewGuid() }));
@@ -74,7 +82,7 @@ public class ApproveAccessRequestUseCaseTests
         accessRequests.Requests.Add(request);
 
         var useCase = new ApproveAccessRequestUseCase(
-            accessRequests, courses, areas, new FakeUnitOfWork(), new FakeAuditLogService());
+            accessRequests, courses, areas, new FakeUserRepository(), new FakeUnitOfWork(), new FakeAuditLogService());
 
         await Assert.ThrowsAsync<ConflictException>(() => useCase.ExecuteAsync(
             new ApproveAccessRequestInput { AccessRequestId = request.Id, DecidedByUserId = Guid.NewGuid() }));

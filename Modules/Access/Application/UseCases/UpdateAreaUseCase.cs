@@ -111,7 +111,7 @@ public class UpdateAreaUseCase
                 AuditLogActionNames.AreaUpdated,
                 "Area",
                 area.Id,
-                new Dictionary<string, string?> { ["slug"] = area.Slug.Value },
+                new Dictionary<string, string?> { ["slug"] = area.Slug.Value, ["displayName"] = area.Name },
                 cancellationToken: cancellationToken);
 
             if (activeChanged)
@@ -120,6 +120,7 @@ public class UpdateAreaUseCase
                     area.Active ? AuditLogActionNames.AreaActivated : AuditLogActionNames.AreaDeactivated,
                     "Area",
                     area.Id,
+                    new Dictionary<string, string?> { ["displayName"] = area.Name },
                     cancellationToken: cancellationToken);
             }
 

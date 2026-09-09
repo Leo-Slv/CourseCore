@@ -74,8 +74,9 @@ public class GrantRoleAreaAccessUseCase
                     ["roleId"] = access.RoleId.ToString(),
                     ["areaId"] = access.AreaId.ToString(),
                     ["canView"] = access.CanView.ToString(),
-                    ["canManage"] = access.CanManage.ToString()
-                    , ["operation"] = operation
+                    ["canManage"] = access.CanManage.ToString(),
+                    ["operation"] = operation,
+                    ["displayName"] = $"{role.Name} → {area.Name}"
                 },
                 cancellationToken: cancellationToken);
 

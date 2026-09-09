@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Application.UseCases;
@@ -41,7 +42,8 @@ public class LessonVideoUseCaseTests
         var lessons = new FakeLessonRepository();
         var lesson = CreateLesson();
         lessons.Lessons.Add(lesson);
-        var useCase = new ReplaceLessonVideoUseCase(videos, lessons, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new ReplaceLessonVideoUseCase(videos, lessons, new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(new CreateVideoInput
         {
@@ -56,6 +58,8 @@ public class LessonVideoUseCaseTests
 
         Assert.Single(videos.Videos);
         Assert.Equal(lesson.Id, output.LessonId);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.VideoReplaced);
+        Assert.Equal("Video", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -68,7 +72,8 @@ public class LessonVideoUseCaseTests
         var existingVideo = Video.Create(lesson.Id, "Old", "Old description", VideoStorageProvider.Local, "old-key", 50, 10);
         existingVideo.MarkAsReady();
         videos.Videos.Add(existingVideo);
-        var useCase = new ReplaceLessonVideoUseCase(videos, lessons, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new ReplaceLessonVideoUseCase(videos, lessons, new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(new CreateVideoInput
         {
@@ -86,6 +91,8 @@ public class LessonVideoUseCaseTests
         Assert.Equal("New Title", output.Title);
         Assert.Equal("YouTube", output.StorageProvider);
         Assert.Equal("Processing", output.Status);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.VideoReplaced);
+        Assert.Equal("New Title", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -95,11 +102,14 @@ public class LessonVideoUseCaseTests
         var lessonId = Guid.NewGuid();
         var video = Video.Create(lessonId, "Video", "Description", VideoStorageProvider.YouTube, "dQw4w9WgXcQ", 100, 0);
         videos.Videos.Add(video);
-        var useCase = new RemoveLessonVideoUseCase(videos, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new RemoveLessonVideoUseCase(videos, new FakeUnitOfWork(), auditLogs);
 
         await useCase.ExecuteAsync(lessonId);
 
         Assert.Empty(videos.Videos);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.VideoRemoved);
+        Assert.Equal("Video", auditLog.Metadata["displayName"]);
     }
 
     [Fact]

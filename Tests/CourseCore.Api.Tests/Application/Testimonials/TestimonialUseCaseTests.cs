@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Testimonials.Application.DTOs;
 using CourseCore.Api.Modules.Testimonials.Application.UseCases;
 using CourseCore.Api.Modules.Testimonials.Domain.Entities;
@@ -12,8 +13,9 @@ public class TestimonialUseCaseTests
     public async Task CreateTestimonialUseCase_WhenDataIsValid_ShouldCreateUnpublishedTestimonial()
     {
         var testimonials = new FakeTestimonialRepository();
+        var auditLogs = new FakeAuditLogService();
         var useCase = new CreateTestimonialUseCase(
-            testimonials, new FakeCourseRepository(), new FakeUnitOfWork(), new FakeAuditLogService());
+            testimonials, new FakeCourseRepository(), new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(new CreateTestimonialInput
         {
@@ -23,6 +25,8 @@ public class TestimonialUseCaseTests
 
         Assert.False(output.Published);
         Assert.Single(testimonials.Testimonials);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.TestimonialCreated);
+        Assert.Equal("Marina Souza", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -58,8 +62,9 @@ public class TestimonialUseCaseTests
         var testimonials = new FakeTestimonialRepository();
         var testimonial = Testimonial.Create("Author", "Quote", null, null);
         testimonials.Testimonials.Add(testimonial);
+        var auditLogs = new FakeAuditLogService();
         var useCase = new UpdateTestimonialUseCase(
-            testimonials, new FakeCourseRepository(), new FakeUnitOfWork(), new FakeAuditLogService());
+            testimonials, new FakeCourseRepository(), new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(new UpdateTestimonialInput
         {
@@ -69,6 +74,8 @@ public class TestimonialUseCaseTests
         });
 
         Assert.Equal("Updated Author", output.AuthorName);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.TestimonialUpdated);
+        Assert.Equal("Updated Author", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -91,11 +98,14 @@ public class TestimonialUseCaseTests
         var testimonials = new FakeTestimonialRepository();
         var testimonial = Testimonial.Create("Author", "Quote", null, null);
         testimonials.Testimonials.Add(testimonial);
-        var useCase = new PublishTestimonialUseCase(testimonials, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new PublishTestimonialUseCase(testimonials, new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(testimonial.Id);
 
         Assert.True(output.Published);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.TestimonialPublished);
+        Assert.Equal("Author", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -105,11 +115,14 @@ public class TestimonialUseCaseTests
         var testimonial = Testimonial.Create("Author", "Quote", null, null);
         testimonial.Publish();
         testimonials.Testimonials.Add(testimonial);
-        var useCase = new UnpublishTestimonialUseCase(testimonials, new FakeUnitOfWork(), new FakeAuditLogService());
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new UnpublishTestimonialUseCase(testimonials, new FakeUnitOfWork(), auditLogs);
 
         var output = await useCase.ExecuteAsync(testimonial.Id);
 
         Assert.False(output.Published);
+        var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.TestimonialUnpublished);
+        Assert.Equal("Author", auditLog.Metadata["displayName"]);
     }
 
     [Fact]

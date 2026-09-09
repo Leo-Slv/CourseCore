@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
+using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
 
@@ -15,6 +16,7 @@ public class ApproveAccessRequestUseCase
     private readonly IAccessRequestRepository _accessRequests;
     private readonly ICourseRepository _courses;
     private readonly IAreaRepository _areas;
+    private readonly IUserRepository _users;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
 
@@ -22,12 +24,14 @@ public class ApproveAccessRequestUseCase
         IAccessRequestRepository accessRequests,
         ICourseRepository courses,
         IAreaRepository areas,
+        IUserRepository users,
         IUnitOfWork unitOfWork,
         IAuditLogService auditLogs)
     {
         _accessRequests = accessRequests;
         _courses = courses;
         _areas = areas;
+        _users = users;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
     }
@@ -96,6 +100,8 @@ public class ApproveAccessRequestUseCase
             request.Approve(input.DecidedByUserId);
             await _accessRequests.UpdateAsync(request, cancellationToken);
 
+            var requestingUser = await _users.FindByIdAsync(request.UserId, cancellationToken);
+
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.AccessRequestApproved,
                 "AccessRequest",
@@ -104,7 +110,8 @@ public class ApproveAccessRequestUseCase
                 {
                     ["targetUserId"] = request.UserId.ToString(),
                     ["courseId"] = request.CourseId.ToString(),
-                    ["grantedAreaIds"] = string.Join(",", targetAreaIds)
+                    ["grantedAreaIds"] = string.Join(",", targetAreaIds),
+                    ["displayName"] = $"{requestingUser?.Email.Value ?? request.UserId.ToString()} → {course.Title}"
                 },
                 userId: input.DecidedByUserId,
                 cancellationToken: cancellationToken);

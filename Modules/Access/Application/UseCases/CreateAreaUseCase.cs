@@ -65,7 +65,7 @@ public class CreateAreaUseCase
                 AuditLogActionNames.AreaCreated,
                 "Area",
                 area.Id,
-                new Dictionary<string, string?> { ["slug"] = area.Slug.Value },
+                new Dictionary<string, string?> { ["slug"] = area.Slug.Value, ["displayName"] = area.Name },
                 cancellationToken: cancellationToken);
 
             return AreaOutput.FromArea(area);

@@ -71,7 +71,8 @@ public class CreateVideoUseCase
                 new Dictionary<string, string?>
                 {
                     ["lessonId"] = video.LessonId.ToString(),
-                    ["status"] = video.Status.ToString()
+                    ["status"] = video.Status.ToString(),
+                    ["displayName"] = video.Title
                 },
                 cancellationToken: cancellationToken);
 

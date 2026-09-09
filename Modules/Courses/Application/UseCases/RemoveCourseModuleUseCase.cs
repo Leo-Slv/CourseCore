@@ -48,7 +48,11 @@ public class RemoveCourseModuleUseCase
                 AuditLogActionNames.CourseModuleDeleted,
                 "CourseModule",
                 moduleId,
-                new Dictionary<string, string?> { ["courseId"] = module.CourseId.ToString() },
+                new Dictionary<string, string?>
+                {
+                    ["courseId"] = module.CourseId.ToString(),
+                    ["displayName"] = module.Title
+                },
                 cancellationToken: cancellationToken);
         }, cancellationToken);
     }

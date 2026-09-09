@@ -40,12 +40,16 @@ public class RemoveUserRoleUseCase
 
         return _unitOfWork.ExecuteAsync(async () =>
         {
-            if (await _users.FindByIdAsync(userId, cancellationToken) is null)
+            var user = await _users.FindByIdAsync(userId, cancellationToken);
+
+            if (user is null)
             {
                 throw new NotFoundException("User not found.");
             }
 
-            if (await _roles.FindByIdAsync(roleId, cancellationToken) is null)
+            var role = await _roles.FindByIdAsync(roleId, cancellationToken);
+
+            if (role is null)
             {
                 throw new NotFoundException("Role not found.");
             }
@@ -55,7 +59,11 @@ public class RemoveUserRoleUseCase
                 AuditLogActionNames.UserRoleUnassigned,
                 "User",
                 userId,
-                new Dictionary<string, string?> { ["roleId"] = roleId.ToString() },
+                new Dictionary<string, string?>
+                {
+                    ["roleId"] = roleId.ToString(),
+                    ["displayName"] = $"{user.Email.Value} → {role.Name}"
+                },
                 cancellationToken: cancellationToken);
         }, cancellationToken);
     }

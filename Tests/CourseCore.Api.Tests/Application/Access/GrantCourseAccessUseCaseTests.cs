@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Tests.TestDoubles;
@@ -39,6 +40,8 @@ public class GrantCourseAccessUseCaseTests
         Assert.Single(fixture.AccessRequests.Requests);
         var access = fixture.Areas.UserAreaAccesses.Single(a => a.UserId == fixture.UserId && a.AreaId == fixture.AreaId);
         Assert.True(access.CanView);
+        var auditLog = Assert.Single(fixture.AuditLogs.Entries, e => e.Action == AuditLogActionNames.AccessRequestApproved);
+        Assert.Equal($"{fixture.UserEmail} → {fixture.CourseTitle}", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -71,10 +74,12 @@ public class GrantCourseAccessUseCaseTests
         courses.Courses.Add(course);
 
         var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var auditLogs = new FakeAuditLogService();
         var useCase = new GrantCourseAccessUseCase(
-            users, courses, areas, accessRequests, courseAccessService, new FakeUnitOfWork(), new FakeAuditLogService());
+            users, courses, areas, accessRequests, courseAccessService, new FakeUnitOfWork(), auditLogs);
 
-        return new GrantCourseAccessFixture(useCase, user.Id, course.Id, area.Id, Guid.NewGuid(), areas, accessRequests);
+        return new GrantCourseAccessFixture(
+            useCase, user.Id, course.Id, area.Id, Guid.NewGuid(), areas, accessRequests, auditLogs, user.Email.Value, course.Title);
     }
 
     private sealed record GrantCourseAccessFixture(
@@ -84,5 +89,8 @@ public class GrantCourseAccessUseCaseTests
         Guid AreaId,
         Guid AdminUserId,
         FakeAreaRepository Areas,
-        FakeAccessRequestRepository AccessRequests);
+        FakeAccessRequestRepository AccessRequests,
+        FakeAuditLogService AuditLogs,
+        string UserEmail,
+        string CourseTitle);
 }

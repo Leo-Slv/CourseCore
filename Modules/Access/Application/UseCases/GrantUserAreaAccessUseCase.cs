@@ -71,8 +71,9 @@ public class GrantUserAreaAccessUseCase
                     ["targetUserId"] = access.UserId.ToString(),
                     ["areaId"] = access.AreaId.ToString(),
                     ["canView"] = access.CanView.ToString(),
-                    ["canManage"] = access.CanManage.ToString()
-                    , ["operation"] = operation
+                    ["canManage"] = access.CanManage.ToString(),
+                    ["operation"] = operation,
+                    ["displayName"] = $"{user.Email.Value} → {area.Name}"
                 },
                 cancellationToken: cancellationToken);
 

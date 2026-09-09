@@ -49,6 +49,7 @@ public class CreateTestimonialUseCase
                 AuditLogActionNames.TestimonialCreated,
                 "Testimonial",
                 testimonial.Id,
+                new Dictionary<string, string?> { ["displayName"] = testimonial.AuthorName },
                 cancellationToken: cancellationToken);
 
             return TestimonialOutput.FromTestimonial(testimonial);

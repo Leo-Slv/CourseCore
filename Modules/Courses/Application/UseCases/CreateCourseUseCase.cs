@@ -69,6 +69,7 @@ public class CreateCourseUseCase
                 AuditLogActionNames.CourseCreated,
                 "Course",
                 course.Id,
+                new Dictionary<string, string?> { ["displayName"] = course.Title },
                 cancellationToken: cancellationToken);
 
             return CourseOutput.FromCourse(course);

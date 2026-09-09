@@ -57,7 +57,8 @@ public class MarkVideoReadyUseCase
                 {
                     ["lessonId"] = video.LessonId.ToString(),
                     ["storageProvider"] = video.StorageProvider.ToString(),
-                    ["status"] = video.Status.ToString()
+                    ["status"] = video.Status.ToString(),
+                    ["displayName"] = video.Title
                 },
                 cancellationToken: cancellationToken);
 

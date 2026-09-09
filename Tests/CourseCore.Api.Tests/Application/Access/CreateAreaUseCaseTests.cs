@@ -30,7 +30,8 @@ public class CreateAreaUseCaseTests
         Assert.Equal("courses", output.Slug);
         Assert.Single(areas.Areas);
         Assert.Equal(1, unitOfWork.ExecuteCalls);
-        Assert.Contains(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaCreated);
+        var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaCreated);
+        Assert.Equal("Courses", auditLog.Metadata["displayName"]);
     }
 
     [Fact]

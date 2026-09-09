@@ -76,6 +76,7 @@ public class UpdateLessonUseCase
                 AuditLogActionNames.LessonUpdated,
                 "Lesson",
                 lesson.Id,
+                new Dictionary<string, string?> { ["displayName"] = lesson.Title },
                 cancellationToken: cancellationToken);
 
             return LessonOutput.FromLesson(lesson, videoId: null, durationSeconds: null);

@@ -64,6 +64,7 @@ public class UpdateCourseModuleUseCase
                 AuditLogActionNames.CourseModuleUpdated,
                 "CourseModule",
                 module.Id,
+                new Dictionary<string, string?> { ["displayName"] = module.Title },
                 cancellationToken: cancellationToken);
 
             return CourseModuleOutput.FromModule(module);

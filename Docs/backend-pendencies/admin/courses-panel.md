@@ -90,6 +90,62 @@ anymore.
   `PublishCourseUseCase`), same `ManageCourses` policy, records a new
   `AuditLogActionNames.CourseUnpublished`.
 
+## 4. Audit log entries carry no human-readable display name — CLOSED
+
+- **Mockup expects**: readable text per entry — "CoursePublished · Curso
+  de Batismo", "UserAreaAccessGranted · ana.souza@email.com →
+  Liderança", "VideoCreated · Aula 03 — Módulo 01".
+- **Backend today**: every `RecordAsync` call site across the codebase
+  (checked all of them, in `Courses`, `Access`, and `Media`) stores only
+  GUIDs — `EntityId` plus a `Metadata` dictionary of raw id strings
+  (`targetUserId`, `courseId`, `areaId`, `lessonId`, `moduleId`, etc.).
+  None store a title, email, or name string anywhere. `CoursePublished`
+  and `CourseUnpublished` specifically record no metadata at all beyond
+  the course's own `EntityId`. There is also no generic "resolve these
+  ids to display names" endpoint spanning entity types.
+- **What's needed**: either add a display-name string to each
+  `RecordAsync` call site at the point of action (the use case already
+  has the entity in hand — e.g. `PublishCourseUseCase` already holds
+  `course.Title`, it just isn't passed to `RecordAsync`), or add a
+  batch id→name resolution endpoint per entity type for the frontend to
+  call.
+- **Workaround shipped**: the frontend resolves what it can from data
+  it already has loaded for other reasons on the same screen — course
+  titles from the admin course list, area names from the areas list —
+  and falls back to `{EntityName} #{short id}` for everything else
+  (users, videos, lessons, modules). Decided 2026-09-07 rather than
+  adding new endpoints or an N+1 per-row lookup just for this one panel.
+- **Severity**: Cosmetic — the panel works and is truthful, just less
+  polished than the mockup for action types the current page has no
+  other reason to have already fetched.
+- **Resolved (2026-09-09)**: took the first option — added a single
+  `["displayName"]` key to the `metadata` dictionary at ~30 `RecordAsync`
+  call sites across `Courses`, `Media`, `Testimonials`, `Access`, `Users`,
+  and `RegisterUseCase` (the one `Auth`-module exception, mirroring
+  `UserCreated`). No interface/entity/persistence/migration change —
+  `Metadata` is already a flat, generic `Dictionary<string,string>`
+  round-tripped through JSON with no schema, so a new key "just works"
+  end-to-end (confirmed by reading `AuditLogService.BuildMetadataJson` /
+  `AuditLogOutput.ParseMetadata`). Single-entity actions use that entity's
+  own title/name (`course.Title`, `area.Name`, `testimonial.AuthorName`,
+  etc.); relationship actions (grant/revoke/approve/reject linking a user
+  or role to an area/course) compose `"{email} → {target}"`, matching the
+  mockup's own convention exactly — for the handful of call sites that
+  used to discard or never fetch the relevant user/role/area/course
+  entity (`AssignUserRoleUseCase`, `RemoveUserRoleUseCase`,
+  `ApproveAccessRequestUseCase`, `RejectAccessRequestUseCase`,
+  `RevokeUserAreaAccessUseCase`), the fix captures the already-queried
+  result instead of discarding it, or adds one cheap read-only lookup.
+  Deliberately **out of scope**: the 9 other `Auth`-module use cases
+  (login/logout/refresh/confirm-email/password flows — the entity *is*
+  the acting user, GUID + session context is enough) and the secondary
+  `UserTokenVersionIncremented`/`UserSessionsRevoked` companion entries
+  (always paired with a primary entry that already carries a
+  `displayName`) — both fall back to the existing `{EntityName}
+  #{short id}` scheme, unchanged. The frontend's fallback logic for the
+  now-covered action types can be simplified once it picks this field up
+  — that's frontend work, not tracked further here.
+
 ## What's already real (for when this screen gets picked back up)
 
 - `POST /api/courses` (create), `PUT /api/courses/{id}` (update),

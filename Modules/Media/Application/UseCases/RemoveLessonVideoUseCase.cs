@@ -43,7 +43,11 @@ public class RemoveLessonVideoUseCase
                 AuditLogActionNames.VideoRemoved,
                 "Video",
                 video.Id,
-                new Dictionary<string, string?> { ["lessonId"] = lessonId.ToString() },
+                new Dictionary<string, string?>
+                {
+                    ["lessonId"] = lessonId.ToString(),
+                    ["displayName"] = video.Title
+                },
                 cancellationToken: cancellationToken);
         }, cancellationToken);
     }

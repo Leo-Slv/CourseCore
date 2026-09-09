@@ -39,6 +39,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(AuditLogActionNames.UserCreated, auditLog.Action);
         Assert.Equal("User", auditLog.EntityName);
         Assert.Equal(output.Id, auditLog.EntityId);
+        Assert.Equal("New User", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -64,6 +65,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(AuditLogActionNames.UserUpdated, auditLog.Action);
         Assert.Equal("User", auditLog.EntityName);
         Assert.Equal(user.Id, auditLog.EntityId);
+        Assert.Equal("Updated User", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -93,6 +95,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(access.Id, auditLog.EntityId);
         Assert.Equal(user.Id.ToString(), auditLog.Metadata["targetUserId"]);
         Assert.Equal(area.Id.ToString(), auditLog.Metadata["areaId"]);
+        Assert.Equal($"{user.Email.Value} → {area.Name}", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -122,6 +125,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(access.Id, auditLog.EntityId);
         Assert.Equal(role.Id.ToString(), auditLog.Metadata["roleId"]);
         Assert.Equal(area.Id.ToString(), auditLog.Metadata["areaId"]);
+        Assert.Equal($"{role.Name} → {area.Name}", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -144,6 +148,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(AuditLogActionNames.CourseCreated, auditLog.Action);
         Assert.Equal("Course", auditLog.EntityName);
         Assert.Equal(output.Id, auditLog.EntityId);
+        Assert.Equal("Course", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -173,6 +178,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(AuditLogActionNames.CourseUpdated, auditLog.Action);
         Assert.Equal("Course", auditLog.EntityName);
         Assert.Equal(course.Id, auditLog.EntityId);
+        Assert.Equal("Updated Course", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -194,6 +200,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(AuditLogActionNames.CoursePublished, auditLog.Action);
         Assert.Equal("Course", auditLog.EntityName);
         Assert.Equal(course.Id, auditLog.EntityId);
+        Assert.Equal("Course", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -216,6 +223,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(AuditLogActionNames.CourseUnpublished, auditLog.Action);
         Assert.Equal("Course", auditLog.EntityName);
         Assert.Equal(course.Id, auditLog.EntityId);
+        Assert.Equal("Course", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -244,6 +252,7 @@ public class SensitiveActionAuditTests
         Assert.Equal("Video", auditLog.EntityName);
         Assert.Equal(output.Id, auditLog.EntityId);
         Assert.Equal(lesson.Id.ToString(), auditLog.Metadata["lessonId"]);
+        Assert.Equal("Video", auditLog.Metadata["displayName"]);
         Assert.DoesNotContain("storage", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
     }
 
@@ -272,6 +281,7 @@ public class SensitiveActionAuditTests
         Assert.Equal(video.LessonId.ToString(), auditLog.Metadata["lessonId"]);
         Assert.Equal("Local", auditLog.Metadata["storageProvider"]);
         Assert.Equal("Ready", auditLog.Metadata["status"]);
+        Assert.Equal("Video", auditLog.Metadata["displayName"]);
         Assert.DoesNotContain("key", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("url", string.Join(',', auditLog.Metadata.Keys), StringComparison.OrdinalIgnoreCase);
     }

@@ -60,6 +60,7 @@ public class UpdateTestimonialUseCase
                 AuditLogActionNames.TestimonialUpdated,
                 "Testimonial",
                 testimonial.Id,
+                new Dictionary<string, string?> { ["displayName"] = testimonial.AuthorName },
                 cancellationToken: cancellationToken);
 
             return TestimonialOutput.FromTestimonial(testimonial);

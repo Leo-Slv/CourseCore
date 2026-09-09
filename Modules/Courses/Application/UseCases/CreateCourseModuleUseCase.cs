@@ -66,7 +66,11 @@ public class CreateCourseModuleUseCase
                 AuditLogActionNames.CourseModuleCreated,
                 "CourseModule",
                 newModule.Id,
-                new Dictionary<string, string?> { ["courseId"] = input.CourseId.ToString() },
+                new Dictionary<string, string?>
+                {
+                    ["courseId"] = input.CourseId.ToString(),
+                    ["displayName"] = newModule.Title
+                },
                 cancellationToken: cancellationToken);
 
             return CourseModuleOutput.FromModule(newModule);

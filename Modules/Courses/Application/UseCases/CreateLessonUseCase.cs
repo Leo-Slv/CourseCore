@@ -69,7 +69,11 @@ public class CreateLessonUseCase
                 AuditLogActionNames.LessonCreated,
                 "Lesson",
                 newLesson.Id,
-                new Dictionary<string, string?> { ["moduleId"] = input.ModuleId.ToString() },
+                new Dictionary<string, string?>
+                {
+                    ["moduleId"] = input.ModuleId.ToString(),
+                    ["displayName"] = newLesson.Title
+                },
                 cancellationToken: cancellationToken);
 
             return LessonOutput.FromLesson(newLesson, videoId: null, durationSeconds: null);

@@ -62,6 +62,7 @@ public class RegisterUseCaseTests
         var auditLog = Assert.Single(fixture.AuditLogs.Entries);
         Assert.Equal(AuditLogActionNames.UserRegistered, auditLog.Action);
         Assert.Equal(output.UserId, auditLog.EntityId);
+        Assert.Equal("New User", auditLog.Metadata["displayName"]);
     }
 
     [Fact]

@@ -62,6 +62,7 @@ public class ReorderLessonsUseCase
                 AuditLogActionNames.LessonReordered,
                 "CourseModule",
                 input.ModuleId,
+                new Dictionary<string, string?> { ["displayName"] = module.Title },
                 cancellationToken: cancellationToken);
         }, cancellationToken);
     }

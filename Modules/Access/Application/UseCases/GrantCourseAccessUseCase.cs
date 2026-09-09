@@ -139,7 +139,8 @@ public class GrantCourseAccessUseCase
                     ["targetUserId"] = userId.ToString(),
                     ["courseId"] = courseId.ToString(),
                     ["grantedAreaIds"] = string.Join(",", targetAreaIds),
-                    ["grantedDirectly"] = "true"
+                    ["grantedDirectly"] = "true",
+                    ["displayName"] = $"{user.Email.Value} → {course.Title}"
                 },
                 userId: decidedByUserId,
                 cancellationToken: cancellationToken);

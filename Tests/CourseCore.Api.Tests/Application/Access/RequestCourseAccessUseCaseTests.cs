@@ -2,6 +2,7 @@ using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Tests.TestDoubles;
@@ -49,6 +50,8 @@ public class RequestCourseAccessUseCaseTests
 
         Assert.Equal("Pending", output.Status);
         Assert.Single(fixture.AccessRequests.Requests);
+        var auditLog = Assert.Single(fixture.AuditLogs.Entries, e => e.Action == AuditLogActionNames.AccessRequestCreated);
+        Assert.Equal($"{fixture.UserEmail} → {fixture.CourseTitle}", auditLog.Metadata["displayName"]);
     }
 
     private static RequestCourseAccessFixture CreateFixture(CoursePricingModel pricingModel)
@@ -67,10 +70,12 @@ public class RequestCourseAccessUseCaseTests
         courses.Courses.Add(course);
 
         var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var auditLogs = new FakeAuditLogService();
         var useCase = new RequestCourseAccessUseCase(
-            users, courses, accessRequests, courseAccessService, new FakeUnitOfWork(), new FakeAuditLogService());
+            users, courses, accessRequests, courseAccessService, new FakeUnitOfWork(), auditLogs);
 
-        return new RequestCourseAccessFixture(useCase, user.Id, course.Id, area.Id, areas, accessRequests);
+        return new RequestCourseAccessFixture(
+            useCase, user.Id, course.Id, area.Id, areas, accessRequests, auditLogs, user.Email.Value, course.Title);
     }
 
     private sealed record RequestCourseAccessFixture(
@@ -79,5 +84,8 @@ public class RequestCourseAccessUseCaseTests
         Guid CourseId,
         Guid AreaId,
         FakeAreaRepository Areas,
-        FakeAccessRequestRepository AccessRequests);
+        FakeAccessRequestRepository AccessRequests,
+        FakeAuditLogService AuditLogs,
+        string UserEmail,
+        string CourseTitle);
 }

@@ -23,7 +23,8 @@ public class RemoveUserRoleUseCaseTests
 
         var remainingRoles = await roles.FindByUserIdAsync(user.Id);
         Assert.DoesNotContain(remainingRoles, r => r.Id == role.Id);
-        Assert.Contains(auditLogs.Entries, entry => entry.Action == "UserRoleUnassigned");
+        var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == "UserRoleUnassigned");
+        Assert.Equal($"{user.Email.Value} → {role.Name}", auditLog.Metadata["displayName"]);
     }
 
     [Fact]

@@ -22,7 +22,8 @@ public class AssignUserRoleUseCaseTests
 
         var assignedRoles = await roles.FindByUserIdAsync(user.Id);
         Assert.Contains(assignedRoles, r => r.Id == role.Id);
-        Assert.Contains(auditLogs.Entries, entry => entry.Action == "UserRoleAssigned");
+        var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == "UserRoleAssigned");
+        Assert.Equal($"{user.Email.Value} → {role.Name}", auditLog.Metadata["displayName"]);
     }
 
     [Fact]

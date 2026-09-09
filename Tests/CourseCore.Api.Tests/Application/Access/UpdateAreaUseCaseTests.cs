@@ -31,7 +31,8 @@ public class UpdateAreaUseCaseTests
         Assert.Equal("updated-area", output.Slug);
         Assert.Equal("Updated description", output.Description);
         Assert.Equal(5, output.DisplayOrder);
-        Assert.Contains(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaUpdated);
+        var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaUpdated);
+        Assert.Equal("Updated", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
@@ -46,7 +47,8 @@ public class UpdateAreaUseCaseTests
         var output = await useCase.ExecuteAsync(ValidInput(area.Id, area.Slug.Value, active: false));
 
         Assert.False(output.Active);
-        Assert.Contains(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaDeactivated);
+        var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaDeactivated);
+        Assert.Equal(area.Name, auditLog.Metadata["displayName"]);
     }
 
     [Fact]

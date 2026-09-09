@@ -102,7 +102,8 @@ public class RequestCourseAccessUseCase
                 request.Id,
                 new Dictionary<string, string?>
                 {
-                    ["courseId"] = request.CourseId.ToString()
+                    ["courseId"] = request.CourseId.ToString(),
+                    ["displayName"] = $"{user.Email.Value} → {course.Title}"
                 },
                 userId: input.UserId,
                 cancellationToken: cancellationToken);
