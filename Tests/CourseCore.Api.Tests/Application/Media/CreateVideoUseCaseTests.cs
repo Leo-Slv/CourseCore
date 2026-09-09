@@ -32,6 +32,63 @@ public class CreateVideoUseCaseTests
         Assert.Null(output.PlaybackUrl);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenYouTubeAndDurationIsKnown_ShouldMarkVideoAsReady()
+    {
+        var fixture = CreateFixture();
+
+        var output = await fixture.UseCase.ExecuteAsync(new CreateVideoInput
+        {
+            LessonId = fixture.Lesson.Id,
+            Title = "Video",
+            Description = "Description",
+            StorageProvider = "YouTube",
+            StorageKey = "dQw4w9WgXcQ",
+            DurationSeconds = 120,
+            SizeBytes = 0
+        });
+
+        Assert.Equal("Ready", output.Status);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenYouTubeAndDurationIsZero_ShouldKeepVideoProcessing()
+    {
+        var fixture = CreateFixture();
+
+        var output = await fixture.UseCase.ExecuteAsync(new CreateVideoInput
+        {
+            LessonId = fixture.Lesson.Id,
+            Title = "Video",
+            Description = "Description",
+            StorageProvider = "YouTube",
+            StorageKey = "dQw4w9WgXcQ",
+            DurationSeconds = 0,
+            SizeBytes = 0
+        });
+
+        Assert.Equal("Processing", output.Status);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenLocalAndDurationIsKnown_ShouldKeepVideoProcessing()
+    {
+        var fixture = CreateFixture();
+
+        var output = await fixture.UseCase.ExecuteAsync(new CreateVideoInput
+        {
+            LessonId = fixture.Lesson.Id,
+            Title = "Video",
+            Description = "Description",
+            StorageProvider = "Local",
+            StorageKey = "videos/video.mp4",
+            DurationSeconds = 120,
+            SizeBytes = 1024
+        });
+
+        Assert.Equal("Processing", output.Status);
+    }
+
     [Theory]
     [InlineData("https://media.example/video.mp4")]
     [InlineData("../video.mp4")]

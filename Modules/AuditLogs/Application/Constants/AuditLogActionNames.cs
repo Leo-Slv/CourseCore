@@ -38,6 +38,7 @@ public static class AuditLogActionNames
     public const string LessonCreated = "LessonCreated";
     public const string LessonUpdated = "LessonUpdated";
     public const string LessonDeleted = "LessonDeleted";
+    public const string LessonMoved = "LessonMoved";
     public const string LessonReordered = "LessonReordered";
     public const string VideoCreated = "VideoCreated";
     public const string VideoMarkedReady = "VideoMarkedReady";

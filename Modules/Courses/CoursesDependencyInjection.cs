@@ -28,6 +28,7 @@ public static class CoursesDependencyInjection
         services.AddScoped<UpdateLessonUseCase>();
         services.AddScoped<RemoveLessonUseCase>();
         services.AddScoped<ReorderLessonsUseCase>();
+        services.AddScoped<MoveLessonUseCase>();
 
         return services;
     }

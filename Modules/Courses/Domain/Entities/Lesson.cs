@@ -69,6 +69,12 @@ public class Lesson : EntityBase
         MarkAsUpdated();
     }
 
+    public void ChangeModuleId(Guid moduleId)
+    {
+        ModuleId = ValidateId(moduleId, nameof(ModuleId));
+        MarkAsUpdated();
+    }
+
     public void MarkAsFreePreview()
     {
         FreePreview = true;

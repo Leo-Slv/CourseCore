@@ -18,17 +18,20 @@ public class LessonsController : ControllerBase
     private readonly UpdateLessonUseCase _updateLessonUseCase;
     private readonly RemoveLessonUseCase _removeLessonUseCase;
     private readonly ReorderLessonsUseCase _reorderLessonsUseCase;
+    private readonly MoveLessonUseCase _moveLessonUseCase;
 
     public LessonsController(
         CreateLessonUseCase createLessonUseCase,
         UpdateLessonUseCase updateLessonUseCase,
         RemoveLessonUseCase removeLessonUseCase,
-        ReorderLessonsUseCase reorderLessonsUseCase)
+        ReorderLessonsUseCase reorderLessonsUseCase,
+        MoveLessonUseCase moveLessonUseCase)
     {
         _createLessonUseCase = createLessonUseCase;
         _updateLessonUseCase = updateLessonUseCase;
         _removeLessonUseCase = removeLessonUseCase;
         _reorderLessonsUseCase = reorderLessonsUseCase;
+        _moveLessonUseCase = moveLessonUseCase;
     }
 
     [HttpPost]
@@ -90,6 +93,28 @@ public class LessonsController : ControllerBase
         await _removeLessonUseCase.ExecuteAsync(lessonId, cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpPut("{lessonId:guid}/move")]
+    [ProducesResponseType(typeof(LessonResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<LessonResponse>> MoveAsync(
+        Guid courseId,
+        Guid moduleId,
+        Guid lessonId,
+        MoveLessonRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _moveLessonUseCase.ExecuteAsync(
+            CoursePresenter.ToInput(lessonId, request),
+            cancellationToken);
+
+        return Ok(CoursePresenter.ToResponse(output));
     }
 
     [HttpPut("reorder")]

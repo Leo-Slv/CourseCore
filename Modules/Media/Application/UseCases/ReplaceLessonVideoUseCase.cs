@@ -60,6 +60,11 @@ public class ReplaceLessonVideoUseCase
                     input.SizeBytes,
                     input.ThumbnailUrl);
 
+                if (storageProvider == VideoStorageProvider.YouTube && newVideo.DurationSeconds > 0)
+                {
+                    newVideo.MarkAsReady();
+                }
+
                 await _videos.CreateAsync(newVideo, cancellationToken);
                 await _auditLogs.RecordAsync(
                     AuditLogActionNames.VideoReplaced,
@@ -83,6 +88,11 @@ public class ReplaceLessonVideoUseCase
             existingVideo.ChangeDuration(input.DurationSeconds);
             existingVideo.ChangeSize(input.SizeBytes);
             existingVideo.MarkAsProcessing();
+
+            if (storageProvider == VideoStorageProvider.YouTube && existingVideo.DurationSeconds > 0)
+            {
+                existingVideo.MarkAsReady();
+            }
 
             await _videos.UpdateAsync(existingVideo, cancellationToken);
             await _auditLogs.RecordAsync(

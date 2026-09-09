@@ -58,6 +58,7 @@ public class LessonVideoUseCaseTests
 
         Assert.Single(videos.Videos);
         Assert.Equal(lesson.Id, output.LessonId);
+        Assert.Equal("Ready", output.Status);
         var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.VideoReplaced);
         Assert.Equal("Video", auditLog.Metadata["displayName"]);
     }
@@ -90,9 +91,55 @@ public class LessonVideoUseCaseTests
         Assert.Equal(existingVideo.Id, output.Id);
         Assert.Equal("New Title", output.Title);
         Assert.Equal("YouTube", output.StorageProvider);
-        Assert.Equal("Processing", output.Status);
+        Assert.Equal("Ready", output.Status);
         var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.VideoReplaced);
         Assert.Equal("New Title", auditLog.Metadata["displayName"]);
+    }
+
+    [Fact]
+    public async Task ReplaceLessonVideoUseCase_WhenYouTubeAndDurationIsZero_ShouldKeepVideoProcessing()
+    {
+        var videos = new FakeVideoRepository();
+        var lessons = new FakeLessonRepository();
+        var lesson = CreateLesson();
+        lessons.Lessons.Add(lesson);
+        var useCase = new ReplaceLessonVideoUseCase(videos, lessons, new FakeUnitOfWork(), new FakeAuditLogService());
+
+        var output = await useCase.ExecuteAsync(new CreateVideoInput
+        {
+            LessonId = lesson.Id,
+            Title = "Video",
+            Description = "Description",
+            StorageProvider = "YouTube",
+            StorageKey = "dQw4w9WgXcQ",
+            DurationSeconds = 0,
+            SizeBytes = 0
+        });
+
+        Assert.Equal("Processing", output.Status);
+    }
+
+    [Fact]
+    public async Task ReplaceLessonVideoUseCase_WhenLocalProvider_ShouldKeepVideoProcessing()
+    {
+        var videos = new FakeVideoRepository();
+        var lessons = new FakeLessonRepository();
+        var lesson = CreateLesson();
+        lessons.Lessons.Add(lesson);
+        var useCase = new ReplaceLessonVideoUseCase(videos, lessons, new FakeUnitOfWork(), new FakeAuditLogService());
+
+        var output = await useCase.ExecuteAsync(new CreateVideoInput
+        {
+            LessonId = lesson.Id,
+            Title = "Video",
+            Description = "Description",
+            StorageProvider = "Local",
+            StorageKey = "videos/video.mp4",
+            DurationSeconds = 120,
+            SizeBytes = 1024
+        });
+
+        Assert.Equal("Processing", output.Status);
     }
 
     [Fact]

@@ -63,6 +63,11 @@ public class CreateVideoUseCase
                 input.SizeBytes,
                 input.ThumbnailUrl);
 
+            if (storageProvider == VideoStorageProvider.YouTube && video.DurationSeconds > 0)
+            {
+                video.MarkAsReady();
+            }
+
             await _videos.CreateAsync(video, cancellationToken);
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.VideoCreated,

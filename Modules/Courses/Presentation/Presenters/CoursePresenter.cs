@@ -158,6 +158,15 @@ public static class CoursePresenter
         };
     }
 
+    public static MoveLessonInput ToInput(Guid lessonId, MoveLessonRequest request)
+    {
+        return new MoveLessonInput
+        {
+            LessonId = lessonId,
+            TargetModuleId = request.TargetModuleId
+        };
+    }
+
     public static ReorderLessonsInput ToInput(Guid moduleId, ReorderLessonsRequest request)
     {
         return new ReorderLessonsInput

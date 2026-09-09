@@ -79,6 +79,60 @@ public class CourseContentIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task MoveLesson_ToAnotherModuleInSameCourse_ShouldMoveAndAppendDisplayOrder()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var course = await _factory.SeedPublishedCourseWithoutContentAsync();
+
+        var sourceModuleId = await _factory.SeedCourseModuleAsync(course.CourseId, displayOrder: 0);
+        var targetModuleId = await _factory.SeedCourseModuleAsync(course.CourseId, displayOrder: 1);
+        await _factory.SeedLessonAsync(targetModuleId, displayOrder: 0);
+        var lessonId = await _factory.SeedLessonAsync(sourceModuleId, displayOrder: 0);
+
+        var moveResponse = await client.PutAsJsonAsync(
+            $"/api/courses/{course.CourseId}/modules/{sourceModuleId}/lessons/{lessonId}/move",
+            new { targetModuleId });
+
+        await AssertStatusAsync(HttpStatusCode.OK, moveResponse);
+        var moved = await moveResponse.Content.ReadFromJsonAsync<LessonResponse>();
+        Assert.NotNull(moved);
+        Assert.Equal(targetModuleId, moved!.ModuleId);
+        Assert.Equal(1, moved.DisplayOrder);
+    }
+
+    [Fact]
+    public async Task MoveLesson_ToModuleInDifferentCourse_ShouldReturnBadRequest()
+    {
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        var otherCourse = await _factory.SeedPublishedCourseWithoutContentAsync();
+        var otherModuleId = await _factory.SeedCourseModuleAsync(otherCourse.CourseId);
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/courses/{course.CourseId}/modules/{course.ModuleId}/lessons/{course.LessonId}/move",
+            new { targetModuleId = otherModuleId });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MoveLesson_WhenUserHasNoManageCoursesPermission_ShouldReturnForbidden()
+    {
+        using var client = CreateClient();
+        var user = await _factory.SeedUserAsync();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/courses/{course.CourseId}/modules/{course.ModuleId}/lessons/{course.LessonId}/move",
+            new { targetModuleId = Guid.NewGuid() });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ListCourseModules_WhenAdminHasNoPersonalCourseAccess_ShouldStillReturnModules()
     {
         using var client = CreateClient();
