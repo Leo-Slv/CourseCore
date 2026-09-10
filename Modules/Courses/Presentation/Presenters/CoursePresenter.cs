@@ -246,6 +246,7 @@ public static class CoursePresenter
             Id = output.Id,
             Name = output.Name,
             Slug = output.Slug,
+            Description = output.Description,
             DisplayOrder = output.DisplayOrder
         };
     }

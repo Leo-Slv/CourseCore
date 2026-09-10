@@ -10,6 +10,8 @@ public class AreaSummaryOutput
 
     public string Slug { get; init; } = string.Empty;
 
+    public string Description { get; init; } = string.Empty;
+
     public int DisplayOrder { get; init; }
 
     public static AreaSummaryOutput FromAreaOutput(AreaOutput area)
@@ -19,6 +21,7 @@ public class AreaSummaryOutput
             Id = area.Id,
             Name = area.Name,
             Slug = area.Slug,
+            Description = area.Description,
             DisplayOrder = area.DisplayOrder
         };
     }
