@@ -25,6 +25,7 @@ public class VideosController : ControllerBase
     private readonly ListVideosUseCase _listVideosUseCase;
     private readonly ActivateVideoUseCase _activateVideoUseCase;
     private readonly UnlistVideoUseCase _unlistVideoUseCase;
+    private readonly GetYouTubeVideoMetadataUseCase _getYouTubeVideoMetadataUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public VideosController(
@@ -37,6 +38,7 @@ public class VideosController : ControllerBase
         ListVideosUseCase listVideosUseCase,
         ActivateVideoUseCase activateVideoUseCase,
         UnlistVideoUseCase unlistVideoUseCase,
+        GetYouTubeVideoMetadataUseCase getYouTubeVideoMetadataUseCase,
         ICurrentUserService currentUserService)
     {
         _createVideoUseCase = createVideoUseCase;
@@ -48,6 +50,7 @@ public class VideosController : ControllerBase
         _listVideosUseCase = listVideosUseCase;
         _activateVideoUseCase = activateVideoUseCase;
         _unlistVideoUseCase = unlistVideoUseCase;
+        _getYouTubeVideoMetadataUseCase = getYouTubeVideoMetadataUseCase;
         _currentUserService = currentUserService;
     }
 
@@ -65,6 +68,28 @@ public class VideosController : ControllerBase
         var output = await _listVideosUseCase.ExecuteAsync(VideoPresenter.ToInput(request), cancellationToken);
 
         return Ok(VideoPresenter.ToResponse(output));
+    }
+
+    [HttpGet("youtube-metadata")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(YouTubeVideoMetadataResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<YouTubeVideoMetadataResponse>> GetYouTubeMetadataAsync(
+        [FromQuery] string videoId,
+        CancellationToken cancellationToken)
+    {
+        var output = await _getYouTubeVideoMetadataUseCase.ExecuteAsync(videoId, cancellationToken);
+
+        return Ok(new YouTubeVideoMetadataResponse
+        {
+            Title = output.Title,
+            ThumbnailUrl = output.ThumbnailUrl,
+            DurationSeconds = output.DurationSeconds
+        });
     }
 
     [HttpPost("{videoId:guid}/activate")]

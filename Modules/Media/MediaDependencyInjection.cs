@@ -4,6 +4,7 @@ using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Repositories;
 using CourseCore.Api.Modules.Media.Infrastructure.Storage;
+using CourseCore.Api.Modules.Media.Infrastructure.YouTube;
 
 namespace CourseCore.Api.Modules.Media;
 
@@ -30,6 +31,13 @@ public static class MediaDependencyInjection
         services.AddScoped<ListVideosUseCase>();
         services.AddScoped<ActivateVideoUseCase>();
         services.AddScoped<UnlistVideoUseCase>();
+
+        services.Configure<YouTubeOptions>(configuration.GetSection(YouTubeOptions.SectionName));
+        services.AddHttpClient<IYouTubeMetadataProvider, YouTubeMetadataProvider>(client =>
+        {
+            client.BaseAddress = new Uri("https://www.googleapis.com/youtube/v3/");
+        });
+        services.AddScoped<GetYouTubeVideoMetadataUseCase>();
 
         return services;
     }
