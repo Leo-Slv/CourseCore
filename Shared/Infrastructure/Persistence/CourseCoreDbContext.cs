@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Certificates.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Progress.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Questions.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Testimonials.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
 using Microsoft.EntityFrameworkCore;
@@ -59,6 +60,8 @@ public class CourseCoreDbContext : DbContext
     public DbSet<UserLessonProgressPersistenceModel> UserLessonProgress => Set<UserLessonProgressPersistenceModel>();
 
     public DbSet<LessonNotePersistenceModel> LessonNotes => Set<LessonNotePersistenceModel>();
+
+    public DbSet<LessonQuestionPersistenceModel> LessonQuestions => Set<LessonQuestionPersistenceModel>();
 
     public DbSet<AuditLogPersistenceModel> AuditLogs => Set<AuditLogPersistenceModel>();
 

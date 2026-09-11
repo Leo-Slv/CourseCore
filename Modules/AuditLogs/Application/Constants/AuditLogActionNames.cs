@@ -58,4 +58,7 @@ public static class AuditLogActionNames
     public const string TestimonialUpdated = "TestimonialUpdated";
     public const string TestimonialPublished = "TestimonialPublished";
     public const string TestimonialUnpublished = "TestimonialUnpublished";
+    public const string QuestionAsked = "QuestionAsked";
+    public const string QuestionAnswered = "QuestionAnswered";
+    public const string QuestionRemoved = "QuestionRemoved";
 }

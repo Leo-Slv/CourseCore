@@ -5,6 +5,8 @@ using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Progress.Domain.Entities;
 using CourseCore.Api.Modules.Progress.Domain.Repositories;
+using CourseCore.Api.Modules.Questions.Domain.Entities;
+using CourseCore.Api.Modules.Questions.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Entities;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Domain.ValueObjects;
@@ -600,6 +602,47 @@ public sealed class FakeLessonNoteRepository : ILessonNoteRepository
     public Task RemoveAsync(Guid userId, Guid lessonId, CancellationToken cancellationToken = default)
     {
         _notes.Remove((userId, lessonId));
+
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class FakeLessonQuestionRepository : ILessonQuestionRepository
+{
+    public List<LessonQuestion> Questions { get; } = [];
+
+    public Task<LessonQuestion?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Questions.FirstOrDefault(question => question.Id == id));
+    }
+
+    public Task<IReadOnlyCollection<LessonQuestion>> ListByLessonIdAsync(
+        Guid lessonId,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyCollection<LessonQuestion> result = Questions
+            .Where(question => question.LessonId == lessonId)
+            .OrderByDescending(question => question.CreatedAt)
+            .ToList();
+
+        return Task.FromResult(result);
+    }
+
+    public Task CreateAsync(LessonQuestion question, CancellationToken cancellationToken = default)
+    {
+        Questions.Add(question);
+
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(LessonQuestion question, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(Guid questionId, CancellationToken cancellationToken = default)
+    {
+        Questions.RemoveAll(question => question.Id == questionId);
 
         return Task.CompletedTask;
     }
