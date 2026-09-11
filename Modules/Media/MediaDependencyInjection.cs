@@ -32,6 +32,14 @@ public static class MediaDependencyInjection
         services.AddScoped<ActivateVideoUseCase>();
         services.AddScoped<UnlistVideoUseCase>();
 
+        services.AddScoped<ILessonMaterialRepository, EfLessonMaterialRepository>();
+        services.AddScoped<IMaterialStorageService, MaterialStorageService>();
+        services.AddScoped<CreateLessonMaterialUseCase>();
+        services.AddScoped<ListLessonMaterialsUseCase>();
+        services.AddScoped<UpdateLessonMaterialUseCase>();
+        services.AddScoped<RemoveLessonMaterialUseCase>();
+        services.AddScoped<ReorderLessonMaterialsUseCase>();
+
         services.Configure<YouTubeOptions>(configuration.GetSection(YouTubeOptions.SectionName));
         services.AddHttpClient<IYouTubeMetadataProvider, YouTubeMetadataProvider>(client =>
         {

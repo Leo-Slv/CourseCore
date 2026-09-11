@@ -93,3 +93,73 @@ public sealed class FakeVideoStorageService : IVideoStorageService
         return Task.FromResult($"https://media.coursecore.local/upload/{storageKey}");
     }
 }
+
+public sealed class FakeLessonMaterialRepository : ILessonMaterialRepository
+{
+    public List<LessonMaterial> Materials { get; } = [];
+
+    public Task<LessonMaterial?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Materials.FirstOrDefault(material => material.Id == id));
+    }
+
+    public Task<IReadOnlyCollection<LessonMaterial>> ListByLessonIdAsync(
+        Guid lessonId,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyCollection<LessonMaterial> result = Materials
+            .Where(material => material.LessonId == lessonId)
+            .OrderBy(material => material.DisplayOrder)
+            .ThenBy(material => material.CreatedAt)
+            .ToList();
+
+        return Task.FromResult(result);
+    }
+
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<LessonMaterial>>> ListByLessonIdsAsync(
+        IReadOnlyCollection<Guid> lessonIds,
+        CancellationToken cancellationToken = default)
+    {
+        var lessonIdSet = lessonIds.ToHashSet();
+        IReadOnlyDictionary<Guid, IReadOnlyCollection<LessonMaterial>> result = Materials
+            .Where(material => lessonIdSet.Contains(material.LessonId))
+            .GroupBy(material => material.LessonId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyCollection<LessonMaterial>)group.ToList());
+
+        return Task.FromResult(result);
+    }
+
+    public Task CreateAsync(LessonMaterial material, CancellationToken cancellationToken = default)
+    {
+        Materials.Add(material);
+
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(LessonMaterial material, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(Guid materialId, CancellationToken cancellationToken = default)
+    {
+        Materials.RemoveAll(material => material.Id == materialId);
+
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class FakeMaterialStorageService : IMaterialStorageService
+{
+    public string DownloadUrl { get; set; } = "https://media.coursecore.local/download";
+
+    public Task<string> GetUploadUrlAsync(string storageKey, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult($"https://media.coursecore.local/upload/{storageKey}");
+    }
+
+    public Task<string> GetDownloadUrlAsync(LessonMaterial material, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(DownloadUrl);
+    }
+}

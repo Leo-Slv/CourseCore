@@ -27,5 +27,7 @@ public class LessonPersistenceModel
 
     public VideoPersistenceModel? Video { get; set; }
 
+    public ICollection<LessonMaterialPersistenceModel> Materials { get; set; } = new List<LessonMaterialPersistenceModel>();
+
     public ICollection<UserLessonProgressPersistenceModel> UserProgresses { get; set; } = new List<UserLessonProgressPersistenceModel>();
 }

@@ -9,4 +9,8 @@ public static class MediaValidationLimits
     public const int ThumbnailUrlMaxLength = 1000;
     public const int MaxDurationSeconds = 86_400;
     public const long MaxSizeBytes = 100L * 1024 * 1024 * 1024;
+
+    public const int MaterialFileNameMaxLength = 255;
+    public const int MaterialContentTypeMaxLength = 150;
+    public const long MaxMaterialSizeBytes = 50L * 1024 * 1024;
 }

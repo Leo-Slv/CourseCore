@@ -52,6 +52,8 @@ public class CourseCoreDbContext : DbContext
 
     public DbSet<VideoPersistenceModel> Videos => Set<VideoPersistenceModel>();
 
+    public DbSet<LessonMaterialPersistenceModel> LessonMaterials => Set<LessonMaterialPersistenceModel>();
+
     public DbSet<UserCourseProgressPersistenceModel> UserCourseProgress => Set<UserCourseProgressPersistenceModel>();
 
     public DbSet<UserLessonProgressPersistenceModel> UserLessonProgress => Set<UserLessonProgressPersistenceModel>();
