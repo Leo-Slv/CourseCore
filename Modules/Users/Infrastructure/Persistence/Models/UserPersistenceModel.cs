@@ -34,4 +34,6 @@ public class UserPersistenceModel
     public ICollection<UserCourseProgressPersistenceModel> CourseProgresses { get; set; } = new List<UserCourseProgressPersistenceModel>();
 
     public ICollection<UserLessonProgressPersistenceModel> LessonProgresses { get; set; } = new List<UserLessonProgressPersistenceModel>();
+
+    public ICollection<LessonNotePersistenceModel> LessonNotes { get; set; } = new List<LessonNotePersistenceModel>();
 }

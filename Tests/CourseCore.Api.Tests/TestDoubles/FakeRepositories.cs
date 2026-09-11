@@ -576,6 +576,35 @@ public sealed class FakeProgressRepository : IProgressRepository
     }
 }
 
+public sealed class FakeLessonNoteRepository : ILessonNoteRepository
+{
+    private readonly Dictionary<(Guid UserId, Guid LessonId), LessonNote> _notes = [];
+
+    public Task<LessonNote?> FindByUserAndLessonAsync(
+        Guid userId,
+        Guid lessonId,
+        CancellationToken cancellationToken = default)
+    {
+        _notes.TryGetValue((userId, lessonId), out var note);
+
+        return Task.FromResult(note);
+    }
+
+    public Task SaveAsync(LessonNote note, CancellationToken cancellationToken = default)
+    {
+        _notes[(note.UserId, note.LessonId)] = note;
+
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(Guid userId, Guid lessonId, CancellationToken cancellationToken = default)
+    {
+        _notes.Remove((userId, lessonId));
+
+        return Task.CompletedTask;
+    }
+}
+
 public sealed class FakeAccessRequestRepository : IAccessRequestRepository
 {
     public List<AccessRequest> Requests { get; } = [];

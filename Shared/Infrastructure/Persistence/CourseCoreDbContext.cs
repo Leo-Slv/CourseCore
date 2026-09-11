@@ -58,6 +58,8 @@ public class CourseCoreDbContext : DbContext
 
     public DbSet<UserLessonProgressPersistenceModel> UserLessonProgress => Set<UserLessonProgressPersistenceModel>();
 
+    public DbSet<LessonNotePersistenceModel> LessonNotes => Set<LessonNotePersistenceModel>();
+
     public DbSet<AuditLogPersistenceModel> AuditLogs => Set<AuditLogPersistenceModel>();
 
     public DbSet<CertificatePersistenceModel> Certificates => Set<CertificatePersistenceModel>();

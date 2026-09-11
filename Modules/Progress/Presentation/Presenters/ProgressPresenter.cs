@@ -56,4 +56,27 @@ public static class ProgressPresenter
             ProgressPercent = output.ProgressPercent
         };
     }
+
+    public static UpsertLessonNoteInput ToInput(Guid userId, Guid lessonId, UpsertLessonNoteRequest request)
+    {
+        return new UpsertLessonNoteInput
+        {
+            UserId = userId,
+            LessonId = lessonId,
+            Content = request.Content
+        };
+    }
+
+    public static LessonNoteResponse ToResponse(LessonNoteOutput output)
+    {
+        return new LessonNoteResponse
+        {
+            Id = output.Id,
+            UserId = output.UserId,
+            LessonId = output.LessonId,
+            Content = output.Content,
+            CreatedAt = output.CreatedAt,
+            UpdatedAt = output.UpdatedAt
+        };
+    }
 }

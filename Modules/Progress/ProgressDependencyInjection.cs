@@ -20,6 +20,11 @@ public static class ProgressDependencyInjection
         services.AddScoped<RegisterLessonProgressUseCase>();
         services.AddScoped<GetCourseProgressUseCase>();
 
+        services.AddScoped<ILessonNoteRepository, EfLessonNoteRepository>();
+        services.AddScoped<UpsertLessonNoteUseCase>();
+        services.AddScoped<GetLessonNoteUseCase>();
+        services.AddScoped<RemoveLessonNoteUseCase>();
+
         return services;
     }
 }
