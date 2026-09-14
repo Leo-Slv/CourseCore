@@ -95,6 +95,11 @@ public sealed class FakeS3PresignedUrlProvider : IS3PresignedUrlProvider
     {
         return Task.FromResult(DownloadUrl);
     }
+
+    public string GetPublicUrl(string storageKey)
+    {
+        return $"https://fake-bucket.s3.fake-region.amazonaws.com/{storageKey}";
+    }
 }
 
 public sealed class FakeVideoStorageService : IVideoStorageService

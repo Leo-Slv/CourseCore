@@ -14,6 +14,9 @@ public static class MediaValidationLimits
     public const int MaterialContentTypeMaxLength = 150;
     public const long MaxMaterialSizeBytes = 50L * 1024 * 1024;
 
+    public const int ImageFileNameMaxLength = 255;
+    public const long MaxImageSizeBytes = 5L * 1024 * 1024;
+
     public static readonly IReadOnlySet<string> AllowedVideoContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "video/mp4",
@@ -34,5 +37,12 @@ public static class MediaValidationLimits
         "application/zip",
         "image/png",
         "image/jpeg"
+    };
+
+    public static readonly IReadOnlySet<string> AllowedImageContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/png",
+        "image/jpeg",
+        "image/webp"
     };
 }

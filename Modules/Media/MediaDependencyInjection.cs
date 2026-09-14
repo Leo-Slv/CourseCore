@@ -3,6 +3,7 @@ using Amazon.Runtime;
 using Amazon.S3;
 using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Application.Options;
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Repositories;
@@ -32,6 +33,7 @@ public static class MediaDependencyInjection
         services.Configure<S3StorageOptions>(configuration.GetSection(S3StorageOptions.SectionName));
         services.AddSingleton<IAmazonS3>(_ => CreateS3Client(s3Options));
         services.AddSingleton<IS3PresignedUrlProvider, S3PresignedUrlProvider>();
+        services.AddScoped<ImageUploadService>();
 
         services.AddScoped<IVideoRepository, EfVideoRepository>();
         services.AddScoped<IVideoStorageService, VideoStorageService>();

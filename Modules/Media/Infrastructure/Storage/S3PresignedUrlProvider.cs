@@ -55,6 +55,13 @@ public class S3PresignedUrlProvider : IS3PresignedUrlProvider
         return Task.FromResult(_s3Client.GetPreSignedURL(request));
     }
 
+    public string GetPublicUrl(string storageKey)
+    {
+        EnsureConfigured();
+
+        return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{storageKey}";
+    }
+
     private void EnsureConfigured()
     {
         if (string.IsNullOrWhiteSpace(_options.BucketName))
