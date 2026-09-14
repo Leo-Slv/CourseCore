@@ -28,6 +28,7 @@ public class ListLessonQuestionsUseCase
     public async Task<IReadOnlyCollection<LessonQuestionOutput>> ExecuteAsync(
         Guid userId,
         Guid lessonId,
+        bool bypassAccessCheck = false,
         CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty)
@@ -54,11 +55,14 @@ public class ListLessonQuestionsUseCase
             throw new NotFoundException("Course not found for lesson.");
         }
 
-        var access = await _courseAccessService.CanUserAccessCourseAsync(userId, course.Id, cancellationToken);
-
-        if (!access.CanAccess)
+        if (!bypassAccessCheck)
         {
-            throw new ForbiddenException("User cannot access this course.");
+            var access = await _courseAccessService.CanUserAccessCourseAsync(userId, course.Id, cancellationToken);
+
+            if (!access.CanAccess)
+            {
+                throw new ForbiddenException("User cannot access this course.");
+            }
         }
 
         var questions = await _questions.ListByLessonIdAsync(lessonId, cancellationToken);

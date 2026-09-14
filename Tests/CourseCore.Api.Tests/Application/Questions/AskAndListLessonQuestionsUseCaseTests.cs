@@ -102,6 +102,16 @@ public class AskAndListLessonQuestionsUseCaseTests
         await Assert.ThrowsAsync<ForbiddenException>(() => fixture.ListUseCase.ExecuteAsync(fixture.UserId, fixture.Lesson.Id));
     }
 
+    [Fact]
+    public async Task ListLessonQuestionsUseCase_WhenBypassAccessCheckIsTrue_ShouldReturnQuestionsEvenWithoutAccess()
+    {
+        var fixture = CreateFixture(grantAccess: false);
+
+        var outputs = await fixture.ListUseCase.ExecuteAsync(fixture.UserId, fixture.Lesson.Id, bypassAccessCheck: true);
+
+        Assert.Empty(outputs);
+    }
+
     private static LessonQuestionFixture CreateFixture(bool grantAccess)
     {
         var users = new FakeUserRepository();

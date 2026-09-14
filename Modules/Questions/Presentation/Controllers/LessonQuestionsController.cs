@@ -46,7 +46,12 @@ public class LessonQuestionsController : ControllerBase
         Guid lessonId,
         CancellationToken cancellationToken)
     {
-        var outputs = await _listLessonQuestionsUseCase.ExecuteAsync(GetCurrentUserId(), lessonId, cancellationToken);
+        var bypassAccessCheck = User.HasClaim(AuthClaimTypes.Permission, AuthPermissionNames.ManageCourses);
+        var outputs = await _listLessonQuestionsUseCase.ExecuteAsync(
+            GetCurrentUserId(),
+            lessonId,
+            bypassAccessCheck,
+            cancellationToken);
 
         return Ok(outputs.Select(LessonQuestionPresenter.ToResponse).ToList());
     }

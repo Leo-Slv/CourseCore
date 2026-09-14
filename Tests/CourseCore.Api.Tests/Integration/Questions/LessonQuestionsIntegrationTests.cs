@@ -140,6 +140,25 @@ public class LessonQuestionsIntegrationTests : IClassFixture<CourseCoreApiFactor
     }
 
     [Fact]
+    public async Task ListQuestions_WhenAdminHasNoCourseAccess_ShouldReturnOk()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        using var studentClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(studentClient, user);
+        await studentClient.PostAsJsonAsync(
+            $"/api/questions/lessons/{course.LessonId}",
+            new { questionText = "Question?" });
+
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+
+        var response = await adminClient.GetAsync($"/api/questions/lessons/{course.LessonId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RemoveQuestion_WhenQuestionDoesNotExist_ShouldReturnNotFound()
     {
         using var adminClient = IntegrationAuth.CreateClient(_factory);
