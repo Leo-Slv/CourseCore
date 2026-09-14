@@ -4,6 +4,7 @@ using CourseCore.Api.Modules.Auth.Application.Contracts;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
@@ -597,6 +598,9 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["Media:Playback:BaseUrl"] = "/media",
                 ["Media:Playback:AllowedStorageProviders:0"] = "Local",
                 ["Media:Playback:AllowedStorageProviders:1"] = "YouTube",
+                ["Media:Playback:AllowedStorageProviders:2"] = "S3",
+                ["Media:S3:BucketName"] = "integration-test-bucket",
+                ["Media:S3:Region"] = "us-east-1",
                 ["Cors:AllowedOrigins:0"] = "https://localhost",
                 ["Seed:Admin:Enabled"] = "false"
             };
@@ -631,6 +635,8 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<ICaptchaVerificationService, FakeCaptchaVerificationService>();
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender, FakeEmailSender>();
+            services.RemoveAll<IS3PresignedUrlProvider>();
+            services.AddSingleton<IS3PresignedUrlProvider, FakeS3PresignedUrlProvider>();
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
