@@ -18,7 +18,8 @@ public static class CourseModuleMapper
             model.Published,
             lessons,
             model.CreatedAt,
-            model.UpdatedAt);
+            model.UpdatedAt,
+            model.ImageUrl);
     }
 
     public static CourseModulePersistenceModel ToPersistence(CourseModule module)
@@ -31,6 +32,7 @@ public static class CourseModuleMapper
             Description = module.Description,
             DisplayOrder = module.DisplayOrder,
             Published = module.Published,
+            ImageUrl = module.ImageUrl,
             CreatedAt = module.CreatedAt,
             UpdatedAt = module.UpdatedAt,
             Lessons = module.Lessons.Select(LessonMapper.ToPersistence).ToList()
@@ -44,6 +46,7 @@ public static class CourseModuleMapper
         model.Description = module.Description;
         model.DisplayOrder = module.DisplayOrder;
         model.Published = module.Published;
+        model.ImageUrl = module.ImageUrl;
         model.UpdatedAt = module.UpdatedAt;
 
         // Module updates do not edit lesson structure.

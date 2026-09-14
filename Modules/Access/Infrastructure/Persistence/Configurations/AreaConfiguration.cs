@@ -22,6 +22,7 @@ public class AreaConfiguration : IEntityTypeConfiguration<AreaPersistenceModel>
             .IsRequired()
             .HasMaxLength(20)
             .HasDefaultValue(nameof(AreaAccentColor.Blue));
+        builder.Property(x => x.ImageUrl).IsRequired(false).HasMaxLength(1000);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 

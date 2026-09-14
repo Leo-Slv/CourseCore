@@ -7,13 +7,14 @@ public class CourseModule : EntityBase
 {
     private readonly List<Lesson> _lessons = [];
 
-    private CourseModule(Guid courseId, string title, string description, int displayOrder, bool published)
+    private CourseModule(Guid courseId, string title, string description, int displayOrder, bool published, string? imageUrl)
     {
         CourseId = ValidateId(courseId, nameof(CourseId));
         Title = ValidateRequired(title, nameof(Title));
         Description = NormalizeDescription(description);
         DisplayOrder = ValidateDisplayOrder(displayOrder);
         Published = published;
+        ImageUrl = NormalizeOptional(imageUrl);
     }
 
     public Guid CourseId { get; private set; }
@@ -26,11 +27,13 @@ public class CourseModule : EntityBase
 
     public bool Published { get; private set; }
 
+    public string? ImageUrl { get; private set; }
+
     public IReadOnlyCollection<Lesson> Lessons => _lessons.AsReadOnly();
 
-    public static CourseModule Create(Guid courseId, string title, string description, int displayOrder)
+    public static CourseModule Create(Guid courseId, string title, string description, int displayOrder, string? imageUrl = null)
     {
-        return new CourseModule(courseId, title, description, displayOrder, published: false);
+        return new CourseModule(courseId, title, description, displayOrder, published: false, imageUrl);
     }
 
     public static CourseModule Restore(
@@ -42,9 +45,10 @@ public class CourseModule : EntityBase
         bool published,
         IEnumerable<Lesson>? lessons,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt,
+        string? imageUrl = null)
     {
-        var module = new CourseModule(courseId, title, description, displayOrder, published)
+        var module = new CourseModule(courseId, title, description, displayOrder, published, imageUrl)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -77,6 +81,12 @@ public class CourseModule : EntityBase
     public void ChangeDisplayOrder(int order)
     {
         DisplayOrder = ValidateDisplayOrder(order);
+        MarkAsUpdated();
+    }
+
+    public void ChangeImageUrl(string? imageUrl)
+    {
+        ImageUrl = NormalizeOptional(imageUrl);
         MarkAsUpdated();
     }
 
@@ -147,6 +157,11 @@ public class CourseModule : EntityBase
     private static string NormalizeDescription(string description)
     {
         return description?.Trim() ?? string.Empty;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static int ValidateDisplayOrder(int displayOrder)

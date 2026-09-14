@@ -7,7 +7,7 @@ namespace CourseCore.Api.Modules.Access.Domain.Entities;
 
 public class Area : EntityBase
 {
-    private Area(string name, Slug slug, string description, bool active, int displayOrder, AreaAccentColor accentColor)
+    private Area(string name, Slug slug, string description, bool active, int displayOrder, AreaAccentColor accentColor, string? imageUrl)
     {
         Name = ValidateRequired(name, nameof(Name));
         Slug = slug ?? throw new DomainException("Slug is required.");
@@ -15,6 +15,7 @@ public class Area : EntityBase
         Active = active;
         DisplayOrder = ValidateDisplayOrder(displayOrder);
         AccentColor = ValidateAccentColor(accentColor);
+        ImageUrl = NormalizeOptional(imageUrl);
     }
 
     public string Name { get; private set; }
@@ -29,14 +30,17 @@ public class Area : EntityBase
 
     public AreaAccentColor AccentColor { get; private set; }
 
+    public string? ImageUrl { get; private set; }
+
     public static Area Create(
         string name,
         Slug slug,
         string description,
         int displayOrder,
-        AreaAccentColor accentColor = AreaAccentColor.Blue)
+        AreaAccentColor accentColor = AreaAccentColor.Blue,
+        string? imageUrl = null)
     {
-        return new Area(name, slug, description, active: true, displayOrder, accentColor);
+        return new Area(name, slug, description, active: true, displayOrder, accentColor, imageUrl);
     }
 
     public static Area Restore(
@@ -48,9 +52,10 @@ public class Area : EntityBase
         int displayOrder,
         AreaAccentColor accentColor,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt,
+        string? imageUrl = null)
     {
-        return new Area(name, slug, description, active, displayOrder, accentColor)
+        return new Area(name, slug, description, active, displayOrder, accentColor, imageUrl)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -88,6 +93,12 @@ public class Area : EntityBase
         MarkAsUpdated();
     }
 
+    public void ChangeImageUrl(string? imageUrl)
+    {
+        ImageUrl = NormalizeOptional(imageUrl);
+        MarkAsUpdated();
+    }
+
     public void Activate()
     {
         Active = true;
@@ -113,6 +124,11 @@ public class Area : EntityBase
     private static string NormalizeDescription(string description)
     {
         return description?.Trim() ?? string.Empty;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static int ValidateDisplayOrder(int displayOrder)

@@ -17,6 +17,7 @@ public class CourseModuleConfiguration : IEntityTypeConfiguration<CourseModulePe
         builder.Property(x => x.Description).IsRequired().HasMaxLength(1000);
         builder.Property(x => x.DisplayOrder).IsRequired();
         builder.Property(x => x.Published).IsRequired();
+        builder.Property(x => x.ImageUrl).IsRequired(false).HasMaxLength(1000);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 
