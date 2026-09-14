@@ -13,14 +13,16 @@ namespace CourseCore.Api.Modules.Media.Infrastructure.Storage;
 public class VideoStorageService : IVideoStorageService
 {
     private readonly MediaPlaybackOptions _options;
+    private readonly IS3PresignedUrlProvider _s3PresignedUrlProvider;
 
-    public VideoStorageService(IOptions<MediaPlaybackOptions> options)
+    public VideoStorageService(IOptions<MediaPlaybackOptions> options, IS3PresignedUrlProvider s3PresignedUrlProvider)
     {
         _options = options.Value;
+        _s3PresignedUrlProvider = s3PresignedUrlProvider;
         MediaPlaybackOptions.Validate(_options, requireSigningSecret: true);
     }
 
-    public Task<VideoPlaybackUrl> GeneratePlaybackUrlAsync(
+    public async Task<VideoPlaybackUrl> GeneratePlaybackUrlAsync(
         Video video,
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -37,7 +39,14 @@ public class VideoStorageService : IVideoStorageService
         {
             var embedUrl = $"https://www.youtube-nocookie.com/embed/{Uri.EscapeDataString(video.StorageKey)}";
 
-            return Task.FromResult(new VideoPlaybackUrl(embedUrl, DateTime.UtcNow.AddYears(1)));
+            return new VideoPlaybackUrl(embedUrl, DateTime.UtcNow.AddYears(1));
+        }
+
+        if (video.StorageProvider == VideoStorageProvider.S3)
+        {
+            var s3Url = await _s3PresignedUrlProvider.GeneratePresignedDownloadUrlAsync(video.StorageKey, cancellationToken);
+
+            return new VideoPlaybackUrl(s3Url, DateTime.UtcNow.AddMinutes(_options.SignedUrlExpirationMinutes));
         }
 
         var expiresAt = DateTime.UtcNow.AddMinutes(_options.SignedUrlExpirationMinutes);
@@ -56,16 +65,23 @@ public class VideoStorageService : IVideoStorageService
             + $"?expires={expiresUnixTime.ToString(CultureInfo.InvariantCulture)}"
             + $"&signature={Uri.EscapeDataString(signature)}";
 
-        return Task.FromResult(new VideoPlaybackUrl(url, expiresAt));
+        return new VideoPlaybackUrl(url, expiresAt);
     }
 
     public Task<string> GetUploadUrlAsync(
+        VideoStorageProvider provider,
         string storageKey,
+        string contentType,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(storageKey))
         {
             throw new ArgumentException("StorageKey is required.", nameof(storageKey));
+        }
+
+        if (provider == VideoStorageProvider.S3)
+        {
+            return _s3PresignedUrlProvider.GeneratePresignedUploadUrlAsync(storageKey.Trim(), contentType, cancellationToken);
         }
 
         var escapedStorageKey = Uri.EscapeDataString(storageKey.Trim());

@@ -2,6 +2,7 @@ using CourseCore.Api.Modules.Media.Application.Options;
 using CourseCore.Api.Modules.Media.Domain.Entities;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Infrastructure.Storage;
+using CourseCore.Api.Tests.TestDoubles;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Tests.Infrastructure.Media;
@@ -43,13 +44,15 @@ public class VideoStorageServiceTests
         string signingSecret = "test-media-signing-secret-with-at-least-32-characters",
         IReadOnlyCollection<string>? allowedProviders = null)
     {
-        return new VideoStorageService(Options.Create(new MediaPlaybackOptions
-        {
-            SigningSecret = signingSecret,
-            BaseUrl = "/media",
-            SignedUrlExpirationMinutes = 10,
-            AllowedStorageProviders = allowedProviders ?? ["Local"]
-        }));
+        return new VideoStorageService(
+            Options.Create(new MediaPlaybackOptions
+            {
+                SigningSecret = signingSecret,
+                BaseUrl = "/media",
+                SignedUrlExpirationMinutes = 10,
+                AllowedStorageProviders = allowedProviders ?? ["Local"]
+            }),
+            new FakeS3PresignedUrlProvider());
     }
 
     private static Video CreateReadyVideo()

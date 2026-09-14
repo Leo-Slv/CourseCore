@@ -4,6 +4,7 @@ using System.Text;
 using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Application.Options;
 using CourseCore.Api.Modules.Media.Domain.Entities;
+using CourseCore.Api.Modules.Media.Domain.Enums;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Modules.Media.Infrastructure.Storage;
@@ -11,15 +12,19 @@ namespace CourseCore.Api.Modules.Media.Infrastructure.Storage;
 public class MaterialStorageService : IMaterialStorageService
 {
     private readonly MediaPlaybackOptions _options;
+    private readonly IS3PresignedUrlProvider _s3PresignedUrlProvider;
 
-    public MaterialStorageService(IOptions<MediaPlaybackOptions> options)
+    public MaterialStorageService(IOptions<MediaPlaybackOptions> options, IS3PresignedUrlProvider s3PresignedUrlProvider)
     {
         _options = options.Value;
+        _s3PresignedUrlProvider = s3PresignedUrlProvider;
         MediaPlaybackOptions.Validate(_options, requireSigningSecret: true);
     }
 
     public Task<string> GetUploadUrlAsync(
+        MaterialStorageProvider provider,
         string storageKey,
+        string contentType,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(storageKey))
@@ -27,16 +32,26 @@ public class MaterialStorageService : IMaterialStorageService
             throw new ArgumentException("StorageKey is required.", nameof(storageKey));
         }
 
+        if (provider == MaterialStorageProvider.S3)
+        {
+            return _s3PresignedUrlProvider.GeneratePresignedUploadUrlAsync(storageKey.Trim(), contentType, cancellationToken);
+        }
+
         var escapedStorageKey = Uri.EscapeDataString(storageKey.Trim());
 
         return Task.FromResult($"/media/uploads/{escapedStorageKey}");
     }
 
-    public Task<string> GetDownloadUrlAsync(
+    public async Task<string> GetDownloadUrlAsync(
         LessonMaterial material,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (material.StorageProvider == MaterialStorageProvider.S3)
+        {
+            return await _s3PresignedUrlProvider.GeneratePresignedDownloadUrlAsync(material.StorageKey, cancellationToken);
+        }
 
         var expiresAt = DateTime.UtcNow.AddMinutes(_options.SignedUrlExpirationMinutes);
         var expiresUnixTime = new DateTimeOffset(expiresAt).ToUnixTimeSeconds();
@@ -53,7 +68,7 @@ public class MaterialStorageService : IMaterialStorageService
             + $"?expires={expiresUnixTime.ToString(CultureInfo.InvariantCulture)}"
             + $"&signature={Uri.EscapeDataString(signature)}";
 
-        return Task.FromResult(url);
+        return url;
     }
 
     private string Sign(string payload)

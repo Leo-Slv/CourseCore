@@ -77,6 +77,29 @@ public static class VideoPresenter
         };
     }
 
+    public static RequestUploadInput ToUploadInput(RequestUploadUrlRequest request)
+    {
+        return new RequestUploadInput
+        {
+            LessonId = request.LessonId,
+            FileName = request.FileName,
+            ContentType = request.ContentType,
+            SizeBytes = request.SizeBytes,
+            StorageProvider = request.StorageProvider
+        };
+    }
+
+    public static UploadUrlResponse ToResponse(UploadUrlOutput output)
+    {
+        return new UploadUrlResponse
+        {
+            StorageProvider = output.StorageProvider,
+            StorageKey = output.StorageKey,
+            UploadUrl = output.UploadUrl,
+            ExpiresAt = output.ExpiresAt
+        };
+    }
+
     public static VideoPlaybackResponse ToResponse(VideoPlaybackOutput output)
     {
         return new VideoPlaybackResponse

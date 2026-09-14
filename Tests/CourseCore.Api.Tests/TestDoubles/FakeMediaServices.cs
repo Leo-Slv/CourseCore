@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Domain.Entities;
+using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Domain.Repositories;
 
 namespace CourseCore.Api.Tests.TestDoubles;
@@ -74,6 +75,28 @@ public sealed class FakeVideoRepository : IVideoRepository
     }
 }
 
+public sealed class FakeS3PresignedUrlProvider : IS3PresignedUrlProvider
+{
+    public string UploadUrl { get; set; } = "https://fake-bucket.s3.amazonaws.com/upload";
+
+    public string DownloadUrl { get; set; } = "https://fake-bucket.s3.amazonaws.com/download";
+
+    public Task<string> GeneratePresignedUploadUrlAsync(
+        string storageKey,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(UploadUrl);
+    }
+
+    public Task<string> GeneratePresignedDownloadUrlAsync(
+        string storageKey,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(DownloadUrl);
+    }
+}
+
 public sealed class FakeVideoStorageService : IVideoStorageService
 {
     public string PlaybackUrl { get; set; } = "https://media.coursecore.local/playback";
@@ -88,7 +111,11 @@ public sealed class FakeVideoStorageService : IVideoStorageService
         return Task.FromResult(new VideoPlaybackUrl(PlaybackUrl, ExpiresAt));
     }
 
-    public Task<string> GetUploadUrlAsync(string storageKey, CancellationToken cancellationToken = default)
+    public Task<string> GetUploadUrlAsync(
+        VideoStorageProvider provider,
+        string storageKey,
+        string contentType,
+        CancellationToken cancellationToken = default)
     {
         return Task.FromResult($"https://media.coursecore.local/upload/{storageKey}");
     }
@@ -153,7 +180,11 @@ public sealed class FakeMaterialStorageService : IMaterialStorageService
 {
     public string DownloadUrl { get; set; } = "https://media.coursecore.local/download";
 
-    public Task<string> GetUploadUrlAsync(string storageKey, CancellationToken cancellationToken = default)
+    public Task<string> GetUploadUrlAsync(
+        MaterialStorageProvider provider,
+        string storageKey,
+        string contentType,
+        CancellationToken cancellationToken = default)
     {
         return Task.FromResult($"https://media.coursecore.local/upload/{storageKey}");
     }

@@ -26,6 +26,7 @@ public class VideosController : ControllerBase
     private readonly ActivateVideoUseCase _activateVideoUseCase;
     private readonly UnlistVideoUseCase _unlistVideoUseCase;
     private readonly GetYouTubeVideoMetadataUseCase _getYouTubeVideoMetadataUseCase;
+    private readonly RequestVideoUploadUseCase _requestVideoUploadUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public VideosController(
@@ -39,6 +40,7 @@ public class VideosController : ControllerBase
         ActivateVideoUseCase activateVideoUseCase,
         UnlistVideoUseCase unlistVideoUseCase,
         GetYouTubeVideoMetadataUseCase getYouTubeVideoMetadataUseCase,
+        RequestVideoUploadUseCase requestVideoUploadUseCase,
         ICurrentUserService currentUserService)
     {
         _createVideoUseCase = createVideoUseCase;
@@ -51,7 +53,27 @@ public class VideosController : ControllerBase
         _activateVideoUseCase = activateVideoUseCase;
         _unlistVideoUseCase = unlistVideoUseCase;
         _getYouTubeVideoMetadataUseCase = getYouTubeVideoMetadataUseCase;
+        _requestVideoUploadUseCase = requestVideoUploadUseCase;
         _currentUserService = currentUserService;
+    }
+
+    [HttpPost("upload-url")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UploadUrlResponse>> RequestUploadUrlAsync(
+        RequestUploadUrlRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _requestVideoUploadUseCase.ExecuteAsync(
+            VideoPresenter.ToUploadInput(request),
+            cancellationToken);
+
+        return Ok(VideoPresenter.ToResponse(output));
     }
 
     [HttpGet]

@@ -50,6 +50,8 @@ public static class AuditLogActionNames
     public const string LessonMaterialUpdated = "LessonMaterialUpdated";
     public const string LessonMaterialRemoved = "LessonMaterialRemoved";
     public const string LessonMaterialsReordered = "LessonMaterialsReordered";
+    public const string VideoUploadRequested = "VideoUploadRequested";
+    public const string LessonMaterialUploadRequested = "LessonMaterialUploadRequested";
     public const string UserRoleAssigned = "UserRoleAssigned";
     public const string UserRoleUnassigned = "UserRoleUnassigned";
     public const string UserAreaAccessRevoked = "UserAreaAccessRevoked";

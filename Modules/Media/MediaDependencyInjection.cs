@@ -1,3 +1,6 @@
+using Amazon;
+using Amazon.Runtime;
+using Amazon.S3;
 using CourseCore.Api.Modules.Media.Application.Contracts;
 using CourseCore.Api.Modules.Media.Application.Options;
 using CourseCore.Api.Modules.Media.Application.UseCases;
@@ -19,7 +22,17 @@ public static class MediaDependencyInjection
             ?? new MediaPlaybackOptions();
         MediaPlaybackOptions.Validate(playbackOptions, requireSigningSecret: environment.IsProduction());
 
+        var s3Required = playbackOptions.AllowedStorageProviders.Any(provider =>
+            string.Equals(provider.Trim(), "S3", StringComparison.OrdinalIgnoreCase));
+        var s3Options = configuration.GetSection(S3StorageOptions.SectionName).Get<S3StorageOptions>()
+            ?? new S3StorageOptions();
+        S3StorageOptions.Validate(s3Options, required: s3Required);
+
         services.Configure<MediaPlaybackOptions>(configuration.GetSection(MediaPlaybackOptions.SectionName));
+        services.Configure<S3StorageOptions>(configuration.GetSection(S3StorageOptions.SectionName));
+        services.AddSingleton<IAmazonS3>(_ => CreateS3Client(s3Options));
+        services.AddSingleton<IS3PresignedUrlProvider, S3PresignedUrlProvider>();
+
         services.AddScoped<IVideoRepository, EfVideoRepository>();
         services.AddScoped<IVideoStorageService, VideoStorageService>();
         services.AddScoped<CreateVideoUseCase>();
@@ -31,6 +44,7 @@ public static class MediaDependencyInjection
         services.AddScoped<ListVideosUseCase>();
         services.AddScoped<ActivateVideoUseCase>();
         services.AddScoped<UnlistVideoUseCase>();
+        services.AddScoped<RequestVideoUploadUseCase>();
 
         services.AddScoped<ILessonMaterialRepository, EfLessonMaterialRepository>();
         services.AddScoped<IMaterialStorageService, MaterialStorageService>();
@@ -39,6 +53,7 @@ public static class MediaDependencyInjection
         services.AddScoped<UpdateLessonMaterialUseCase>();
         services.AddScoped<RemoveLessonMaterialUseCase>();
         services.AddScoped<ReorderLessonMaterialsUseCase>();
+        services.AddScoped<RequestLessonMaterialUploadUseCase>();
 
         services.Configure<YouTubeOptions>(configuration.GetSection(YouTubeOptions.SectionName));
         services.AddHttpClient<IYouTubeMetadataProvider, YouTubeMetadataProvider>(client =>
@@ -48,5 +63,19 @@ public static class MediaDependencyInjection
         services.AddScoped<GetYouTubeVideoMetadataUseCase>();
 
         return services;
+    }
+
+    private static AmazonS3Client CreateS3Client(S3StorageOptions options)
+    {
+        var region = string.IsNullOrWhiteSpace(options.Region)
+            ? RegionEndpoint.USEast1
+            : RegionEndpoint.GetBySystemName(options.Region);
+
+        if (!string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey))
+        {
+            return new AmazonS3Client(new BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey), region);
+        }
+
+        return new AmazonS3Client(region);
     }
 }

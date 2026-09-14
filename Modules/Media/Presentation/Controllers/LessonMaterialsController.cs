@@ -19,19 +19,41 @@ public class LessonMaterialsController : ControllerBase
     private readonly UpdateLessonMaterialUseCase _updateLessonMaterialUseCase;
     private readonly RemoveLessonMaterialUseCase _removeLessonMaterialUseCase;
     private readonly ReorderLessonMaterialsUseCase _reorderLessonMaterialsUseCase;
+    private readonly RequestLessonMaterialUploadUseCase _requestLessonMaterialUploadUseCase;
 
     public LessonMaterialsController(
         CreateLessonMaterialUseCase createLessonMaterialUseCase,
         ListLessonMaterialsUseCase listLessonMaterialsUseCase,
         UpdateLessonMaterialUseCase updateLessonMaterialUseCase,
         RemoveLessonMaterialUseCase removeLessonMaterialUseCase,
-        ReorderLessonMaterialsUseCase reorderLessonMaterialsUseCase)
+        ReorderLessonMaterialsUseCase reorderLessonMaterialsUseCase,
+        RequestLessonMaterialUploadUseCase requestLessonMaterialUploadUseCase)
     {
         _createLessonMaterialUseCase = createLessonMaterialUseCase;
         _listLessonMaterialsUseCase = listLessonMaterialsUseCase;
         _updateLessonMaterialUseCase = updateLessonMaterialUseCase;
         _removeLessonMaterialUseCase = removeLessonMaterialUseCase;
         _reorderLessonMaterialsUseCase = reorderLessonMaterialsUseCase;
+        _requestLessonMaterialUploadUseCase = requestLessonMaterialUploadUseCase;
+    }
+
+    [HttpPost("upload-url")]
+    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
+    [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UploadUrlResponse>> RequestUploadUrlAsync(
+        RequestUploadUrlRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _requestLessonMaterialUploadUseCase.ExecuteAsync(
+            LessonMaterialPresenter.ToUploadInput(request),
+            cancellationToken);
+
+        return Ok(LessonMaterialPresenter.ToResponse(output));
     }
 
     [HttpGet("lessons/{lessonId:guid}")]
