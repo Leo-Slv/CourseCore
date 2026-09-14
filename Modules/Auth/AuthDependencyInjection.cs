@@ -53,6 +53,7 @@ public static class AuthDependencyInjection
         services.AddScoped<GetCurrentUserUseCase>();
         services.AddScoped<UpdateOwnProfileUseCase>();
         services.AddScoped<ChangeOwnPasswordUseCase>();
+        services.AddScoped<RequestAvatarUploadUseCase>();
 
         services.Configure<TurnstileOptions>(configuration.GetSection("Turnstile"));
         services.AddHttpClient<ICaptchaVerificationService, TurnstileCaptchaVerificationService>(client =>

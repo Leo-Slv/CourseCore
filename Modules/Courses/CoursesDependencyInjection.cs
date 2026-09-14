@@ -24,6 +24,8 @@ public static class CoursesDependencyInjection
         services.AddScoped<RemoveCourseModuleUseCase>();
         services.AddScoped<ReorderCourseModulesUseCase>();
         services.AddScoped<ListCourseModulesUseCase>();
+        services.AddScoped<RequestCourseThumbnailUploadUseCase>();
+        services.AddScoped<RequestCourseModuleImageUploadUseCase>();
         services.AddScoped<CreateLessonUseCase>();
         services.AddScoped<UpdateLessonUseCase>();
         services.AddScoped<RemoveLessonUseCase>();

@@ -30,6 +30,7 @@ public static class AccessDependencyInjection
         services.AddScoped<GrantCourseAccessUseCase>();
         services.AddScoped<ListGrantedCourseAccessUseCase>();
         services.AddScoped<ListRolesUseCase>();
+        services.AddScoped<RequestAreaImageUploadUseCase>();
 
         return services;
     }

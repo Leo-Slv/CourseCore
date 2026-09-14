@@ -4,6 +4,8 @@ using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Presentation.Presenters;
+using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -24,6 +26,7 @@ public class CoursesController : ControllerBase
     private readonly ListAvailableCoursesUseCase _listAvailableCoursesUseCase;
     private readonly ListAllCoursesUseCase _listAllCoursesUseCase;
     private readonly GetPublicCatalogSummaryUseCase _getPublicCatalogSummaryUseCase;
+    private readonly RequestCourseThumbnailUploadUseCase _requestCourseThumbnailUploadUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public CoursesController(
@@ -35,6 +38,7 @@ public class CoursesController : ControllerBase
         ListAvailableCoursesUseCase listAvailableCoursesUseCase,
         ListAllCoursesUseCase listAllCoursesUseCase,
         GetPublicCatalogSummaryUseCase getPublicCatalogSummaryUseCase,
+        RequestCourseThumbnailUploadUseCase requestCourseThumbnailUploadUseCase,
         ICurrentUserService currentUserService)
     {
         _createCourseUseCase = createCourseUseCase;
@@ -45,7 +49,31 @@ public class CoursesController : ControllerBase
         _listAvailableCoursesUseCase = listAvailableCoursesUseCase;
         _listAllCoursesUseCase = listAllCoursesUseCase;
         _getPublicCatalogSummaryUseCase = getPublicCatalogSummaryUseCase;
+        _requestCourseThumbnailUploadUseCase = requestCourseThumbnailUploadUseCase;
         _currentUserService = currentUserService;
+    }
+
+    [HttpPost("{courseId:guid}/thumbnail-upload-url")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourses)]
+    [ProducesResponseType(typeof(ImageUploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ImageUploadUrlResponse>> RequestThumbnailUploadUrlAsync(
+        Guid courseId,
+        RequestCourseThumbnailUploadRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _requestCourseThumbnailUploadUseCase.ExecuteAsync(
+            courseId,
+            request.FileName,
+            request.ContentType,
+            request.SizeBytes,
+            cancellationToken);
+
+        return Ok(ImagePresenter.ToResponse(output));
     }
 
     [HttpPost]

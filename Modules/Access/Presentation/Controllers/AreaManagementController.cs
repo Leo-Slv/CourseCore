@@ -3,6 +3,8 @@ using CourseCore.Api.Modules.Access.Presentation.Presenters;
 using CourseCore.Api.Modules.Access.Presentation.Requests;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Media.Presentation.Presenters;
+using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,17 +20,42 @@ public class AreaManagementController : ControllerBase
     private readonly UpdateAreaUseCase _updateAreaUseCase;
     private readonly GetAreaByIdUseCase _getAreaByIdUseCase;
     private readonly ListAreasUseCase _listAreasUseCase;
+    private readonly RequestAreaImageUploadUseCase _requestAreaImageUploadUseCase;
 
     public AreaManagementController(
         CreateAreaUseCase createAreaUseCase,
         UpdateAreaUseCase updateAreaUseCase,
         GetAreaByIdUseCase getAreaByIdUseCase,
-        ListAreasUseCase listAreasUseCase)
+        ListAreasUseCase listAreasUseCase,
+        RequestAreaImageUploadUseCase requestAreaImageUploadUseCase)
     {
         _createAreaUseCase = createAreaUseCase;
         _updateAreaUseCase = updateAreaUseCase;
         _getAreaByIdUseCase = getAreaByIdUseCase;
         _listAreasUseCase = listAreasUseCase;
+        _requestAreaImageUploadUseCase = requestAreaImageUploadUseCase;
+    }
+
+    [HttpPost("{areaId:guid}/image-upload-url")]
+    [ProducesResponseType(typeof(ImageUploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ImageUploadUrlResponse>> RequestImageUploadUrlAsync(
+        Guid areaId,
+        RequestAreaImageUploadRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _requestAreaImageUploadUseCase.ExecuteAsync(
+            areaId,
+            request.FileName,
+            request.ContentType,
+            request.SizeBytes,
+            cancellationToken);
+
+        return Ok(ImagePresenter.ToResponse(output));
     }
 
     [HttpPost]

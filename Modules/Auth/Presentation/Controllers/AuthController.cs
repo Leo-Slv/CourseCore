@@ -5,6 +5,8 @@ using CourseCore.Api.Modules.Auth.Presentation.Cookies;
 using CourseCore.Api.Modules.Auth.Presentation.Presenters;
 using CourseCore.Api.Modules.Auth.Presentation.Requests;
 using CourseCore.Api.Modules.Auth.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Presentation.Presenters;
+using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Presentation.Responses;
 using CourseCore.Api.Shared.Presentation.RateLimiting;
@@ -30,6 +32,7 @@ public class AuthController : ControllerBase
     private readonly GetCurrentUserUseCase _getCurrentUserUseCase;
     private readonly UpdateOwnProfileUseCase _updateOwnProfileUseCase;
     private readonly ChangeOwnPasswordUseCase _changeOwnPasswordUseCase;
+    private readonly RequestAvatarUploadUseCase _requestAvatarUploadUseCase;
     private readonly IRefreshTokenCookieService _refreshTokenCookieService;
     private readonly ICurrentUserService _currentUserService;
     private readonly AuthResponseOptions _authResponseOptions;
@@ -47,6 +50,7 @@ public class AuthController : ControllerBase
         GetCurrentUserUseCase getCurrentUserUseCase,
         UpdateOwnProfileUseCase updateOwnProfileUseCase,
         ChangeOwnPasswordUseCase changeOwnPasswordUseCase,
+        RequestAvatarUploadUseCase requestAvatarUploadUseCase,
         IRefreshTokenCookieService refreshTokenCookieService,
         ICurrentUserService currentUserService,
         IOptions<AuthResponseOptions> authResponseOptions,
@@ -63,10 +67,31 @@ public class AuthController : ControllerBase
         _getCurrentUserUseCase = getCurrentUserUseCase;
         _updateOwnProfileUseCase = updateOwnProfileUseCase;
         _changeOwnPasswordUseCase = changeOwnPasswordUseCase;
+        _requestAvatarUploadUseCase = requestAvatarUploadUseCase;
         _refreshTokenCookieService = refreshTokenCookieService;
         _currentUserService = currentUserService;
         _authResponseOptions = authResponseOptions.Value;
         _environment = environment;
+    }
+
+    [HttpPost("me/avatar-upload-url")]
+    [ProducesResponseType(typeof(ImageUploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ImageUploadUrlResponse>> RequestAvatarUploadUrlAsync(
+        RequestAvatarUploadRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _requestAvatarUploadUseCase.ExecuteAsync(
+            GetCurrentUserId(),
+            request.FileName,
+            request.ContentType,
+            request.SizeBytes,
+            cancellationToken);
+
+        return Ok(ImagePresenter.ToResponse(output));
     }
 
     [HttpPost("login")]

@@ -3,6 +3,8 @@ using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Presentation.Presenters;
+using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,19 +21,46 @@ public class CourseModulesController : ControllerBase
     private readonly RemoveCourseModuleUseCase _removeCourseModuleUseCase;
     private readonly ReorderCourseModulesUseCase _reorderCourseModulesUseCase;
     private readonly ListCourseModulesUseCase _listCourseModulesUseCase;
+    private readonly RequestCourseModuleImageUploadUseCase _requestCourseModuleImageUploadUseCase;
 
     public CourseModulesController(
         CreateCourseModuleUseCase createCourseModuleUseCase,
         UpdateCourseModuleUseCase updateCourseModuleUseCase,
         RemoveCourseModuleUseCase removeCourseModuleUseCase,
         ReorderCourseModulesUseCase reorderCourseModulesUseCase,
-        ListCourseModulesUseCase listCourseModulesUseCase)
+        ListCourseModulesUseCase listCourseModulesUseCase,
+        RequestCourseModuleImageUploadUseCase requestCourseModuleImageUploadUseCase)
     {
         _createCourseModuleUseCase = createCourseModuleUseCase;
         _updateCourseModuleUseCase = updateCourseModuleUseCase;
         _removeCourseModuleUseCase = removeCourseModuleUseCase;
         _reorderCourseModulesUseCase = reorderCourseModulesUseCase;
         _listCourseModulesUseCase = listCourseModulesUseCase;
+        _requestCourseModuleImageUploadUseCase = requestCourseModuleImageUploadUseCase;
+    }
+
+    [HttpPost("{moduleId:guid}/image-upload-url")]
+    [ProducesResponseType(typeof(ImageUploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ImageUploadUrlResponse>> RequestImageUploadUrlAsync(
+        Guid courseId,
+        Guid moduleId,
+        RequestCourseModuleImageUploadRequest request,
+        CancellationToken cancellationToken)
+    {
+        var output = await _requestCourseModuleImageUploadUseCase.ExecuteAsync(
+            courseId,
+            moduleId,
+            request.FileName,
+            request.ContentType,
+            request.SizeBytes,
+            cancellationToken);
+
+        return Ok(ImagePresenter.ToResponse(output));
     }
 
     [HttpGet]

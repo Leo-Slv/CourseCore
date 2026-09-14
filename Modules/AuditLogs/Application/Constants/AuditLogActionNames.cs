@@ -63,4 +63,8 @@ public static class AuditLogActionNames
     public const string QuestionAsked = "QuestionAsked";
     public const string QuestionAnswered = "QuestionAnswered";
     public const string QuestionRemoved = "QuestionRemoved";
+    public const string CourseThumbnailUploadRequested = "CourseThumbnailUploadRequested";
+    public const string CourseModuleImageUploadRequested = "CourseModuleImageUploadRequested";
+    public const string AreaImageUploadRequested = "AreaImageUploadRequested";
+    public const string AvatarUploadRequested = "AvatarUploadRequested";
 }
