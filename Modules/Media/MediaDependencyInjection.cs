@@ -54,6 +54,7 @@ public static class MediaDependencyInjection
         services.AddScoped<RemoveLessonMaterialUseCase>();
         services.AddScoped<ReorderLessonMaterialsUseCase>();
         services.AddScoped<RequestLessonMaterialUploadUseCase>();
+        services.AddScoped<GetLessonMaterialDownloadUrlUseCase>();
 
         services.Configure<YouTubeOptions>(configuration.GetSection(YouTubeOptions.SectionName));
         services.AddHttpClient<IYouTubeMetadataProvider, YouTubeMetadataProvider>(client =>

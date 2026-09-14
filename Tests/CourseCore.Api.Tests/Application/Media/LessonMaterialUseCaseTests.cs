@@ -1,9 +1,13 @@
+using CourseCore.Api.Modules.Access.Application.Services;
+using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
+using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Media.Application.DTOs;
 using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Domain.Entities;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Shared.Application.Exceptions;
+using CourseCore.Api.Shared.Domain.ValueObjects;
 using CourseCore.Api.Tests.TestDoubles;
 
 namespace CourseCore.Api.Tests.Application.Media;
@@ -19,11 +23,33 @@ public class LessonMaterialUseCaseTests
         var first = LessonMaterial.Create(lessonId, "First", "first.pdf", "application/pdf", MaterialStorageProvider.Local, "materials/first.pdf", 100, 0);
         materials.Materials.Add(second);
         materials.Materials.Add(first);
-        var useCase = new ListLessonMaterialsUseCase(materials);
+        var fixture = CreateListFixture(materials, lessonId, grantAccess: true);
 
-        var output = await useCase.ExecuteAsync(lessonId);
+        var output = await fixture.ListUseCase.ExecuteAsync(fixture.UserId, lessonId);
 
         Assert.Equal(["First", "Second"], output.Select(material => material.Title));
+    }
+
+    [Fact]
+    public async Task ListLessonMaterialsUseCase_WhenUserHasNoAccess_ShouldThrowForbiddenException()
+    {
+        var materials = new FakeLessonMaterialRepository();
+        var lessonId = Guid.NewGuid();
+        var fixture = CreateListFixture(materials, lessonId, grantAccess: false);
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => fixture.ListUseCase.ExecuteAsync(fixture.UserId, lessonId));
+    }
+
+    [Fact]
+    public async Task ListLessonMaterialsUseCase_WhenBypassAccessCheckIsTrue_ShouldReturnMaterialsEvenWithoutAccess()
+    {
+        var materials = new FakeLessonMaterialRepository();
+        var lessonId = Guid.NewGuid();
+        var fixture = CreateListFixture(materials, lessonId, grantAccess: false);
+
+        var output = await fixture.ListUseCase.ExecuteAsync(fixture.UserId, lessonId, bypassAccessCheck: true);
+
+        Assert.Empty(output);
     }
 
     [Fact]
@@ -137,4 +163,51 @@ public class LessonMaterialUseCaseTests
             ]
         }));
     }
+
+    private static ListMaterialsFixture CreateListFixture(
+        FakeLessonMaterialRepository materials,
+        Guid lessonId,
+        bool grantAccess)
+    {
+        var users = new FakeUserRepository();
+        var roles = new FakeRoleRepository();
+        var areas = new FakeAreaRepository();
+        var courses = new FakeCourseRepository();
+        var lessons = new FakeLessonRepository();
+        var user = TestEntityFactory.User();
+        var area = TestEntityFactory.Area();
+        var course = Course.Create("Course", Slug.Create($"course-{Guid.NewGuid():N}"), "Description", displayOrder: 0);
+        var module = CourseModule.Create(course.Id, "Module", "Description", displayOrder: 0);
+        var lesson = Lesson.Restore(
+            lessonId,
+            module.Id,
+            "Lesson",
+            "Description",
+            displayOrder: 0,
+            freePreview: false,
+            published: true,
+            createdAt: DateTime.UtcNow,
+            updatedAt: DateTime.UtcNow);
+        module.AddLesson(lesson);
+        course.AddModule(module);
+        course.AttachArea(area.Id);
+        course.Publish();
+
+        users.Add(user);
+        areas.Areas.Add(area);
+        lessons.Lessons.Add(lesson);
+        courses.Courses.Add(course);
+
+        if (grantAccess)
+        {
+            areas.UserAreaAccesses.Add(UserAreaAccess.Create(user.Id, area.Id, canView: true, canManage: false));
+        }
+
+        var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var listUseCase = new ListLessonMaterialsUseCase(materials, lessons, courses, courseAccessService);
+
+        return new ListMaterialsFixture(listUseCase, user.Id);
+    }
+
+    private sealed record ListMaterialsFixture(ListLessonMaterialsUseCase ListUseCase, Guid UserId);
 }

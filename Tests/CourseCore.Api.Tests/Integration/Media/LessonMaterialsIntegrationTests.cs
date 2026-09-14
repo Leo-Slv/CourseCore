@@ -146,6 +146,93 @@ public class LessonMaterialsIntegrationTests : IClassFixture<CourseCoreApiFactor
         Assert.Equal(["Second", "First"], body!.Select(material => material.Title));
     }
 
+    [Fact]
+    public async Task ListMaterials_WhenStudentHasCourseAccess_ShouldReturnOk()
+    {
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+        await adminClient.PostAsJsonAsync($"/api/materials/lessons/{course.LessonId}", CreateMaterialRequest());
+
+        using var studentClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(studentClient, user);
+
+        var response = await studentClient.GetAsync($"/api/materials/lessons/{course.LessonId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<List<LessonMaterialResponse>>();
+        Assert.NotNull(body);
+        Assert.Single(body!);
+    }
+
+    [Fact]
+    public async Task ListMaterials_WhenStudentHasNoCourseAccess_ShouldReturnForbidden()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync($"/api/materials/lessons/{course.LessonId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListMaterials_WhenAdminHasNoCourseAccess_ShouldReturnOk()
+    {
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+        await adminClient.PostAsJsonAsync($"/api/materials/lessons/{course.LessonId}", CreateMaterialRequest());
+
+        var response = await adminClient.GetAsync($"/api/materials/lessons/{course.LessonId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetDownloadUrl_WhenStudentHasCourseAccess_ShouldReturnOk()
+    {
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+        var create = await adminClient.PostAsJsonAsync($"/api/materials/lessons/{course.LessonId}", CreateMaterialRequest());
+        var created = await create.Content.ReadFromJsonAsync<LessonMaterialResponse>();
+        Assert.NotNull(created);
+
+        using var studentClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(studentClient, user);
+
+        var response = await studentClient.GetAsync($"/api/materials/{created!.Id}/download");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<MaterialDownloadResponse>();
+        Assert.NotNull(body);
+        Assert.False(string.IsNullOrWhiteSpace(body!.DownloadUrl));
+    }
+
+    [Fact]
+    public async Task GetDownloadUrl_WhenStudentHasNoCourseAccess_ShouldReturnForbidden()
+    {
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync();
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+        var create = await adminClient.PostAsJsonAsync($"/api/materials/lessons/{course.LessonId}", CreateMaterialRequest());
+        var created = await create.Content.ReadFromJsonAsync<LessonMaterialResponse>();
+        Assert.NotNull(created);
+
+        using var studentClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(studentClient, user);
+
+        var response = await studentClient.GetAsync($"/api/materials/{created!.Id}/download");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private static object CreateMaterialRequest(string title = "Apostila — Módulo 01")
     {
         return new

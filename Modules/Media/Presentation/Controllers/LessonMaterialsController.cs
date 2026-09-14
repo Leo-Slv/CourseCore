@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Requests;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
+using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,8 @@ public class LessonMaterialsController : ControllerBase
     private readonly RemoveLessonMaterialUseCase _removeLessonMaterialUseCase;
     private readonly ReorderLessonMaterialsUseCase _reorderLessonMaterialsUseCase;
     private readonly RequestLessonMaterialUploadUseCase _requestLessonMaterialUploadUseCase;
+    private readonly GetLessonMaterialDownloadUrlUseCase _getLessonMaterialDownloadUrlUseCase;
+    private readonly ICurrentUserService _currentUserService;
 
     public LessonMaterialsController(
         CreateLessonMaterialUseCase createLessonMaterialUseCase,
@@ -27,7 +30,9 @@ public class LessonMaterialsController : ControllerBase
         UpdateLessonMaterialUseCase updateLessonMaterialUseCase,
         RemoveLessonMaterialUseCase removeLessonMaterialUseCase,
         ReorderLessonMaterialsUseCase reorderLessonMaterialsUseCase,
-        RequestLessonMaterialUploadUseCase requestLessonMaterialUploadUseCase)
+        RequestLessonMaterialUploadUseCase requestLessonMaterialUploadUseCase,
+        GetLessonMaterialDownloadUrlUseCase getLessonMaterialDownloadUrlUseCase,
+        ICurrentUserService currentUserService)
     {
         _createLessonMaterialUseCase = createLessonMaterialUseCase;
         _listLessonMaterialsUseCase = listLessonMaterialsUseCase;
@@ -35,6 +40,8 @@ public class LessonMaterialsController : ControllerBase
         _removeLessonMaterialUseCase = removeLessonMaterialUseCase;
         _reorderLessonMaterialsUseCase = reorderLessonMaterialsUseCase;
         _requestLessonMaterialUploadUseCase = requestLessonMaterialUploadUseCase;
+        _getLessonMaterialDownloadUrlUseCase = getLessonMaterialDownloadUrlUseCase;
+        _currentUserService = currentUserService;
     }
 
     [HttpPost("upload-url")]
@@ -57,16 +64,42 @@ public class LessonMaterialsController : ControllerBase
     }
 
     [HttpGet("lessons/{lessonId:guid}")]
-    [Authorize(Policy = AuthPolicyNames.ManageVideos)]
     [ProducesResponseType(typeof(IReadOnlyCollection<LessonMaterialResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IReadOnlyCollection<LessonMaterialResponse>>> ListLessonMaterialsAsync(
         Guid lessonId,
         CancellationToken cancellationToken)
     {
-        var output = await _listLessonMaterialsUseCase.ExecuteAsync(lessonId, cancellationToken);
+        var bypassAccessCheck = User.HasClaim(AuthClaimTypes.Permission, AuthPermissionNames.ManageVideos);
+        var output = await _listLessonMaterialsUseCase.ExecuteAsync(
+            GetCurrentUserId(),
+            lessonId,
+            bypassAccessCheck,
+            cancellationToken);
+
+        return Ok(LessonMaterialPresenter.ToResponse(output));
+    }
+
+    [HttpGet("{materialId:guid}/download")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType(typeof(MaterialDownloadResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<MaterialDownloadResponse>> GetDownloadUrlAsync(
+        Guid materialId,
+        CancellationToken cancellationToken)
+    {
+        var bypassAccessCheck = User.HasClaim(AuthClaimTypes.Permission, AuthPermissionNames.ManageVideos);
+        var output = await _getLessonMaterialDownloadUrlUseCase.ExecuteAsync(
+            GetCurrentUserId(),
+            materialId,
+            bypassAccessCheck,
+            cancellationToken);
 
         return Ok(LessonMaterialPresenter.ToResponse(output));
     }
@@ -145,5 +178,17 @@ public class LessonMaterialsController : ControllerBase
             cancellationToken);
 
         return NoContent();
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userId = _currentUserService.UserId;
+
+        if (userId is null || userId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Authenticated user was not found.");
+        }
+
+        return userId.Value;
     }
 }

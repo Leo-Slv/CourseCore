@@ -91,4 +91,16 @@ public static class LessonMaterialPresenter
     {
         return outputs.Select(ToResponse).ToList();
     }
+
+    public static MaterialDownloadResponse ToResponse(MaterialDownloadOutput output)
+    {
+        return new MaterialDownloadResponse
+        {
+            MaterialId = output.MaterialId,
+            Title = output.Title,
+            FileName = output.FileName,
+            DownloadUrl = output.DownloadUrl,
+            ExpiresAt = output.ExpiresAt
+        };
+    }
 }
