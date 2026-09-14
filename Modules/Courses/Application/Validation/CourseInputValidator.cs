@@ -42,10 +42,11 @@ public static class CourseInputValidator
         ValidateCourseFields(input.Title, input.Slug, input.Description, input.ThumbnailUrl, input.PricingModel, input.AreaIds);
     }
 
-    public static void ValidateModuleFields(string title, string description)
+    public static void ValidateModuleFields(string title, string description, string? imageUrl = null)
     {
         if (!IsValidRequired(title, CourseValidationLimits.ModuleTitleMaxLength)
-            || !IsValidOptional(description, CourseValidationLimits.ModuleDescriptionMaxLength))
+            || !IsValidOptional(description, CourseValidationLimits.ModuleDescriptionMaxLength)
+            || !IsValidHttpUrl(imageUrl, CourseValidationLimits.ModuleImageUrlMaxLength))
         {
             throw InvalidPayload();
         }

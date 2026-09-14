@@ -16,6 +16,8 @@ public class CourseModuleOutput
 
     public bool Published { get; init; }
 
+    public string? ImageUrl { get; init; }
+
     public IReadOnlyCollection<LessonOutput> Lessons { get; init; } = Array.Empty<LessonOutput>();
 
     public static CourseModuleOutput FromModule(CourseModule module)
@@ -28,6 +30,7 @@ public class CourseModuleOutput
             Description = module.Description,
             DisplayOrder = module.DisplayOrder,
             Published = module.Published,
+            ImageUrl = module.ImageUrl,
             Lessons = module.Lessons
                 .OrderBy(lesson => lesson.DisplayOrder)
                 .Select(lesson => LessonOutput.FromLesson(lesson, videoId: null, durationSeconds: null))
@@ -48,6 +51,7 @@ public class CourseModuleOutput
             Description = module.Description,
             DisplayOrder = module.DisplayOrder,
             Published = module.Published,
+            ImageUrl = module.ImageUrl,
             Lessons = module.Lessons
                 .OrderBy(lesson => lesson.DisplayOrder)
                 .Select(lesson =>

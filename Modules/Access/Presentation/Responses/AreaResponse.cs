@@ -16,6 +16,8 @@ public class AreaResponse
 
     public string AccentColor { get; init; } = string.Empty;
 
+    public string? ImageUrl { get; init; }
+
     public int CourseCount { get; init; }
 
     public IReadOnlyCollection<AreaCourseSummaryResponse> Courses { get; init; } = Array.Empty<AreaCourseSummaryResponse>();

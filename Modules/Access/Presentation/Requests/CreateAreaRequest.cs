@@ -11,4 +11,6 @@ public class CreateAreaRequest
     public int DisplayOrder { get; init; }
 
     public string AccentColor { get; init; } = "Blue";
+
+    public string? ImageUrl { get; init; }
 }

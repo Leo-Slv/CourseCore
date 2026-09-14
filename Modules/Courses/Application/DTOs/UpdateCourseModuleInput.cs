@@ -9,4 +9,6 @@ public class UpdateCourseModuleInput
     public string Description { get; init; } = string.Empty;
 
     public bool Published { get; init; }
+
+    public string? ImageUrl { get; init; }
 }

@@ -9,6 +9,7 @@ public static class CourseValidationLimits
     public const int PricingModelMaxLength = 20;
     public const int ModuleTitleMaxLength = 200;
     public const int ModuleDescriptionMaxLength = 1000;
+    public const int ModuleImageUrlMaxLength = 1000;
     public const int LessonTitleMaxLength = 200;
     public const int LessonDescriptionMaxLength = 1000;
     public const int MaxAreaIds = 50;

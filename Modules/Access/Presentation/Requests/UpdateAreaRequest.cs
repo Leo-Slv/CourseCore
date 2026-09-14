@@ -13,4 +13,6 @@ public class UpdateAreaRequest
     public bool Active { get; init; }
 
     public string AccentColor { get; init; } = "Blue";
+
+    public string? ImageUrl { get; init; }
 }

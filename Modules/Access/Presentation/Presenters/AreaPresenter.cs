@@ -14,7 +14,8 @@ public static class AreaPresenter
             Slug = request.Slug,
             Description = request.Description,
             DisplayOrder = request.DisplayOrder,
-            AccentColor = request.AccentColor
+            AccentColor = request.AccentColor,
+            ImageUrl = request.ImageUrl
         };
     }
 
@@ -28,7 +29,8 @@ public static class AreaPresenter
             Description = request.Description,
             DisplayOrder = request.DisplayOrder,
             Active = request.Active,
-            AccentColor = request.AccentColor
+            AccentColor = request.AccentColor,
+            ImageUrl = request.ImageUrl
         };
     }
 
@@ -51,6 +53,7 @@ public static class AreaPresenter
             Active = output.Active,
             DisplayOrder = output.DisplayOrder,
             AccentColor = output.AccentColor,
+            ImageUrl = output.ImageUrl,
             CourseCount = output.CourseCount,
             Courses = output.Courses.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,

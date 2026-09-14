@@ -50,6 +50,11 @@ public class UpdateAreaUseCase
             throw new ApplicationValidationException("Slug is invalid.");
         }
 
+        if (input.ImageUrl is not null && input.ImageUrl.Trim().Length > AreaValidationLimits.ImageUrlMaxLength)
+        {
+            throw new ApplicationValidationException("ImageUrl is invalid.");
+        }
+
         var slug = Slug.Create(input.Slug);
         var accentColor = ParseAccentColor(input.AccentColor);
 
@@ -95,6 +100,13 @@ public class UpdateAreaUseCase
                 area.ChangeAccentColor(accentColor);
             }
 
+            var requestedImageUrl = NormalizeOrNull(input.ImageUrl);
+
+            if (area.ImageUrl != requestedImageUrl)
+            {
+                area.ChangeImageUrl(requestedImageUrl);
+            }
+
             var activeChanged = area.Active != input.Active;
 
             if (activeChanged && input.Active)
@@ -136,5 +148,10 @@ public class UpdateAreaUseCase
         }
 
         throw new ApplicationValidationException("AccentColor is invalid.");
+    }
+
+    private static string? NormalizeOrNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

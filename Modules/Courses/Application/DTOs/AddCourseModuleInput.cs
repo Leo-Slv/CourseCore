@@ -7,4 +7,6 @@ public class AddCourseModuleInput
     public string Title { get; init; } = string.Empty;
 
     public string Description { get; init; } = string.Empty;
+
+    public string? ImageUrl { get; init; }
 }

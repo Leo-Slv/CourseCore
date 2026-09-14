@@ -14,5 +14,7 @@ public class CourseModuleResponse
 
     public bool Published { get; init; }
 
+    public string? ImageUrl { get; init; }
+
     public IReadOnlyCollection<LessonResponse> Lessons { get; init; } = Array.Empty<LessonResponse>();
 }

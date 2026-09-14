@@ -111,7 +111,8 @@ public static class CoursePresenter
         {
             CourseId = courseId,
             Title = request.Title,
-            Description = request.Description
+            Description = request.Description,
+            ImageUrl = request.ImageUrl
         };
     }
 
@@ -122,7 +123,8 @@ public static class CoursePresenter
             ModuleId = moduleId,
             Title = request.Title,
             Description = request.Description,
-            Published = request.Published
+            Published = request.Published,
+            ImageUrl = request.ImageUrl
         };
     }
 
@@ -291,6 +293,7 @@ public static class CoursePresenter
             Description = output.Description,
             DisplayOrder = output.DisplayOrder,
             Published = output.Published,
+            ImageUrl = output.ImageUrl,
             Lessons = output.Lessons.Select(ToResponse).ToList()
         };
     }

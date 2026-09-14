@@ -48,6 +48,11 @@ public class CreateAreaUseCase
             throw new ApplicationValidationException("Slug is invalid.");
         }
 
+        if (input.ImageUrl is not null && input.ImageUrl.Trim().Length > AreaValidationLimits.ImageUrlMaxLength)
+        {
+            throw new ApplicationValidationException("ImageUrl is invalid.");
+        }
+
         var slug = Slug.Create(input.Slug);
         var accentColor = ParseAccentColor(input.AccentColor);
 
@@ -58,7 +63,7 @@ public class CreateAreaUseCase
                 throw new ConflictException("An area with this slug already exists.");
             }
 
-            var area = Area.Create(input.Name, slug, description, input.DisplayOrder, accentColor);
+            var area = Area.Create(input.Name, slug, description, input.DisplayOrder, accentColor, input.ImageUrl);
 
             await _areas.CreateAsync(area, cancellationToken);
             await _auditLogs.RecordAsync(

@@ -18,6 +18,8 @@ public class AreaOutput
 
     public string AccentColor { get; init; } = string.Empty;
 
+    public string? ImageUrl { get; init; }
+
     public int CourseCount { get; init; }
 
     public IReadOnlyCollection<AreaCourseSummaryOutput> Courses { get; init; } = Array.Empty<AreaCourseSummaryOutput>();
@@ -40,6 +42,7 @@ public class AreaOutput
             Active = area.Active,
             DisplayOrder = area.DisplayOrder,
             AccentColor = area.AccentColor.ToString(),
+            ImageUrl = area.ImageUrl,
             CourseCount = courseCount,
             Courses = courses ?? Array.Empty<AreaCourseSummaryOutput>(),
             CreatedAt = area.CreatedAt,

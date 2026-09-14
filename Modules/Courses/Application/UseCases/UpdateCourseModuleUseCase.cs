@@ -33,7 +33,7 @@ public class UpdateCourseModuleUseCase
             throw new ArgumentException("ModuleId is required.", nameof(input));
         }
 
-        CourseInputValidator.ValidateModuleFields(input.Title, input.Description);
+        CourseInputValidator.ValidateModuleFields(input.Title, input.Description, input.ImageUrl);
 
         return _unitOfWork.ExecuteAsync(async () =>
         {
@@ -46,6 +46,13 @@ public class UpdateCourseModuleUseCase
 
             module.ChangeTitle(input.Title);
             module.ChangeDescription(input.Description);
+
+            var requestedImageUrl = NormalizeOrNull(input.ImageUrl);
+
+            if (module.ImageUrl != requestedImageUrl)
+            {
+                module.ChangeImageUrl(requestedImageUrl);
+            }
 
             if (input.Published != module.Published)
             {
@@ -69,5 +76,10 @@ public class UpdateCourseModuleUseCase
 
             return CourseModuleOutput.FromModule(module);
         }, cancellationToken);
+    }
+
+    private static string? NormalizeOrNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

@@ -37,7 +37,7 @@ public class CreateCourseModuleUseCase
             throw new ArgumentException("CourseId is required.", nameof(input));
         }
 
-        CourseInputValidator.ValidateModuleFields(input.Title, input.Description);
+        CourseInputValidator.ValidateModuleFields(input.Title, input.Description, input.ImageUrl);
 
         return _unitOfWork.ExecuteAsync(async () =>
         {
@@ -59,7 +59,7 @@ public class CreateCourseModuleUseCase
                 ? 0
                 : existingModules.Max(module => module.DisplayOrder) + 1;
 
-            var newModule = CourseModule.Create(input.CourseId, input.Title, input.Description, nextDisplayOrder);
+            var newModule = CourseModule.Create(input.CourseId, input.Title, input.Description, nextDisplayOrder, input.ImageUrl);
 
             await _courseModules.AddAsync(newModule, cancellationToken);
             await _auditLogs.RecordAsync(
