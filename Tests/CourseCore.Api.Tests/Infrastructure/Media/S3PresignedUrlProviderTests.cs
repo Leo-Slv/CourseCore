@@ -33,8 +33,15 @@ public class S3PresignedUrlProviderTests
     [Fact]
     public async Task GeneratePresignedDownloadUrlAsync_WhenExpiresInIsProvided_ShouldOverrideConfiguredDefault()
     {
+        // Presigning is a local SigV4 computation — it needs credentials that
+        // merely look valid (never resolved against AWS, no network call),
+        // but the SDK's default credential chain still throws if none are
+        // supplied and the environment has none configured, which is the
+        // case on CI (unlike a machine with a real AWS profile/env vars).
         var provider = new S3PresignedUrlProvider(
-            new AmazonS3Client(Amazon.RegionEndpoint.USEast1),
+            new AmazonS3Client(
+                new Amazon.Runtime.BasicAWSCredentials("fake-access-key", "fake-secret-key"),
+                Amazon.RegionEndpoint.USEast1),
             Options.Create(new S3StorageOptions
             {
                 BucketName = "fake-bucket",
