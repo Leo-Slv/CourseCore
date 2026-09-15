@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Presentation.Requests;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Application.Services;
 
 namespace CourseCore.Api.Modules.Access.Presentation.Presenters;
 
@@ -42,7 +43,10 @@ public static class AreaPresenter
         };
     }
 
-    public static AreaResponse ToResponse(AreaOutput output)
+    public static async Task<AreaResponse> ToResponseAsync(
+        AreaOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
         return new AreaResponse
         {
@@ -53,7 +57,7 @@ public static class AreaPresenter
             Active = output.Active,
             DisplayOrder = output.DisplayOrder,
             AccentColor = output.AccentColor,
-            ImageUrl = output.ImageUrl,
+            ImageUrl = await imageUrlResolver.ResolveAsync(output.ImageUrl, cancellationToken),
             CourseCount = output.CourseCount,
             Courses = output.Courses.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,
@@ -72,8 +76,17 @@ public static class AreaPresenter
         };
     }
 
-    public static IReadOnlyCollection<AreaResponse> ToResponse(IReadOnlyCollection<AreaOutput> outputs)
+    public static async Task<IReadOnlyCollection<AreaResponse>> ToResponseAsync(
+        IReadOnlyCollection<AreaOutput> outputs,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
-        return outputs.Select(ToResponse).ToList();
+        var responses = new List<AreaResponse>();
+        foreach (var output in outputs)
+        {
+            responses.Add(await ToResponseAsync(output, imageUrlResolver, cancellationToken));
+        }
+
+        return responses;
     }
 }

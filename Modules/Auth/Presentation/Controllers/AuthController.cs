@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Auth.Presentation.Cookies;
 using CourseCore.Api.Modules.Auth.Presentation.Presenters;
 using CourseCore.Api.Modules.Auth.Presentation.Requests;
 using CourseCore.Api.Modules.Auth.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Application.Contracts;
@@ -37,6 +38,7 @@ public class AuthController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
     private readonly AuthResponseOptions _authResponseOptions;
     private readonly IWebHostEnvironment _environment;
+    private readonly ImageUrlResolver _imageUrlResolver;
 
     public AuthController(
         LoginUseCase loginUseCase,
@@ -54,7 +56,8 @@ public class AuthController : ControllerBase
         IRefreshTokenCookieService refreshTokenCookieService,
         ICurrentUserService currentUserService,
         IOptions<AuthResponseOptions> authResponseOptions,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        ImageUrlResolver imageUrlResolver)
     {
         _loginUseCase = loginUseCase;
         _refreshTokenUseCase = refreshTokenUseCase;
@@ -72,6 +75,7 @@ public class AuthController : ControllerBase
         _currentUserService = currentUserService;
         _authResponseOptions = authResponseOptions.Value;
         _environment = environment;
+        _imageUrlResolver = imageUrlResolver;
     }
 
     [HttpPost("me/avatar-upload-url")]
@@ -206,7 +210,7 @@ public class AuthController : ControllerBase
     {
         var output = await _getCurrentUserUseCase.ExecuteAsync(GetCurrentUserId(), cancellationToken);
 
-        return Ok(AuthPresenter.ToResponse(output));
+        return Ok(await AuthPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpPut("me")]
@@ -223,7 +227,7 @@ public class AuthController : ControllerBase
             AuthPresenter.ToInput(GetCurrentUserId(), request),
             cancellationToken);
 
-        return Ok(AuthPresenter.ToResponse(output));
+        return Ok(await AuthPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpPost("change-password")]

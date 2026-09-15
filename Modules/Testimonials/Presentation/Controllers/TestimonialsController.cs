@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Testimonials.Application.UseCases;
 using CourseCore.Api.Modules.Testimonials.Presentation.Presenters;
 using CourseCore.Api.Modules.Testimonials.Presentation.Requests;
@@ -23,6 +24,7 @@ public class TestimonialsController : ControllerBase
     private readonly ListPublicTestimonialsUseCase _listPublicTestimonialsUseCase;
     private readonly SubmitTestimonialUseCase _submitTestimonialUseCase;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ImageUrlResolver _imageUrlResolver;
 
     public TestimonialsController(
         CreateTestimonialUseCase createTestimonialUseCase,
@@ -32,7 +34,8 @@ public class TestimonialsController : ControllerBase
         ListTestimonialsUseCase listTestimonialsUseCase,
         ListPublicTestimonialsUseCase listPublicTestimonialsUseCase,
         SubmitTestimonialUseCase submitTestimonialUseCase,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ImageUrlResolver imageUrlResolver)
     {
         _createTestimonialUseCase = createTestimonialUseCase;
         _updateTestimonialUseCase = updateTestimonialUseCase;
@@ -42,6 +45,7 @@ public class TestimonialsController : ControllerBase
         _listPublicTestimonialsUseCase = listPublicTestimonialsUseCase;
         _submitTestimonialUseCase = submitTestimonialUseCase;
         _currentUserService = currentUserService;
+        _imageUrlResolver = imageUrlResolver;
     }
 
     [HttpPost("mine")]
@@ -57,7 +61,7 @@ public class TestimonialsController : ControllerBase
         var output = await _submitTestimonialUseCase.ExecuteAsync(
             TestimonialPresenter.ToInput(GetCurrentUserId(), request),
             cancellationToken);
-        var response = TestimonialPresenter.ToResponse(output);
+        var response = await TestimonialPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken);
 
         return Created($"/api/testimonials/{response.Id}", response);
     }
@@ -77,7 +81,7 @@ public class TestimonialsController : ControllerBase
         var output = await _createTestimonialUseCase.ExecuteAsync(
             TestimonialPresenter.ToInput(request),
             cancellationToken);
-        var response = TestimonialPresenter.ToResponse(output);
+        var response = await TestimonialPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken);
 
         return Created($"/api/testimonials/{response.Id}", response);
     }
@@ -99,7 +103,7 @@ public class TestimonialsController : ControllerBase
             TestimonialPresenter.ToInput(testimonialId, request),
             cancellationToken);
 
-        return Ok(TestimonialPresenter.ToResponse(output));
+        return Ok(await TestimonialPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpPost("{testimonialId:guid}/publish")]
@@ -115,7 +119,7 @@ public class TestimonialsController : ControllerBase
     {
         var output = await _publishTestimonialUseCase.ExecuteAsync(testimonialId, cancellationToken);
 
-        return Ok(TestimonialPresenter.ToResponse(output));
+        return Ok(await TestimonialPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpPost("{testimonialId:guid}/unpublish")]
@@ -131,7 +135,7 @@ public class TestimonialsController : ControllerBase
     {
         var output = await _unpublishTestimonialUseCase.ExecuteAsync(testimonialId, cancellationToken);
 
-        return Ok(TestimonialPresenter.ToResponse(output));
+        return Ok(await TestimonialPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpGet]
@@ -145,7 +149,13 @@ public class TestimonialsController : ControllerBase
     {
         var outputs = await _listTestimonialsUseCase.ExecuteAsync(cancellationToken);
 
-        return Ok(outputs.Select(TestimonialPresenter.ToResponse).ToList());
+        var responses = new List<TestimonialResponse>();
+        foreach (var output in outputs)
+        {
+            responses.Add(await TestimonialPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
+        }
+
+        return Ok(responses);
     }
 
     [HttpGet("public")]
@@ -157,7 +167,13 @@ public class TestimonialsController : ControllerBase
     {
         var outputs = await _listPublicTestimonialsUseCase.ExecuteAsync(cancellationToken);
 
-        return Ok(outputs.Select(TestimonialPresenter.ToResponse).ToList());
+        var responses = new List<TestimonialResponse>();
+        foreach (var output in outputs)
+        {
+            responses.Add(await TestimonialPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
+        }
+
+        return Ok(responses);
     }
 
     private Guid GetCurrentUserId()

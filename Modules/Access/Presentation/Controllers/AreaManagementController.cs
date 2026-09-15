@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Access.Presentation.Presenters;
 using CourseCore.Api.Modules.Access.Presentation.Requests;
 using CourseCore.Api.Modules.Access.Presentation.Responses;
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Presentation.Responses;
@@ -21,19 +22,22 @@ public class AreaManagementController : ControllerBase
     private readonly GetAreaByIdUseCase _getAreaByIdUseCase;
     private readonly ListAreasUseCase _listAreasUseCase;
     private readonly RequestAreaImageUploadUseCase _requestAreaImageUploadUseCase;
+    private readonly ImageUrlResolver _imageUrlResolver;
 
     public AreaManagementController(
         CreateAreaUseCase createAreaUseCase,
         UpdateAreaUseCase updateAreaUseCase,
         GetAreaByIdUseCase getAreaByIdUseCase,
         ListAreasUseCase listAreasUseCase,
-        RequestAreaImageUploadUseCase requestAreaImageUploadUseCase)
+        RequestAreaImageUploadUseCase requestAreaImageUploadUseCase,
+        ImageUrlResolver imageUrlResolver)
     {
         _createAreaUseCase = createAreaUseCase;
         _updateAreaUseCase = updateAreaUseCase;
         _getAreaByIdUseCase = getAreaByIdUseCase;
         _listAreasUseCase = listAreasUseCase;
         _requestAreaImageUploadUseCase = requestAreaImageUploadUseCase;
+        _imageUrlResolver = imageUrlResolver;
     }
 
     [HttpPost("{areaId:guid}/image-upload-url")]
@@ -70,7 +74,7 @@ public class AreaManagementController : ControllerBase
         CancellationToken cancellationToken)
     {
         var output = await _createAreaUseCase.ExecuteAsync(AreaPresenter.ToInput(request), cancellationToken);
-        var response = AreaPresenter.ToResponse(output);
+        var response = await AreaPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken);
 
         return Created($"/api/areas/{response.Id}", response);
     }
@@ -92,7 +96,7 @@ public class AreaManagementController : ControllerBase
             AreaPresenter.ToInput(areaId, request),
             cancellationToken);
 
-        return Ok(AreaPresenter.ToResponse(output));
+        return Ok(await AreaPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpGet("{areaId:guid}")]
@@ -107,7 +111,7 @@ public class AreaManagementController : ControllerBase
     {
         var output = await _getAreaByIdUseCase.ExecuteAsync(areaId, cancellationToken);
 
-        return Ok(AreaPresenter.ToResponse(output));
+        return Ok(await AreaPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpGet]
@@ -122,6 +126,6 @@ public class AreaManagementController : ControllerBase
     {
         var output = await _listAreasUseCase.ExecuteAsync(AreaPresenter.ToInput(request), cancellationToken);
 
-        return Ok(AreaPresenter.ToResponse(output));
+        return Ok(await AreaPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 }

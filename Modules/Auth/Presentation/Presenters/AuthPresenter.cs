@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Auth.Application.DTOs;
 using CourseCore.Api.Modules.Auth.Presentation.Requests;
 using CourseCore.Api.Modules.Auth.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Application.Services;
 
 namespace CourseCore.Api.Modules.Auth.Presentation.Presenters;
 
@@ -96,7 +97,10 @@ public static class AuthPresenter
         };
     }
 
-    public static CurrentUserResponse ToResponse(CurrentUserOutput output)
+    public static async Task<CurrentUserResponse> ToResponseAsync(
+        CurrentUserOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
         return new CurrentUserResponse
         {
@@ -106,7 +110,7 @@ public static class AuthPresenter
             Active = output.Active,
             EmailVerifiedAt = output.EmailVerifiedAt,
             Phone = output.Phone,
-            AvatarUrl = output.AvatarUrl,
+            AvatarUrl = await imageUrlResolver.ResolveAsync(output.AvatarUrl, cancellationToken),
             Roles = output.Roles.ToList()
         };
     }

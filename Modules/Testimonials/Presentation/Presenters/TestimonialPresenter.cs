@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Testimonials.Application.DTOs;
 using CourseCore.Api.Modules.Testimonials.Presentation.Requests;
 using CourseCore.Api.Modules.Testimonials.Presentation.Responses;
@@ -39,14 +40,17 @@ public static class TestimonialPresenter
         };
     }
 
-    public static TestimonialResponse ToResponse(TestimonialOutput output)
+    public static async Task<TestimonialResponse> ToResponseAsync(
+        TestimonialOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
         return new TestimonialResponse
         {
             Id = output.Id,
             AuthorName = output.AuthorName,
             Quote = output.Quote,
-            AvatarUrl = output.AvatarUrl,
+            AvatarUrl = await imageUrlResolver.ResolveAsync(output.AvatarUrl, cancellationToken),
             CourseId = output.CourseId,
             Published = output.Published,
             SubmittedByUserId = output.SubmittedByUserId,
