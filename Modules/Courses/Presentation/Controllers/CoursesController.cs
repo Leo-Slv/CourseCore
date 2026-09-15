@@ -4,6 +4,7 @@ using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Application.Contracts;
@@ -28,6 +29,7 @@ public class CoursesController : ControllerBase
     private readonly GetPublicCatalogSummaryUseCase _getPublicCatalogSummaryUseCase;
     private readonly RequestCourseThumbnailUploadUseCase _requestCourseThumbnailUploadUseCase;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ImageUrlResolver _imageUrlResolver;
 
     public CoursesController(
         CreateCourseUseCase createCourseUseCase,
@@ -39,7 +41,8 @@ public class CoursesController : ControllerBase
         ListAllCoursesUseCase listAllCoursesUseCase,
         GetPublicCatalogSummaryUseCase getPublicCatalogSummaryUseCase,
         RequestCourseThumbnailUploadUseCase requestCourseThumbnailUploadUseCase,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ImageUrlResolver imageUrlResolver)
     {
         _createCourseUseCase = createCourseUseCase;
         _updateCourseUseCase = updateCourseUseCase;
@@ -51,6 +54,7 @@ public class CoursesController : ControllerBase
         _getPublicCatalogSummaryUseCase = getPublicCatalogSummaryUseCase;
         _requestCourseThumbnailUploadUseCase = requestCourseThumbnailUploadUseCase;
         _currentUserService = currentUserService;
+        _imageUrlResolver = imageUrlResolver;
     }
 
     [HttpPost("{courseId:guid}/thumbnail-upload-url")]
@@ -92,7 +96,7 @@ public class CoursesController : ControllerBase
         var output = await _createCourseUseCase.ExecuteAsync(
             CoursePresenter.ToInput(request),
             cancellationToken);
-        var response = CoursePresenter.ToResponse(output);
+        var response = await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken);
 
         return Created($"/api/courses/{response.Id}", response);
     }
@@ -115,7 +119,7 @@ public class CoursesController : ControllerBase
             CoursePresenter.ToInput(courseId, request),
             cancellationToken);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return Ok(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpPost("{courseId:guid}/publish")]
@@ -134,7 +138,7 @@ public class CoursesController : ControllerBase
             new PublishCourseInput { CourseId = courseId },
             cancellationToken);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return Ok(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpPost("{courseId:guid}/unpublish")]
@@ -153,7 +157,7 @@ public class CoursesController : ControllerBase
             new PublishCourseInput { CourseId = courseId },
             cancellationToken);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return Ok(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpGet]
@@ -167,7 +171,13 @@ public class CoursesController : ControllerBase
     {
         var output = await _listAllCoursesUseCase.ExecuteAsync(cancellationToken);
 
-        return Ok(output.Select(CoursePresenter.ToResponse).ToList());
+        var responses = new List<CourseResponse>();
+        foreach (var course in output)
+        {
+            responses.Add(await CoursePresenter.ToResponseAsync(course, _imageUrlResolver, cancellationToken));
+        }
+
+        return Ok(responses);
     }
 
     [HttpGet("{courseId:guid}")]
@@ -185,7 +195,7 @@ public class CoursesController : ControllerBase
             CoursePresenter.ToGetCourseDetailsInput(courseId, GetCurrentUserId()),
             cancellationToken);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return Ok(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpGet("available")]
@@ -202,7 +212,7 @@ public class CoursesController : ControllerBase
             CoursePresenter.ToInput(GetCurrentUserId(), request),
             cancellationToken);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return Ok(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpGet("public-summary")]
@@ -214,7 +224,7 @@ public class CoursesController : ControllerBase
     {
         var output = await _getPublicCatalogSummaryUseCase.ExecuteAsync(cancellationToken);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return Ok(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     private Guid GetCurrentUserId()

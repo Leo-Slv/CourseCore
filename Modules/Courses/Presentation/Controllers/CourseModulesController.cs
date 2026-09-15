@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
 using CourseCore.Api.Modules.Media.Presentation.Responses;
 using CourseCore.Api.Shared.Presentation.Responses;
@@ -22,6 +23,7 @@ public class CourseModulesController : ControllerBase
     private readonly ReorderCourseModulesUseCase _reorderCourseModulesUseCase;
     private readonly ListCourseModulesUseCase _listCourseModulesUseCase;
     private readonly RequestCourseModuleImageUploadUseCase _requestCourseModuleImageUploadUseCase;
+    private readonly ImageUrlResolver _imageUrlResolver;
 
     public CourseModulesController(
         CreateCourseModuleUseCase createCourseModuleUseCase,
@@ -29,7 +31,8 @@ public class CourseModulesController : ControllerBase
         RemoveCourseModuleUseCase removeCourseModuleUseCase,
         ReorderCourseModulesUseCase reorderCourseModulesUseCase,
         ListCourseModulesUseCase listCourseModulesUseCase,
-        RequestCourseModuleImageUploadUseCase requestCourseModuleImageUploadUseCase)
+        RequestCourseModuleImageUploadUseCase requestCourseModuleImageUploadUseCase,
+        ImageUrlResolver imageUrlResolver)
     {
         _createCourseModuleUseCase = createCourseModuleUseCase;
         _updateCourseModuleUseCase = updateCourseModuleUseCase;
@@ -37,6 +40,7 @@ public class CourseModulesController : ControllerBase
         _reorderCourseModulesUseCase = reorderCourseModulesUseCase;
         _listCourseModulesUseCase = listCourseModulesUseCase;
         _requestCourseModuleImageUploadUseCase = requestCourseModuleImageUploadUseCase;
+        _imageUrlResolver = imageUrlResolver;
     }
 
     [HttpPost("{moduleId:guid}/image-upload-url")]
@@ -75,7 +79,13 @@ public class CourseModulesController : ControllerBase
     {
         var outputs = await _listCourseModulesUseCase.ExecuteAsync(courseId, cancellationToken);
 
-        return Ok(outputs.Select(CoursePresenter.ToResponse).ToList());
+        var responses = new List<CourseModuleResponse>();
+        foreach (var output in outputs)
+        {
+            responses.Add(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
+        }
+
+        return Ok(responses);
     }
 
     [HttpPost]
@@ -94,7 +104,7 @@ public class CourseModulesController : ControllerBase
         var output = await _createCourseModuleUseCase.ExecuteAsync(
             CoursePresenter.ToInput(courseId, request),
             cancellationToken);
-        var response = CoursePresenter.ToResponse(output);
+        var response = await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken);
 
         return Created($"/api/courses/{courseId}/modules/{response.Id}", response);
     }
@@ -116,7 +126,7 @@ public class CourseModulesController : ControllerBase
             CoursePresenter.ToInput(moduleId, request),
             cancellationToken);
 
-        return Ok(CoursePresenter.ToResponse(output));
+        return Ok(await CoursePresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpDelete("{moduleId:guid}")]

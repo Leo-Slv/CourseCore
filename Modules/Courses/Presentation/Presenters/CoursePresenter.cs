@@ -1,24 +1,41 @@
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Presentation.Requests;
 using CourseCore.Api.Modules.Courses.Presentation.Responses;
+using CourseCore.Api.Modules.Media.Application.Services;
 
 namespace CourseCore.Api.Modules.Courses.Presentation.Presenters;
 
 public static class CoursePresenter
 {
-    public static PublicCatalogSummaryResponse ToResponse(PublicCatalogSummaryOutput output)
+    public static async Task<PublicCatalogSummaryResponse> ToResponseAsync(
+        PublicCatalogSummaryOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
+        var featuredCourses = new List<PublicFeaturedCourseResponse>();
+        foreach (var featuredCourse in output.FeaturedCourses)
+        {
+            featuredCourses.Add(await ToResponseAsync(featuredCourse, imageUrlResolver, cancellationToken));
+        }
+
+        var highlightedCourse = output.HighlightedCourse is null
+            ? null
+            : await ToResponseAsync(output.HighlightedCourse, imageUrlResolver, cancellationToken);
+
         return new PublicCatalogSummaryResponse
         {
             ActiveAreaCount = output.ActiveAreaCount,
             PublishedCourseCount = output.PublishedCourseCount,
-            FeaturedCourses = output.FeaturedCourses.Select(ToResponse).ToList(),
-            HighlightedCourse = output.HighlightedCourse is null ? null : ToResponse(output.HighlightedCourse),
+            FeaturedCourses = featuredCourses,
+            HighlightedCourse = highlightedCourse,
             Areas = output.Areas.Select(ToResponse).ToList()
         };
     }
 
-    public static PublicFeaturedCourseResponse ToResponse(PublicFeaturedCourseOutput output)
+    public static async Task<PublicFeaturedCourseResponse> ToResponseAsync(
+        PublicFeaturedCourseOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
         return new PublicFeaturedCourseResponse
         {
@@ -26,7 +43,7 @@ public static class CoursePresenter
             Title = output.Title,
             Slug = output.Slug,
             Description = output.Description,
-            ThumbnailUrl = output.ThumbnailUrl,
+            ThumbnailUrl = await imageUrlResolver.ResolveAsync(output.ThumbnailUrl, cancellationToken),
             PricingModel = output.PricingModel,
             PriceAmount = output.PriceAmount,
             ModuleCount = output.ModuleCount,
@@ -196,7 +213,10 @@ public static class CoursePresenter
         };
     }
 
-    public static CourseResponse ToResponse(CourseOutput output)
+    public static async Task<CourseResponse> ToResponseAsync(
+        CourseOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
         return new CourseResponse
         {
@@ -204,7 +224,7 @@ public static class CoursePresenter
             Title = output.Title,
             Slug = output.Slug,
             Description = output.Description,
-            ThumbnailUrl = output.ThumbnailUrl,
+            ThumbnailUrl = await imageUrlResolver.ResolveAsync(output.ThumbnailUrl, cancellationToken),
             Published = output.Published,
             DisplayOrder = output.DisplayOrder,
             PublishedAt = output.PublishedAt,
@@ -218,15 +238,24 @@ public static class CoursePresenter
         };
     }
 
-    public static CourseDetailsResponse ToResponse(CourseDetailsOutput output)
+    public static async Task<CourseDetailsResponse> ToResponseAsync(
+        CourseDetailsOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
+        var modules = new List<CourseModuleResponse>();
+        foreach (var module in output.Modules)
+        {
+            modules.Add(await ToResponseAsync(module, imageUrlResolver, cancellationToken));
+        }
+
         return new CourseDetailsResponse
         {
             Id = output.Id,
             Title = output.Title,
             Slug = output.Slug,
             Description = output.Description,
-            ThumbnailUrl = output.ThumbnailUrl,
+            ThumbnailUrl = await imageUrlResolver.ResolveAsync(output.ThumbnailUrl, cancellationToken),
             Published = output.Published,
             DisplayOrder = output.DisplayOrder,
             PublishedAt = output.PublishedAt,
@@ -235,7 +264,7 @@ public static class CoursePresenter
             HasAccess = output.HasAccess,
             CertificateIssued = output.CertificateIssued,
             AreaIds = output.AreaIds.ToList(),
-            Modules = output.Modules.Select(ToResponse).ToList(),
+            Modules = modules,
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
         };
@@ -253,7 +282,10 @@ public static class CoursePresenter
         };
     }
 
-    public static CourseCatalogItemResponse ToResponse(CourseCatalogItemOutput output)
+    public static async Task<CourseCatalogItemResponse> ToResponseAsync(
+        CourseCatalogItemOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
         return new CourseCatalogItemResponse
         {
@@ -261,7 +293,7 @@ public static class CoursePresenter
             Title = output.Title,
             Slug = output.Slug,
             Description = output.Description,
-            ThumbnailUrl = output.ThumbnailUrl,
+            ThumbnailUrl = await imageUrlResolver.ResolveAsync(output.ThumbnailUrl, cancellationToken),
             DisplayOrder = output.DisplayOrder,
             PricingModel = output.PricingModel,
             PriceAmount = output.PriceAmount,
@@ -274,16 +306,28 @@ public static class CoursePresenter
         };
     }
 
-    public static CourseCatalogResponse ToResponse(CourseCatalogOutput output)
+    public static async Task<CourseCatalogResponse> ToResponseAsync(
+        CourseCatalogOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
+        var courses = new List<CourseCatalogItemResponse>();
+        foreach (var course in output.Courses)
+        {
+            courses.Add(await ToResponseAsync(course, imageUrlResolver, cancellationToken));
+        }
+
         return new CourseCatalogResponse
         {
             Areas = output.Areas.Select(ToResponse).ToList(),
-            Courses = output.Courses.Select(ToResponse).ToList()
+            Courses = courses
         };
     }
 
-    public static CourseModuleResponse ToResponse(CourseModuleOutput output)
+    public static async Task<CourseModuleResponse> ToResponseAsync(
+        CourseModuleOutput output,
+        ImageUrlResolver imageUrlResolver,
+        CancellationToken cancellationToken = default)
     {
         return new CourseModuleResponse
         {
@@ -293,7 +337,7 @@ public static class CoursePresenter
             Description = output.Description,
             DisplayOrder = output.DisplayOrder,
             Published = output.Published,
-            ImageUrl = output.ImageUrl,
+            ImageUrl = await imageUrlResolver.ResolveAsync(output.ImageUrl, cancellationToken),
             Lessons = output.Lessons.Select(ToResponse).ToList()
         };
     }
