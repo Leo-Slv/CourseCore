@@ -25,7 +25,7 @@ public class RequestCourseModuleImageUploadUseCase
         _auditLogs = auditLogs;
     }
 
-    public async Task<ImageUploadUrlOutput> ExecuteAsync(
+    public async Task<UploadUrlOutput> ExecuteAsync(
         Guid courseId,
         Guid moduleId,
         string fileName,

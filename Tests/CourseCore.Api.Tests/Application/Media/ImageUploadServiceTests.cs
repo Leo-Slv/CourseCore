@@ -10,7 +10,7 @@ namespace CourseCore.Api.Tests.Application.Media;
 public class ImageUploadServiceTests
 {
     [Fact]
-    public async Task RequestUploadAsync_WhenPayloadIsValid_ShouldReturnPublicUrlWithGeneratedStorageKey()
+    public async Task RequestUploadAsync_WhenPayloadIsValid_ShouldReturnUploadUrlWithGeneratedStorageKey()
     {
         var service = CreateService(out _);
         var ownerId = Guid.NewGuid();
@@ -26,8 +26,6 @@ public class ImageUploadServiceTests
         Assert.StartsWith($"avatars/{ownerId:N}/", output.StorageKey);
         Assert.EndsWith(".png", output.StorageKey);
         Assert.False(string.IsNullOrWhiteSpace(output.UploadUrl));
-        Assert.Contains(output.StorageKey, output.PublicUrl);
-        Assert.StartsWith("https://", output.PublicUrl);
     }
 
     [Fact]

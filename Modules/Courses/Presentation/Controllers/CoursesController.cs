@@ -55,13 +55,13 @@ public class CoursesController : ControllerBase
 
     [HttpPost("{courseId:guid}/thumbnail-upload-url")]
     [Authorize(Policy = AuthPolicyNames.ManageCourses)]
-    [ProducesResponseType(typeof(ImageUploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ImageUploadUrlResponse>> RequestThumbnailUploadUrlAsync(
+    public async Task<ActionResult<UploadUrlResponse>> RequestThumbnailUploadUrlAsync(
         Guid courseId,
         RequestCourseThumbnailUploadRequest request,
         CancellationToken cancellationToken)
@@ -73,7 +73,7 @@ public class CoursesController : ControllerBase
             request.SizeBytes,
             cancellationToken);
 
-        return Ok(ImagePresenter.ToResponse(output));
+        return Ok(VideoPresenter.ToResponse(output));
     }
 
     [HttpPost]

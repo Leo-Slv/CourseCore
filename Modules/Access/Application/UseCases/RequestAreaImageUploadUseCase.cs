@@ -25,7 +25,7 @@ public class RequestAreaImageUploadUseCase
         _auditLogs = auditLogs;
     }
 
-    public async Task<ImageUploadUrlOutput> ExecuteAsync(
+    public async Task<UploadUrlOutput> ExecuteAsync(
         Guid areaId,
         string fileName,
         string contentType,

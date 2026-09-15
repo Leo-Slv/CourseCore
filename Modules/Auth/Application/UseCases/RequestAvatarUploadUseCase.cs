@@ -25,7 +25,7 @@ public class RequestAvatarUploadUseCase
         _auditLogs = auditLogs;
     }
 
-    public async Task<ImageUploadUrlOutput> ExecuteAsync(
+    public async Task<UploadUrlOutput> ExecuteAsync(
         Guid userId,
         string fileName,
         string contentType,

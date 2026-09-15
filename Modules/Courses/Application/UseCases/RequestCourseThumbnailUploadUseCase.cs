@@ -25,7 +25,7 @@ public class RequestCourseThumbnailUploadUseCase
         _auditLogs = auditLogs;
     }
 
-    public async Task<ImageUploadUrlOutput> ExecuteAsync(
+    public async Task<UploadUrlOutput> ExecuteAsync(
         Guid courseId,
         string fileName,
         string contentType,

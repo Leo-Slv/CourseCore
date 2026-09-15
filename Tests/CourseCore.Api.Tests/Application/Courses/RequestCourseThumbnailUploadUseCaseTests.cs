@@ -24,7 +24,7 @@ public class RequestCourseThumbnailUploadUseCaseTests
 
         Assert.Equal("S3", output.StorageProvider);
         Assert.StartsWith($"course-thumbnails/{fixture.CourseId:N}/", output.StorageKey);
-        Assert.False(string.IsNullOrWhiteSpace(output.PublicUrl));
+        Assert.False(string.IsNullOrWhiteSpace(output.UploadUrl));
     }
 
     [Fact]

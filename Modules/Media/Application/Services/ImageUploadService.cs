@@ -23,7 +23,7 @@ public class ImageUploadService
         _s3Options = s3Options.Value;
     }
 
-    public async Task<ImageUploadUrlOutput> RequestUploadAsync(
+    public async Task<UploadUrlOutput> RequestUploadAsync(
         string keyPrefix,
         Guid ownerId,
         string fileName,
@@ -41,14 +41,12 @@ public class ImageUploadService
 
         var storageKey = StorageKeyGenerator.Generate(keyPrefix, ownerId, fileName);
         var uploadUrl = await _s3.GeneratePresignedUploadUrlAsync(storageKey, contentType, cancellationToken);
-        var publicUrl = _s3.GetPublicUrl(storageKey);
 
-        return new ImageUploadUrlOutput
+        return new UploadUrlOutput
         {
             StorageProvider = "S3",
             StorageKey = storageKey,
             UploadUrl = uploadUrl,
-            PublicUrl = publicUrl,
             ExpiresAt = DateTime.UtcNow.AddMinutes(_s3Options.UploadUrlExpirationMinutes)
         };
     }

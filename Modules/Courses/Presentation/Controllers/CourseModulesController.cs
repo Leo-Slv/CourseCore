@@ -40,13 +40,13 @@ public class CourseModulesController : ControllerBase
     }
 
     [HttpPost("{moduleId:guid}/image-upload-url")]
-    [ProducesResponseType(typeof(ImageUploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ImageUploadUrlResponse>> RequestImageUploadUrlAsync(
+    public async Task<ActionResult<UploadUrlResponse>> RequestImageUploadUrlAsync(
         Guid courseId,
         Guid moduleId,
         RequestCourseModuleImageUploadRequest request,
@@ -60,7 +60,7 @@ public class CourseModulesController : ControllerBase
             request.SizeBytes,
             cancellationToken);
 
-        return Ok(ImagePresenter.ToResponse(output));
+        return Ok(VideoPresenter.ToResponse(output));
     }
 
     [HttpGet]

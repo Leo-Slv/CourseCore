@@ -26,11 +26,11 @@ public class ImageUploadIntegrationTests : IClassFixture<CourseCoreApiFactory>
             UploadRequest());
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ImageUploadUrlResponse>();
+        var body = await response.Content.ReadFromJsonAsync<UploadUrlResponse>();
         Assert.NotNull(body);
         Assert.Equal("S3", body!.StorageProvider);
         Assert.StartsWith($"course-thumbnails/{course.CourseId:N}/", body.StorageKey);
-        Assert.False(string.IsNullOrWhiteSpace(body.PublicUrl));
+        Assert.False(string.IsNullOrWhiteSpace(body.UploadUrl));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class ImageUploadIntegrationTests : IClassFixture<CourseCoreApiFactory>
             UploadRequest());
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ImageUploadUrlResponse>();
+        var body = await response.Content.ReadFromJsonAsync<UploadUrlResponse>();
         Assert.NotNull(body);
         Assert.StartsWith($"module-covers/{course.ModuleId:N}/", body!.StorageKey);
     }
@@ -127,7 +127,7 @@ public class ImageUploadIntegrationTests : IClassFixture<CourseCoreApiFactory>
             UploadRequest());
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ImageUploadUrlResponse>();
+        var body = await response.Content.ReadFromJsonAsync<UploadUrlResponse>();
         Assert.NotNull(body);
         Assert.StartsWith($"area-covers/{course.AreaId:N}/", body!.StorageKey);
     }
@@ -167,7 +167,7 @@ public class ImageUploadIntegrationTests : IClassFixture<CourseCoreApiFactory>
         var response = await client.PostAsJsonAsync("/api/auth/me/avatar-upload-url", UploadRequest());
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ImageUploadUrlResponse>();
+        var body = await response.Content.ReadFromJsonAsync<UploadUrlResponse>();
         Assert.NotNull(body);
         Assert.StartsWith($"avatars/{user.Id:N}/", body!.StorageKey);
     }

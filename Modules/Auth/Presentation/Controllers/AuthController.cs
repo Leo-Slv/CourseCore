@@ -75,12 +75,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("me/avatar-upload-url")]
-    [ProducesResponseType(typeof(ImageUploadUrlResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ImageUploadUrlResponse>> RequestAvatarUploadUrlAsync(
+    public async Task<ActionResult<UploadUrlResponse>> RequestAvatarUploadUrlAsync(
         RequestAvatarUploadRequest request,
         CancellationToken cancellationToken)
     {
@@ -91,7 +91,7 @@ public class AuthController : ControllerBase
             request.SizeBytes,
             cancellationToken);
 
-        return Ok(ImagePresenter.ToResponse(output));
+        return Ok(VideoPresenter.ToResponse(output));
     }
 
     [HttpPost("login")]
