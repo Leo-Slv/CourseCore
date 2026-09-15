@@ -44,7 +44,9 @@ public class VideoStorageService : IVideoStorageService
 
         if (video.StorageProvider == VideoStorageProvider.S3)
         {
-            var s3Url = await _s3PresignedUrlProvider.GeneratePresignedDownloadUrlAsync(video.StorageKey, cancellationToken);
+            var s3Url = await _s3PresignedUrlProvider.GeneratePresignedDownloadUrlAsync(
+                video.StorageKey,
+                cancellationToken: cancellationToken);
 
             return new VideoPlaybackUrl(s3Url, DateTime.UtcNow.AddMinutes(_options.SignedUrlExpirationMinutes));
         }

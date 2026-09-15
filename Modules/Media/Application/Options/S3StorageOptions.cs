@@ -16,6 +16,8 @@ public sealed class S3StorageOptions
 
     public int DownloadUrlExpirationMinutes { get; init; } = 10;
 
+    public int ImageUrlExpirationMinutes { get; init; } = 60;
+
     public static void Validate(S3StorageOptions options, bool required)
     {
         if (!required)
@@ -46,6 +48,11 @@ public sealed class S3StorageOptions
         if (options.DownloadUrlExpirationMinutes is < 1 or > 60)
         {
             throw new InvalidOperationException("S3 storage download URL expiration must be between 1 and 60 minutes.");
+        }
+
+        if (options.ImageUrlExpirationMinutes is < 1 or > 1440)
+        {
+            throw new InvalidOperationException("S3 storage image URL expiration must be between 1 and 1440 minutes.");
         }
     }
 }

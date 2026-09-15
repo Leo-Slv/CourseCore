@@ -34,6 +34,7 @@ public static class MediaDependencyInjection
         services.AddSingleton<IAmazonS3>(_ => CreateS3Client(s3Options));
         services.AddSingleton<IS3PresignedUrlProvider, S3PresignedUrlProvider>();
         services.AddScoped<ImageUploadService>();
+        services.AddScoped<ImageUrlResolver>();
 
         services.AddScoped<IVideoRepository, EfVideoRepository>();
         services.AddScoped<IVideoStorageService, VideoStorageService>();

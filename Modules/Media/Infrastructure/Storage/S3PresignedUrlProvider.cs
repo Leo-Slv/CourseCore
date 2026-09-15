@@ -39,27 +39,23 @@ public class S3PresignedUrlProvider : IS3PresignedUrlProvider
 
     public Task<string> GeneratePresignedDownloadUrlAsync(
         string storageKey,
+        TimeSpan? expiresIn = null,
         CancellationToken cancellationToken = default)
     {
         EnsureConfigured();
         cancellationToken.ThrowIfCancellationRequested();
+
+        var expiration = expiresIn ?? TimeSpan.FromMinutes(_options.DownloadUrlExpirationMinutes);
 
         var request = new GetPreSignedUrlRequest
         {
             BucketName = _options.BucketName,
             Key = storageKey,
             Verb = HttpVerb.GET,
-            Expires = DateTime.UtcNow.AddMinutes(_options.DownloadUrlExpirationMinutes)
+            Expires = DateTime.UtcNow.Add(expiration)
         };
 
         return Task.FromResult(_s3Client.GetPreSignedURL(request));
-    }
-
-    public string GetPublicUrl(string storageKey)
-    {
-        EnsureConfigured();
-
-        return $"https://{_options.BucketName}.s3.{_options.Region}.amazonaws.com/{storageKey}";
     }
 
     private void EnsureConfigured()

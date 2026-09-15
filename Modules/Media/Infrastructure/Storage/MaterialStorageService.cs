@@ -50,7 +50,9 @@ public class MaterialStorageService : IMaterialStorageService
 
         if (material.StorageProvider == MaterialStorageProvider.S3)
         {
-            return await _s3PresignedUrlProvider.GeneratePresignedDownloadUrlAsync(material.StorageKey, cancellationToken);
+            return await _s3PresignedUrlProvider.GeneratePresignedDownloadUrlAsync(
+                material.StorageKey,
+                cancellationToken: cancellationToken);
         }
 
         var expiresAt = DateTime.UtcNow.AddMinutes(_options.SignedUrlExpirationMinutes);

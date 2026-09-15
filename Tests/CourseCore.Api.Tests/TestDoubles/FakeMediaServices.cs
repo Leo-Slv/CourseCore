@@ -91,14 +91,10 @@ public sealed class FakeS3PresignedUrlProvider : IS3PresignedUrlProvider
 
     public Task<string> GeneratePresignedDownloadUrlAsync(
         string storageKey,
+        TimeSpan? expiresIn = null,
         CancellationToken cancellationToken = default)
     {
         return Task.FromResult(DownloadUrl);
-    }
-
-    public string GetPublicUrl(string storageKey)
-    {
-        return $"https://fake-bucket.s3.fake-region.amazonaws.com/{storageKey}";
     }
 }
 

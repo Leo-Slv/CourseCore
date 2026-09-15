@@ -9,7 +9,6 @@ public interface IS3PresignedUrlProvider
 
     Task<string> GeneratePresignedDownloadUrlAsync(
         string storageKey,
+        TimeSpan? expiresIn = null,
         CancellationToken cancellationToken = default);
-
-    string GetPublicUrl(string storageKey);
 }
