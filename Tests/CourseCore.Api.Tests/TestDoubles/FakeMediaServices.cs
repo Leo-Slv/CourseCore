@@ -81,6 +81,12 @@ public sealed class FakeS3PresignedUrlProvider : IS3PresignedUrlProvider
 
     public string DownloadUrl { get; set; } = "https://fake-bucket.s3.amazonaws.com/download";
 
+    public string? LastDownloadStorageKey { get; private set; }
+
+    public TimeSpan? LastDownloadExpiresIn { get; private set; }
+
+    public int DownloadCallCount { get; private set; }
+
     public Task<string> GeneratePresignedUploadUrlAsync(
         string storageKey,
         string contentType,
@@ -94,6 +100,10 @@ public sealed class FakeS3PresignedUrlProvider : IS3PresignedUrlProvider
         TimeSpan? expiresIn = null,
         CancellationToken cancellationToken = default)
     {
+        DownloadCallCount++;
+        LastDownloadStorageKey = storageKey;
+        LastDownloadExpiresIn = expiresIn;
+
         return Task.FromResult(DownloadUrl);
     }
 }

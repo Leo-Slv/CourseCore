@@ -163,4 +163,39 @@ public class TestimonialsIntegrationTests : IClassFixture<CourseCoreApiFactory>
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    [Fact]
+    public async Task SubmitMine_WhenUserAvatarIsABareStorageKey_ShouldResolveToASignedUrlInThePublicList()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var profileResponse = await client.PutAsJsonAsync("/api/auth/me", new
+        {
+            name = "Integration User",
+            avatarUrl = $"avatars/{user.Id:N}/avatar.png"
+        });
+        Assert.Equal(HttpStatusCode.OK, profileResponse.StatusCode);
+
+        var submitResponse = await client.PostAsJsonAsync("/api/testimonials/mine", new
+        {
+            quote = "This platform changed how I study!"
+        });
+        var submitted = await submitResponse.Content.ReadFromJsonAsync<TestimonialResponse>();
+        Assert.Equal(HttpStatusCode.Created, submitResponse.StatusCode);
+
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+        var publishResponse = await adminClient.PostAsync($"/api/testimonials/{submitted!.Id}/publish", content: null);
+        Assert.Equal(HttpStatusCode.OK, publishResponse.StatusCode);
+
+        using var anonymousClient = IntegrationAuth.CreateClient(_factory);
+        var publicListResponse = await anonymousClient.GetAsync("/api/testimonials/public");
+        var publicList = await publicListResponse.Content.ReadFromJsonAsync<List<TestimonialResponse>>();
+
+        var publicTestimonial = Assert.Single(publicList!, t => t.Id == submitted.Id);
+        Assert.False(string.IsNullOrWhiteSpace(publicTestimonial.AvatarUrl));
+        Assert.NotEqual($"avatars/{user.Id:N}/avatar.png", publicTestimonial.AvatarUrl);
+    }
 }
