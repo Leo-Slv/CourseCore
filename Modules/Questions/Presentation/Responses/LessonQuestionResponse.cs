@@ -10,6 +10,8 @@ public class LessonQuestionResponse
 
     public string AskedByName { get; init; } = string.Empty;
 
+    public string? AskedByAvatarUrl { get; init; }
+
     public string QuestionText { get; init; } = string.Empty;
 
     public string? AnswerText { get; init; }
@@ -17,6 +19,8 @@ public class LessonQuestionResponse
     public Guid? AnsweredByUserId { get; init; }
 
     public string? AnsweredByName { get; init; }
+
+    public string? AnsweredByAvatarUrl { get; init; }
 
     public DateTime? AnsweredAt { get; init; }
 

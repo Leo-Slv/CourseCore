@@ -99,7 +99,7 @@ public class AskLessonQuestionUseCase
                 userId: user.Id,
                 cancellationToken: cancellationToken);
 
-            return LessonQuestionOutput.FromQuestion(question);
+            return LessonQuestionOutput.FromQuestion(question, askedByAvatarUrl: user.AvatarUrl);
         }, cancellationToken);
     }
 }

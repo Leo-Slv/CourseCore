@@ -38,6 +38,16 @@ public sealed class FakeUserRepository : IUserRepository
         return Task.FromResult(user);
     }
 
+    public Task<IReadOnlyCollection<User>> FindByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idSet = ids.ToHashSet();
+        var matches = _usersById.Values.Where(user => idSet.Contains(user.Id)).ToArray();
+
+        return Task.FromResult<IReadOnlyCollection<User>>(matches);
+    }
+
     public Task<IReadOnlyCollection<User>> ListAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult<IReadOnlyCollection<User>>(_usersById.Values.ToArray());

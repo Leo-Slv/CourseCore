@@ -71,6 +71,37 @@ public class AskAndListLessonQuestionsUseCaseTests
     }
 
     [Fact]
+    public async Task AskLessonQuestionUseCase_WhenUserHasAvatar_ShouldCarryAvatarUrlOnOutput()
+    {
+        var fixture = CreateFixture(grantAccess: true, userAvatarUrl: "avatars/user.jpg");
+
+        var output = await fixture.AskUseCase.ExecuteAsync(new AskLessonQuestionInput
+        {
+            UserId = fixture.UserId,
+            LessonId = fixture.Lesson.Id,
+            QuestionText = "How does this work?"
+        });
+
+        Assert.Equal("avatars/user.jpg", output.AskedByAvatarUrl);
+    }
+
+    [Fact]
+    public async Task ListLessonQuestionsUseCase_WhenAuthorHasAvatar_ShouldResolveAvatarUrlPerQuestion()
+    {
+        var fixture = CreateFixture(grantAccess: true, userAvatarUrl: "avatars/user.jpg");
+        await fixture.AskUseCase.ExecuteAsync(new AskLessonQuestionInput
+        {
+            UserId = fixture.UserId,
+            LessonId = fixture.Lesson.Id,
+            QuestionText = "Question"
+        });
+
+        var outputs = await fixture.ListUseCase.ExecuteAsync(fixture.UserId, fixture.Lesson.Id);
+
+        Assert.Equal("avatars/user.jpg", Assert.Single(outputs).AskedByAvatarUrl);
+    }
+
+    [Fact]
     public async Task ListLessonQuestionsUseCase_WhenUserHasAccess_ShouldReturnQuestionsOrderedByCreatedAtDescending()
     {
         var fixture = CreateFixture(grantAccess: true);
@@ -112,7 +143,7 @@ public class AskAndListLessonQuestionsUseCaseTests
         Assert.Empty(outputs);
     }
 
-    private static LessonQuestionFixture CreateFixture(bool grantAccess)
+    private static LessonQuestionFixture CreateFixture(bool grantAccess, string? userAvatarUrl = null)
     {
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
@@ -123,6 +154,10 @@ public class AskAndListLessonQuestionsUseCaseTests
         var auditLogs = new FakeAuditLogService();
         var unitOfWork = new FakeUnitOfWork();
         var user = TestEntityFactory.User();
+        if (userAvatarUrl is not null)
+        {
+            user.ChangeAvatarUrl(userAvatarUrl);
+        }
         var area = TestEntityFactory.Area();
         var (course, lesson) = CreatePublishedCourseWithLesson(area.Id);
 
@@ -142,7 +177,7 @@ public class AskAndListLessonQuestionsUseCaseTests
 
         var courseAccessService = new CourseAccessService(users, roles, areas, courses);
         var askUseCase = new AskLessonQuestionUseCase(users, lessons, courses, questions, courseAccessService, unitOfWork, auditLogs);
-        var listUseCase = new ListLessonQuestionsUseCase(lessons, courses, questions, courseAccessService);
+        var listUseCase = new ListLessonQuestionsUseCase(lessons, courses, questions, users, courseAccessService);
 
         return new LessonQuestionFixture(askUseCase, listUseCase, auditLogs, user.Id, lesson);
     }

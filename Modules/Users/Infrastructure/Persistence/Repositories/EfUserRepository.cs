@@ -34,6 +34,25 @@ public class EfUserRepository : IUserRepository
         return model is null ? null : UserMapper.ToDomain(model);
     }
 
+    public async Task<IReadOnlyCollection<User>> FindByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idList = ids.Distinct().ToList();
+
+        if (idList.Count == 0)
+        {
+            return Array.Empty<User>();
+        }
+
+        var models = await _dbContext.Users
+            .AsNoTracking()
+            .Where(x => idList.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        return models.Select(UserMapper.ToDomain).ToList();
+    }
+
     public async Task<IReadOnlyCollection<User>> ListAsync(CancellationToken cancellationToken = default)
     {
         var models = await _dbContext.Users

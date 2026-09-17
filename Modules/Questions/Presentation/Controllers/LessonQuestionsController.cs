@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Questions.Application.UseCases;
 using CourseCore.Api.Modules.Questions.Presentation.Presenters;
 using CourseCore.Api.Modules.Questions.Presentation.Requests;
@@ -20,19 +21,22 @@ public class LessonQuestionsController : ControllerBase
     private readonly AnswerLessonQuestionUseCase _answerLessonQuestionUseCase;
     private readonly RemoveLessonQuestionUseCase _removeLessonQuestionUseCase;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ImageUrlResolver _imageUrlResolver;
 
     public LessonQuestionsController(
         AskLessonQuestionUseCase askLessonQuestionUseCase,
         ListLessonQuestionsUseCase listLessonQuestionsUseCase,
         AnswerLessonQuestionUseCase answerLessonQuestionUseCase,
         RemoveLessonQuestionUseCase removeLessonQuestionUseCase,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ImageUrlResolver imageUrlResolver)
     {
         _askLessonQuestionUseCase = askLessonQuestionUseCase;
         _listLessonQuestionsUseCase = listLessonQuestionsUseCase;
         _answerLessonQuestionUseCase = answerLessonQuestionUseCase;
         _removeLessonQuestionUseCase = removeLessonQuestionUseCase;
         _currentUserService = currentUserService;
+        _imageUrlResolver = imageUrlResolver;
     }
 
     [HttpGet("lessons/{lessonId:guid}")]
@@ -53,7 +57,10 @@ public class LessonQuestionsController : ControllerBase
             bypassAccessCheck,
             cancellationToken);
 
-        return Ok(outputs.Select(LessonQuestionPresenter.ToResponse).ToList());
+        var responses = await Task.WhenAll(outputs.Select(output =>
+            LessonQuestionPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken)));
+
+        return Ok(responses);
     }
 
     [HttpPost("lessons/{lessonId:guid}")]
@@ -71,7 +78,7 @@ public class LessonQuestionsController : ControllerBase
         var output = await _askLessonQuestionUseCase.ExecuteAsync(
             LessonQuestionPresenter.ToInput(GetCurrentUserId(), lessonId, request),
             cancellationToken);
-        var response = LessonQuestionPresenter.ToResponse(output);
+        var response = await LessonQuestionPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken);
 
         return Created($"/api/questions/{response.Id}", response);
     }
@@ -93,7 +100,7 @@ public class LessonQuestionsController : ControllerBase
             LessonQuestionPresenter.ToInput(questionId, GetCurrentUserId(), request),
             cancellationToken);
 
-        return Ok(LessonQuestionPresenter.ToResponse(output));
+        return Ok(await LessonQuestionPresenter.ToResponseAsync(output, _imageUrlResolver, cancellationToken));
     }
 
     [HttpDelete("{questionId:guid}")]

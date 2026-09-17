@@ -52,6 +52,8 @@ public class AnswerLessonQuestionUseCase
 
             question.Answer(answeredByUser.Id, answeredByUser.Name, input.AnswerText);
 
+            var askedByUser = await _users.FindByIdAsync(question.AskedByUserId, cancellationToken);
+
             await _questions.UpdateAsync(question, cancellationToken);
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.QuestionAnswered,
@@ -65,7 +67,10 @@ public class AnswerLessonQuestionUseCase
                 userId: answeredByUser.Id,
                 cancellationToken: cancellationToken);
 
-            return LessonQuestionOutput.FromQuestion(question);
+            return LessonQuestionOutput.FromQuestion(
+                question,
+                askedByAvatarUrl: askedByUser?.AvatarUrl,
+                answeredByAvatarUrl: answeredByUser.AvatarUrl);
         }, cancellationToken);
     }
 }

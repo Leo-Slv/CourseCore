@@ -15,8 +15,12 @@ public class AnswerAndRemoveLessonQuestionUseCaseTests
         var questions = new FakeLessonQuestionRepository();
         var users = new FakeUserRepository();
         var admin = TestEntityFactory.User(email: "admin@coursecore.local");
+        admin.ChangeAvatarUrl("avatars/admin.jpg");
         users.Add(admin);
-        var question = LessonQuestion.Create(Guid.NewGuid(), Guid.NewGuid(), "Student", "What is this about?");
+        var asker = TestEntityFactory.User(email: "student@coursecore.local");
+        asker.ChangeAvatarUrl("avatars/student.jpg");
+        users.Add(asker);
+        var question = LessonQuestion.Create(Guid.NewGuid(), asker.Id, "Student", "What is this about?");
         questions.Questions.Add(question);
         var auditLogs = new FakeAuditLogService();
         var useCase = new AnswerLessonQuestionUseCase(questions, users, new FakeUnitOfWork(), auditLogs);
@@ -31,6 +35,8 @@ public class AnswerAndRemoveLessonQuestionUseCaseTests
         Assert.Equal("Here is the answer.", output.AnswerText);
         Assert.Equal("Test User", output.AnsweredByName);
         Assert.Equal(admin.Id, output.AnsweredByUserId);
+        Assert.Equal("avatars/admin.jpg", output.AnsweredByAvatarUrl);
+        Assert.Equal("avatars/student.jpg", output.AskedByAvatarUrl);
         Assert.NotNull(output.AnsweredAt);
         var auditLog = Assert.Single(auditLogs.Entries, e => e.Action == AuditLogActionNames.QuestionAnswered);
         Assert.Equal(admin.Id.ToString(), auditLog.Metadata["answeredByUserId"]);
