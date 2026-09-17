@@ -73,6 +73,29 @@ public class CourseModuleUseCaseTests
     }
 
     [Fact]
+    public async Task UpdateCourseModuleUseCase_WhenImageUrlIsABareStorageKey_ShouldAccept()
+    {
+        var courseModules = new FakeCourseModuleRepository();
+        var course = CreateCourse();
+        var module = CourseModule.Create(course.Id, "Module", "Description", 0);
+        courseModules.Modules.Add(module);
+        var useCase = new UpdateCourseModuleUseCase(courseModules, new FakeUnitOfWork(), new FakeAuditLogService());
+
+        var output = await useCase.ExecuteAsync(new UpdateCourseModuleInput
+        {
+            ModuleId = module.Id,
+            Title = "Module",
+            Description = "Description",
+            Published = false,
+            ImageUrl = "module-covers/9f600ce28869449eb2af4ef8154a7c5c/3b9959146a0245c8a6cda78af229915e.jpg"
+        });
+
+        Assert.Equal(
+            "module-covers/9f600ce28869449eb2af4ef8154a7c5c/3b9959146a0245c8a6cda78af229915e.jpg",
+            output.ImageUrl);
+    }
+
+    [Fact]
     public async Task RemoveCourseModuleUseCase_WhenModuleHasLessons_ShouldThrowConflictException()
     {
         var courseModules = new FakeCourseModuleRepository();

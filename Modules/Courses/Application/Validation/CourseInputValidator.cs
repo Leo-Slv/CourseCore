@@ -46,7 +46,7 @@ public static class CourseInputValidator
     {
         if (!IsValidRequired(title, CourseValidationLimits.ModuleTitleMaxLength)
             || !IsValidOptional(description, CourseValidationLimits.ModuleDescriptionMaxLength)
-            || !IsValidHttpUrl(imageUrl, CourseValidationLimits.ModuleImageUrlMaxLength))
+            || !IsValidOptional(imageUrl, CourseValidationLimits.ModuleImageUrlMaxLength))
         {
             throw InvalidPayload();
         }
@@ -75,7 +75,7 @@ public static class CourseInputValidator
             || !IsValidRequired(pricingModel, CourseValidationLimits.PricingModelMaxLength)
             || areaIds is null
             || areaIds.Count > CourseValidationLimits.MaxAreaIds
-            || !IsValidHttpUrl(thumbnailUrl, CourseValidationLimits.ThumbnailUrlMaxLength))
+            || !IsValidOptional(thumbnailUrl, CourseValidationLimits.ThumbnailUrlMaxLength))
         {
             throw InvalidPayload();
         }
@@ -86,19 +86,6 @@ public static class CourseInputValidator
 
     private static bool IsValidOptional(string? value, int maxLength) =>
         value is null || value.Trim().Length <= maxLength;
-
-    private static bool IsValidHttpUrl(string? value, int maxLength)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return true;
-        }
-
-        var normalized = value.Trim();
-        return normalized.Length <= maxLength
-            && Uri.TryCreate(normalized, UriKind.Absolute, out var uri)
-            && uri.Scheme is "http" or "https";
-    }
 
     private static ApplicationValidationException InvalidPayload() =>
         new("Course payload is invalid.");
