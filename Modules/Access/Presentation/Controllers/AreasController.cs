@@ -19,6 +19,7 @@ public class AreasController : ControllerBase
     private readonly GrantRoleAreaAccessUseCase _grantRoleAreaAccessUseCase;
     private readonly CheckCourseAccessUseCase _checkCourseAccessUseCase;
     private readonly ListUserAreaAccessUseCase _listUserAreaAccessUseCase;
+    private readonly ListRoleAreaAccessUseCase _listRoleAreaAccessUseCase;
     private readonly RevokeUserAreaAccessUseCase _revokeUserAreaAccessUseCase;
     private readonly ICurrentUserService _currentUserService;
 
@@ -27,6 +28,7 @@ public class AreasController : ControllerBase
         GrantRoleAreaAccessUseCase grantRoleAreaAccessUseCase,
         CheckCourseAccessUseCase checkCourseAccessUseCase,
         ListUserAreaAccessUseCase listUserAreaAccessUseCase,
+        ListRoleAreaAccessUseCase listRoleAreaAccessUseCase,
         RevokeUserAreaAccessUseCase revokeUserAreaAccessUseCase,
         ICurrentUserService currentUserService)
     {
@@ -34,6 +36,7 @@ public class AreasController : ControllerBase
         _grantRoleAreaAccessUseCase = grantRoleAreaAccessUseCase;
         _checkCourseAccessUseCase = checkCourseAccessUseCase;
         _listUserAreaAccessUseCase = listUserAreaAccessUseCase;
+        _listRoleAreaAccessUseCase = listRoleAreaAccessUseCase;
         _revokeUserAreaAccessUseCase = revokeUserAreaAccessUseCase;
         _currentUserService = currentUserService;
     }
@@ -88,6 +91,22 @@ public class AreasController : ControllerBase
         CancellationToken cancellationToken)
     {
         var outputs = await _listUserAreaAccessUseCase.ExecuteAsync(userId, cancellationToken);
+
+        return Ok(outputs.Select(AccessPresenter.ToResponse).ToList());
+    }
+
+    [HttpGet("role-area/{roleId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageRoleAreaAccess)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<AreaAccessResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IReadOnlyCollection<AreaAccessResponse>>> ListRoleAreaAccessAsync(
+        Guid roleId,
+        CancellationToken cancellationToken)
+    {
+        var outputs = await _listRoleAreaAccessUseCase.ExecuteAsync(roleId, cancellationToken);
 
         return Ok(outputs.Select(AccessPresenter.ToResponse).ToList());
     }
