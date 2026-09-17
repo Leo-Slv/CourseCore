@@ -82,6 +82,33 @@ Spec: [`Docs/specs/catalog/lesson-player.md`](../../specs/catalog/lesson-player.
   ones are wanted (not requested here, not implemented) — otherwise this
   item is frontend scope, not a backend pendency anymore.
 
+## 6. Lesson Q&A author avatar — no field — CLOSED
+
+- **Mockup/frontend expects**: the asker's and answerer's real avatar photo
+  next to each question/answer in the "Perguntas" tab, matching what
+  `CurrentUserResponse` already does for the logged-in user's own avatar.
+- **Backend had**: `LessonQuestion` (`Modules/Questions/Domain/Entities`)
+  only stores `AskedByName`/`AnsweredByName` — plain strings frozen at
+  ask/answer time — and `LessonQuestionOutput`/`LessonQuestionResponse`
+  never carried an avatar reference of any kind. Unlike `CurrentUserResponse`,
+  nothing in the Q&A read path touched `User.AvatarUrl`.
+- **What closing the gap needed**: resolving the *current* `User.AvatarUrl`
+  for the asker/answerer on every read, not freezing it alongside the name
+  (a user's photo should update everywhere immediately, same as their own
+  profile view does) — plus a new `IUserRepository.FindByIdsAsync` batch
+  lookup so `ListLessonQuestionsUseCase` resolves every author in one query
+  instead of N+1 per question.
+- **Resolved (2026-09-17)**: `LessonQuestionOutput`/`LessonQuestionResponse`
+  now carry `AskedByAvatarUrl`/`AnsweredByAvatarUrl`. `AskLessonQuestionUseCase`
+  and `AnswerLessonQuestionUseCase` populate them from the `User` entities
+  they already load; `ListLessonQuestionsUseCase` batch-resolves every
+  question's author(s) via the new `FindByIdsAsync`.
+  `LessonQuestionPresenter.ToResponse` became `ToResponseAsync`, resolving
+  both fields through the existing `ImageUrlResolver` — the same
+  presigned-S3-read mechanism `AuthPresenter.ToResponseAsync` already uses
+  for `CurrentUserResponse.AvatarUrl`. No migration: avatars are resolved
+  live from the current `User` row, never stored on `LessonQuestion` itself.
+
 ## What already works and needed no workaround
 
 For context when scoping pendency 1 — these are real, working endpoints
