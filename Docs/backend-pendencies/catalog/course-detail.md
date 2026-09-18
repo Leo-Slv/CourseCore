@@ -34,6 +34,19 @@ Spec: [`Docs/specs/catalog/course-detail.md`](../../specs/catalog/course-detail.
   `CourseAccessService`'s existing denial reasons (now named constants,
   `CourseAccessDenialReasons`), so any future denial reason defaults to hard
   403 rather than silently starting to leak preview data.
+- **Resolved, 2026-09-18**: the "free, or an area grant" line above described
+  a real authorization bug, not just a design note — `CourseAccessService`
+  granted **any** active, email-verified user access to **any** free course
+  regardless of `UserAreaAccess`/`RoleAreaAccess`, even when the admin had
+  never granted that area (e.g. an admin user with only one area toggled on
+  could still reach free courses/videos in areas they were never given).
+  Fixed by removing the blanket free-pricing bypass from
+  `CanUserAccessCourseAsync`/`ListCatalogAsync` and adding a new `Area.IsPublic`
+  flag: a free course is now only auto-accessible when it lives in an area
+  explicitly marked public by an admin; otherwise it requires the same
+  `UserAreaAccess`/`RoleAreaAccess` grant a paid course does. `IsPublic` never
+  affects paid courses — those still require an explicit grant regardless of
+  the area's public flag.
 
 ## 2. `LessonResponse.FreePreview` exists but is completely unenforced — CLOSED
 
