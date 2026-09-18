@@ -27,6 +27,8 @@ public static class AuditLogActionNames
     public const string AreaUpdated = "AreaUpdated";
     public const string AreaActivated = "AreaActivated";
     public const string AreaDeactivated = "AreaDeactivated";
+    public const string AreaMadePublic = "AreaMadePublic";
+    public const string AreaMadePrivate = "AreaMadePrivate";
     public const string CourseCreated = "CourseCreated";
     public const string CourseUpdated = "CourseUpdated";
     public const string CoursePublished = "CoursePublished";

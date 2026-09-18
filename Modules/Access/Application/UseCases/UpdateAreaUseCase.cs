@@ -118,6 +118,17 @@ public class UpdateAreaUseCase
                 area.Deactivate();
             }
 
+            var isPublicChanged = area.IsPublic != input.IsPublic;
+
+            if (isPublicChanged && input.IsPublic)
+            {
+                area.MakePublic();
+            }
+            else if (isPublicChanged)
+            {
+                area.MakePrivate();
+            }
+
             await _areas.UpdateAsync(area, cancellationToken);
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.AreaUpdated,
@@ -130,6 +141,16 @@ public class UpdateAreaUseCase
             {
                 await _auditLogs.RecordAsync(
                     area.Active ? AuditLogActionNames.AreaActivated : AuditLogActionNames.AreaDeactivated,
+                    "Area",
+                    area.Id,
+                    new Dictionary<string, string?> { ["displayName"] = area.Name },
+                    cancellationToken: cancellationToken);
+            }
+
+            if (isPublicChanged)
+            {
+                await _auditLogs.RecordAsync(
+                    area.IsPublic ? AuditLogActionNames.AreaMadePublic : AuditLogActionNames.AreaMadePrivate,
                     "Area",
                     area.Id,
                     new Dictionary<string, string?> { ["displayName"] = area.Name },

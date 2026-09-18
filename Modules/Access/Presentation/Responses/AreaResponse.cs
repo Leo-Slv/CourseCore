@@ -18,6 +18,8 @@ public class AreaResponse
 
     public string? ImageUrl { get; init; }
 
+    public bool IsPublic { get; init; }
+
     public int CourseCount { get; init; }
 
     public IReadOnlyCollection<AreaCourseSummaryResponse> Courses { get; init; } = Array.Empty<AreaCourseSummaryResponse>();

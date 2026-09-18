@@ -16,7 +16,8 @@ public static class AreaPresenter
             Description = request.Description,
             DisplayOrder = request.DisplayOrder,
             AccentColor = request.AccentColor,
-            ImageUrl = request.ImageUrl
+            ImageUrl = request.ImageUrl,
+            IsPublic = request.IsPublic
         };
     }
 
@@ -31,7 +32,8 @@ public static class AreaPresenter
             DisplayOrder = request.DisplayOrder,
             Active = request.Active,
             AccentColor = request.AccentColor,
-            ImageUrl = request.ImageUrl
+            ImageUrl = request.ImageUrl,
+            IsPublic = request.IsPublic
         };
     }
 
@@ -58,6 +60,7 @@ public static class AreaPresenter
             DisplayOrder = output.DisplayOrder,
             AccentColor = output.AccentColor,
             ImageUrl = await imageUrlResolver.ResolveAsync(output.ImageUrl, cancellationToken),
+            IsPublic = output.IsPublic,
             CourseCount = output.CourseCount,
             Courses = output.Courses.Select(ToResponse).ToList(),
             CreatedAt = output.CreatedAt,

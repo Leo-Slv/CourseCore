@@ -13,4 +13,6 @@ public class CreateAreaInput
     public string AccentColor { get; init; } = "Blue";
 
     public string? ImageUrl { get; init; }
+
+    public bool IsPublic { get; init; }
 }

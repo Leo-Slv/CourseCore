@@ -63,7 +63,7 @@ public class CreateAreaUseCase
                 throw new ConflictException("An area with this slug already exists.");
             }
 
-            var area = Area.Create(input.Name, slug, description, input.DisplayOrder, accentColor, input.ImageUrl);
+            var area = Area.Create(input.Name, slug, description, input.DisplayOrder, accentColor, input.ImageUrl, input.IsPublic);
 
             await _areas.CreateAsync(area, cancellationToken);
             await _auditLogs.RecordAsync(
