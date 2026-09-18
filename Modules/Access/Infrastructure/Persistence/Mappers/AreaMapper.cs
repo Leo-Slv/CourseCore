@@ -19,7 +19,8 @@ public static class AreaMapper
             ParseAccentColor(model.AccentColor),
             model.CreatedAt,
             model.UpdatedAt,
-            model.ImageUrl);
+            model.ImageUrl,
+            model.IsPublic);
     }
 
     public static AreaPersistenceModel ToPersistence(Area area)
@@ -34,6 +35,7 @@ public static class AreaMapper
             DisplayOrder = area.DisplayOrder,
             AccentColor = area.AccentColor.ToString(),
             ImageUrl = area.ImageUrl,
+            IsPublic = area.IsPublic,
             CreatedAt = area.CreatedAt,
             UpdatedAt = area.UpdatedAt
         };
@@ -48,6 +50,7 @@ public static class AreaMapper
         model.DisplayOrder = area.DisplayOrder;
         model.AccentColor = area.AccentColor.ToString();
         model.ImageUrl = area.ImageUrl;
+        model.IsPublic = area.IsPublic;
         model.UpdatedAt = area.UpdatedAt;
     }
 

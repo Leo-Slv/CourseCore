@@ -7,7 +7,7 @@ namespace CourseCore.Api.Modules.Access.Domain.Entities;
 
 public class Area : EntityBase
 {
-    private Area(string name, Slug slug, string description, bool active, int displayOrder, AreaAccentColor accentColor, string? imageUrl)
+    private Area(string name, Slug slug, string description, bool active, int displayOrder, AreaAccentColor accentColor, string? imageUrl, bool isPublic)
     {
         Name = ValidateRequired(name, nameof(Name));
         Slug = slug ?? throw new DomainException("Slug is required.");
@@ -16,6 +16,7 @@ public class Area : EntityBase
         DisplayOrder = ValidateDisplayOrder(displayOrder);
         AccentColor = ValidateAccentColor(accentColor);
         ImageUrl = NormalizeOptional(imageUrl);
+        IsPublic = isPublic;
     }
 
     public string Name { get; private set; }
@@ -32,15 +33,18 @@ public class Area : EntityBase
 
     public string? ImageUrl { get; private set; }
 
+    public bool IsPublic { get; private set; }
+
     public static Area Create(
         string name,
         Slug slug,
         string description,
         int displayOrder,
         AreaAccentColor accentColor = AreaAccentColor.Blue,
-        string? imageUrl = null)
+        string? imageUrl = null,
+        bool isPublic = false)
     {
-        return new Area(name, slug, description, active: true, displayOrder, accentColor, imageUrl);
+        return new Area(name, slug, description, active: true, displayOrder, accentColor, imageUrl, isPublic);
     }
 
     public static Area Restore(
@@ -53,9 +57,10 @@ public class Area : EntityBase
         AreaAccentColor accentColor,
         DateTime createdAt,
         DateTime updatedAt,
-        string? imageUrl = null)
+        string? imageUrl = null,
+        bool isPublic = false)
     {
-        return new Area(name, slug, description, active, displayOrder, accentColor, imageUrl)
+        return new Area(name, slug, description, active, displayOrder, accentColor, imageUrl, isPublic)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -108,6 +113,18 @@ public class Area : EntityBase
     public void Deactivate()
     {
         Active = false;
+        MarkAsUpdated();
+    }
+
+    public void MakePublic()
+    {
+        IsPublic = true;
+        MarkAsUpdated();
+    }
+
+    public void MakePrivate()
+    {
+        IsPublic = false;
         MarkAsUpdated();
     }
 
