@@ -279,12 +279,13 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         Guid? grantUserAccess = null,
         CoursePricingModel pricingModel = CoursePricingModel.Paid,
         bool lessonFreePreview = false,
-        bool isFeatured = false)
+        bool isFeatured = false,
+        bool areaIsPublic = false)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
         var now = DateTime.UtcNow;
-        var area = CreateArea(now);
+        var area = CreateArea(now, areaIsPublic);
         var course = new CoursePersistenceModel
         {
             Id = Guid.NewGuid(),
@@ -739,7 +740,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             .SingleAsync();
     }
 
-    private static AreaPersistenceModel CreateArea(DateTime now)
+    private static AreaPersistenceModel CreateArea(DateTime now, bool isPublic = false)
     {
         return new AreaPersistenceModel
         {
@@ -750,6 +751,7 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Active = true,
             DisplayOrder = 0,
             AccentColor = "Blue",
+            IsPublic = isPublic,
             CreatedAt = now,
             UpdatedAt = now
         };

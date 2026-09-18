@@ -43,7 +43,7 @@ public static class TestEntityFactory
             now);
     }
 
-    public static Area Area(Guid? id = null, bool active = true)
+    public static Area Area(Guid? id = null, bool active = true, bool isPublic = false)
     {
         var now = DateTime.UtcNow.AddMinutes(-5);
 
@@ -56,7 +56,9 @@ public static class TestEntityFactory
             displayOrder: 0,
             CourseCore.Api.Modules.Access.Domain.Enums.AreaAccentColor.Blue,
             now,
-            now);
+            now,
+            imageUrl: null,
+            isPublic: isPublic);
     }
 
     public static Course PublishedCourse(Guid areaId, CoursePricingModel pricingModel = CoursePricingModel.Paid, bool isFeatured = false)

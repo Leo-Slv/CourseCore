@@ -108,7 +108,7 @@ public class RegisterIntegrationTests : IClassFixture<CourseCoreApiFactory>
     {
         using var client = IntegrationAuth.CreateClient(_factory);
         var areaId = await _factory.SeedAreaAsync();
-        var course = await _factory.SeedPublishedCourseWithLessonAsync(pricingModel: CoursePricingModel.Free);
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(pricingModel: CoursePricingModel.Free, areaIsPublic: true);
 
         var register = await client.PostAsJsonAsync("/api/auth/register", new
         {

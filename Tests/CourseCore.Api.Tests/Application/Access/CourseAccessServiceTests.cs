@@ -19,19 +19,9 @@ public class CourseAccessServiceTests
     }
 
     [Fact]
-    public async Task CanUserAccessCourseAsync_WhenCourseIsFree_ShouldAllowAccessWithoutGrant()
+    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeInNonPublicAreaWithoutGrant_ShouldDenyAccess()
     {
         var fixture = CreateFixture(pricingModel: CoursePricingModel.Free);
-
-        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
-
-        Assert.True(output.CanAccess);
-    }
-
-    [Fact]
-    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeButEmailIsNotVerified_ShouldDenyAccess()
-    {
-        var fixture = CreateFixture(pricingModel: CoursePricingModel.Free, emailVerified: false);
 
         var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
 
@@ -39,9 +29,39 @@ public class CourseAccessServiceTests
     }
 
     [Fact]
-    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeAndUnpublished_ShouldDenyAccess()
+    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeInPublicArea_ShouldAllowAccessWithoutGrant()
     {
-        var fixture = CreateFixture(pricingModel: CoursePricingModel.Free);
+        var fixture = CreateFixture(pricingModel: CoursePricingModel.Free, areaIsPublic: true);
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.True(output.CanAccess);
+    }
+
+    [Fact]
+    public async Task CanUserAccessCourseAsync_WhenCourseIsPaidInPublicAreaWithoutGrant_ShouldDenyAccess()
+    {
+        var fixture = CreateFixture(pricingModel: CoursePricingModel.Paid, areaIsPublic: true);
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.False(output.CanAccess);
+    }
+
+    [Fact]
+    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeInPublicAreaButEmailIsNotVerified_ShouldDenyAccess()
+    {
+        var fixture = CreateFixture(pricingModel: CoursePricingModel.Free, areaIsPublic: true, emailVerified: false);
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.False(output.CanAccess);
+    }
+
+    [Fact]
+    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeInPublicAreaAndUnpublished_ShouldDenyAccess()
+    {
+        var fixture = CreateFixture(pricingModel: CoursePricingModel.Free, areaIsPublic: true);
         var course = fixture.Courses.Courses.Single(c => c.Id == fixture.CourseId);
         course.Unpublish();
 
@@ -51,28 +71,44 @@ public class CourseAccessServiceTests
     }
 
     [Fact]
-    public async Task ListCatalogAsync_ShouldMarkFreeAndGrantedCoursesAsAccessibleAndOthersAsLocked()
+    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeInNonPublicAreaButUserHasAreaAccess_ShouldAllowAccess()
+    {
+        var fixture = CreateFixture(pricingModel: CoursePricingModel.Free);
+        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.True(output.CanAccess);
+    }
+
+    [Fact]
+    public async Task ListCatalogAsync_ShouldMarkGrantedAndPublicAreaFreeCoursesAsAccessibleAndOthersAsLocked()
     {
         var fixture = CreateFixture();
         fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
-        var otherArea = TestEntityFactory.Area();
-        var freeCourse = TestEntityFactory.PublishedCourse(otherArea.Id, CoursePricingModel.Free);
-        var lockedCourse = TestEntityFactory.PublishedCourse(otherArea.Id, CoursePricingModel.Paid);
-        fixture.Areas.Areas.Add(otherArea);
-        fixture.Courses.Courses.Add(freeCourse);
-        fixture.Courses.Courses.Add(lockedCourse);
+        var publicArea = TestEntityFactory.Area(isPublic: true);
+        var privateArea = TestEntityFactory.Area();
+        var freeCourseInPublicArea = TestEntityFactory.PublishedCourse(publicArea.Id, CoursePricingModel.Free);
+        var freeCourseInPrivateArea = TestEntityFactory.PublishedCourse(privateArea.Id, CoursePricingModel.Free);
+        var lockedPaidCourseInPublicArea = TestEntityFactory.PublishedCourse(publicArea.Id, CoursePricingModel.Paid);
+        fixture.Areas.Areas.Add(publicArea);
+        fixture.Areas.Areas.Add(privateArea);
+        fixture.Courses.Courses.Add(freeCourseInPublicArea);
+        fixture.Courses.Courses.Add(freeCourseInPrivateArea);
+        fixture.Courses.Courses.Add(lockedPaidCourseInPublicArea);
 
         var entries = await fixture.Service.ListCatalogAsync(fixture.UserId);
 
         Assert.True(entries.Single(entry => entry.Course.Id == fixture.CourseId).HasAccess);
-        Assert.True(entries.Single(entry => entry.Course.Id == freeCourse.Id).HasAccess);
-        Assert.False(entries.Single(entry => entry.Course.Id == lockedCourse.Id).HasAccess);
+        Assert.True(entries.Single(entry => entry.Course.Id == freeCourseInPublicArea.Id).HasAccess);
+        Assert.False(entries.Single(entry => entry.Course.Id == freeCourseInPrivateArea.Id).HasAccess);
+        Assert.False(entries.Single(entry => entry.Course.Id == lockedPaidCourseInPublicArea.Id).HasAccess);
     }
 
     [Fact]
     public async Task ListCatalogAsync_WhenEmailIsNotVerified_ShouldMarkEverythingAsLocked()
     {
-        var fixture = CreateFixture(emailVerified: false, pricingModel: CoursePricingModel.Free);
+        var fixture = CreateFixture(emailVerified: false, pricingModel: CoursePricingModel.Free, areaIsPublic: true);
 
         var entries = await fixture.Service.ListCatalogAsync(fixture.UserId);
 
@@ -149,6 +185,7 @@ public class CourseAccessServiceTests
         bool areaActive = true,
         bool roleActive = true,
         bool emailVerified = true,
+        bool areaIsPublic = false,
         CoursePricingModel pricingModel = CoursePricingModel.Paid)
     {
         var userId = Guid.NewGuid();
@@ -160,7 +197,7 @@ public class CourseAccessServiceTests
         var courses = new FakeCourseRepository();
         var user = TestEntityFactory.User(userId, active: userActive, emailVerified: emailVerified);
         var role = TestEntityFactory.Role(roleId, active: roleActive);
-        var area = TestEntityFactory.Area(areaId, areaActive);
+        var area = TestEntityFactory.Area(areaId, areaActive, areaIsPublic);
         var course = TestEntityFactory.PublishedCourse(area.Id, pricingModel);
 
         users.Add(user);

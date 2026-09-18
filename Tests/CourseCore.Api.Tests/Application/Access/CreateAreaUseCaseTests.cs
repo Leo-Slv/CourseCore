@@ -28,10 +28,30 @@ public class CreateAreaUseCaseTests
 
         Assert.True(output.Active);
         Assert.Equal("courses", output.Slug);
+        Assert.False(output.IsPublic);
         Assert.Single(areas.Areas);
         Assert.Equal(1, unitOfWork.ExecuteCalls);
         var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaCreated);
         Assert.Equal("Courses", auditLog.Metadata["displayName"]);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenIsPublicIsTrue_ShouldCreatePublicArea()
+    {
+        var areas = new FakeAreaRepository();
+        var useCase = new CreateAreaUseCase(areas, new FakeUnitOfWork(), new FakeAuditLogService());
+
+        var output = await useCase.ExecuteAsync(new CreateAreaInput
+        {
+            Name = "Courses",
+            Slug = "courses",
+            Description = "Access to course content",
+            DisplayOrder = 10,
+            IsPublic = true
+        });
+
+        Assert.True(output.IsPublic);
+        Assert.True(areas.Areas.Single().IsPublic);
     }
 
     [Fact]

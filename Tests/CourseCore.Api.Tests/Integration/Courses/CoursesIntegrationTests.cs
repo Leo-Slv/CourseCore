@@ -537,7 +537,22 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
-    public async Task ListAvailableCourses_WhenCourseIsFree_ShouldMarkFreeCourseAsAccessible()
+    public async Task ListAvailableCourses_WhenCourseIsFreeInPublicArea_ShouldMarkFreeCourseAsAccessible()
+    {
+        var user = await _factory.SeedUserAsync();
+        var freeCourse = await _factory.SeedPublishedCourseWithLessonAsync(pricingModel: CoursePricingModel.Free, areaIsPublic: true);
+        using var client = CreateClient();
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.GetAsync("/api/courses/available");
+        var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
+
+        Assert.NotNull(body);
+        Assert.True(body!.Courses.Single(c => c.Id == freeCourse.CourseId).HasAccess);
+    }
+
+    [Fact]
+    public async Task ListAvailableCourses_WhenCourseIsFreeInNonPublicArea_ShouldMarkFreeCourseAsLocked()
     {
         var user = await _factory.SeedUserAsync();
         var freeCourse = await _factory.SeedPublishedCourseWithLessonAsync(pricingModel: CoursePricingModel.Free);
@@ -548,7 +563,7 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
         var body = await response.Content.ReadFromJsonAsync<CourseCatalogResponse>();
 
         Assert.NotNull(body);
-        Assert.True(body!.Courses.Single(c => c.Id == freeCourse.CourseId).HasAccess);
+        Assert.False(body!.Courses.Single(c => c.Id == freeCourse.CourseId).HasAccess);
     }
 
     [Fact]

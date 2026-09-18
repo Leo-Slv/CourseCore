@@ -68,6 +68,72 @@ public class UpdateAreaUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenIsPublicChangesToTrue_ShouldMakePublicAndRecordAuditLog()
+    {
+        var areas = new FakeAreaRepository();
+        var area = TestEntityFactory.Area();
+        areas.Areas.Add(area);
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new UpdateAreaUseCase(areas, new FakeUnitOfWork(), auditLogs);
+
+        var output = await useCase.ExecuteAsync(new UpdateAreaInput
+        {
+            AreaId = area.Id,
+            Name = "Area",
+            Slug = area.Slug.Value,
+            Description = "Description",
+            DisplayOrder = 0,
+            Active = true,
+            IsPublic = true
+        });
+
+        Assert.True(output.IsPublic);
+        var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaMadePublic);
+        Assert.Equal(area.Name, auditLog.Metadata["displayName"]);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenIsPublicChangesToFalse_ShouldMakePrivateAndRecordAuditLog()
+    {
+        var areas = new FakeAreaRepository();
+        var area = TestEntityFactory.Area(isPublic: true);
+        areas.Areas.Add(area);
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new UpdateAreaUseCase(areas, new FakeUnitOfWork(), auditLogs);
+
+        var output = await useCase.ExecuteAsync(new UpdateAreaInput
+        {
+            AreaId = area.Id,
+            Name = "Area",
+            Slug = area.Slug.Value,
+            Description = "Description",
+            DisplayOrder = 0,
+            Active = true,
+            IsPublic = false
+        });
+
+        Assert.False(output.IsPublic);
+        var auditLog = Assert.Single(auditLogs.Entries, entry => entry.Action == AuditLogActionNames.AreaMadePrivate);
+        Assert.Equal(area.Name, auditLog.Metadata["displayName"]);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenIsPublicDoesNotChange_ShouldNotRecordPublicAuditLog()
+    {
+        var areas = new FakeAreaRepository();
+        var area = TestEntityFactory.Area();
+        areas.Areas.Add(area);
+        var auditLogs = new FakeAuditLogService();
+        var useCase = new UpdateAreaUseCase(areas, new FakeUnitOfWork(), auditLogs);
+
+        await useCase.ExecuteAsync(ValidInput(area.Id, area.Slug.Value));
+
+        Assert.DoesNotContain(
+            auditLogs.Entries,
+            entry => entry.Action is AuditLogActionNames.AreaMadePublic or AuditLogActionNames.AreaMadePrivate);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenAccentColorChanges_ShouldUpdateAccentColor()
     {
         var areas = new FakeAreaRepository();
