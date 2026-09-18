@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
+using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
@@ -66,11 +67,6 @@ public class CourseAccessService
             return Denied(userId, courseId, "Course is not published.");
         }
 
-        if (course.PricingModel == CoursePricingModel.Free)
-        {
-            return Allowed(userId, courseId, "Access granted by free pricing model.");
-        }
-
         var courseAreaIds = course.AreaIds.ToHashSet();
 
         if (courseAreaIds.Count == 0)
@@ -83,6 +79,12 @@ public class CourseAccessService
         if (activeCourseAreaIds.Count == 0)
         {
             return Denied(userId, courseId, CourseAccessDenialReasons.CourseHasNoActiveLinkedAreas);
+        }
+
+        if (course.PricingModel == CoursePricingModel.Free
+            && await HasPublicAreaAsync(activeCourseAreaIds, cancellationToken))
+        {
+            return Allowed(userId, courseId, "Access granted by public area free course.");
         }
 
         var now = DateTime.UtcNow;
@@ -124,19 +126,43 @@ public class CourseAccessService
             return courses.Select(course => new CourseCatalogEntry(course, HasAccess: false)).ToList();
         }
 
-        var accessibleAreaIds = await GetAccessibleAreaIdsAsync(userId, cancellationToken);
+        var allAreas = await _areas.ListAsync(cancellationToken);
+        var activeAreaIds = allAreas.Where(area => area.Active).Select(area => area.Id).ToHashSet();
+        var publicAreaIds = allAreas.Where(area => area.Active && area.IsPublic).Select(area => area.Id).ToHashSet();
+        var accessibleAreaIds = await GetAccessibleAreaIdsAsync(userId, activeAreaIds, cancellationToken);
 
         return courses
             .Select(course => new CourseCatalogEntry(
                 course,
-                course.PricingModel == CoursePricingModel.Free || course.AreaIds.Any(accessibleAreaIds.Contains)))
+                HasCatalogAccess(course, accessibleAreaIds, publicAreaIds)))
             .ToList();
     }
 
-    private async Task<HashSet<Guid>> GetAccessibleAreaIdsAsync(Guid userId, CancellationToken cancellationToken)
+    private static bool HasCatalogAccess(
+        Course course,
+        HashSet<Guid> accessibleAreaIds,
+        HashSet<Guid> publicAreaIds)
     {
-        var activeAreaIds = (await _areas.ListAsync(cancellationToken))
-            .Where(area => area.Active).Select(area => area.Id).ToHashSet();
+        if (course.AreaIds.Any(accessibleAreaIds.Contains))
+        {
+            return true;
+        }
+
+        return course.PricingModel == CoursePricingModel.Free && course.AreaIds.Any(publicAreaIds.Contains);
+    }
+
+    private async Task<bool> HasPublicAreaAsync(HashSet<Guid> areaIds, CancellationToken cancellationToken)
+    {
+        var areas = await _areas.ListAsync(cancellationToken);
+
+        return areas.Any(area => areaIds.Contains(area.Id) && area.IsPublic);
+    }
+
+    private async Task<HashSet<Guid>> GetAccessibleAreaIdsAsync(
+        Guid userId,
+        HashSet<Guid> activeAreaIds,
+        CancellationToken cancellationToken)
+    {
         var now = DateTime.UtcNow;
         var accessibleAreaIds = (await _areas.ListUserAreaAccessesAsync(userId, cancellationToken))
             .Where(access => activeAreaIds.Contains(access.AreaId) && access.IsValidAt(now))
