@@ -1264,6 +1264,94 @@
                               ]
                  },
                  {
+                     "name": "07 - Visitors",
+                     "item": [
+                         {
+                             "name": "Register Visitor",
+                             "request": {
+                                 "auth": {
+                                     "type": "noauth"
+                                 },
+                                 "method": "POST",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "type": "text",
+                                         "value": "application/json"
+                                     },
+                                     {
+                                         "key": "X-Correlation-ID",
+                                         "type": "text",
+                                         "value": "{{correlationId}}"
+                                     }
+                                 ],
+                                 "url": "{{baseUrl}}/api/visitors",
+                                 "description": "Public first-time visitor contact form (\"Primeira vez\"). Does NOT create an account, session or e-mail - it only stores contact data for the reception team. Anonymous and rate-limited per IP (RateLimiting:VisitorRegistration). Requires a valid Turnstile response in captchaToken (bypassed automatically outside Production when Turnstile:SecretKey is not configured). phone accepts the masked or digits-only form and must have 10-11 digits; address is optional. Duplicates are allowed. Response: RegisterVisitorResponse (id, submittedAt only - no personal data echoed). Main statuses: 201, 400, 429, 500. Saves visitorId.",
+                                 "body": {
+                                     "mode": "raw",
+                                     "raw": "{\n  \"name\": \"Postman Visitor\",\n  \"phone\": \"(11) 98765-4321\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"address\": \"Rua A, 10, Centro, São Paulo\",\n  \"captchaToken\": \"{{captchaToken}}\"\n}",
+                                     "options": {
+                                         "raw": {
+                                             "language": "json"
+                                         }
+                                     }
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "prerequest",
+                                     "script": {
+                                         "exec": [
+                                             "pm.environment.set(\"uniqueEmail\", `visitor.${Date.now()}@example.com`);"
+                                         ],
+                                         "type": "text/javascript"
+                                     }
+                                 },
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "exec": [
+                                             "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.eql(201); });",
+                                             "const json = pm.response.json();",
+                                             "pm.test(\"Response has no personal data\", function () { pm.expect(Object.keys(json)).to.have.members([\"id\", \"submittedAt\"]); });",
+                                             "if (json.id) { pm.environment.set(\"visitorId\", json.id); }"
+                                         ],
+                                         "type": "text/javascript"
+                                     }
+                                 }
+                             ]
+                         },
+                         {
+                             "name": "List Visitors",
+                             "request": {
+                                 "method": "GET",
+                                 "header": [
+                                     {
+                                         "key": "X-Correlation-ID",
+                                         "type": "text",
+                                         "value": "{{correlationId}}"
+                                     }
+                                 ],
+                                 "url": "{{baseUrl}}/api/visitors?page=1&pageSize=50",
+                                 "description": "Lists first-time visitor registrations, newest first, paginated. Optional ?search= matches name, e-mail or phone digits (masked input accepted). Bearer required; policy ReadVisitors (visitors.read or Admin). Response: PagedResponse<VisitorResponse>. Main statuses: 200, 400, 401, 403, 500."
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "exec": [
+                                             "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.eql(200); });",
+                                             "const json = pm.response.json();",
+                                             "pm.test(\"Response is paged\", function () { pm.expect(json.items).to.be.an(\"array\"); });"
+                                         ],
+                                         "type": "text/javascript"
+                                     }
+                                 }
+                             ]
+                         }
+                     ]
+                 },
+                 {
                      "name":  "90 - Deprecated",
                      "item":  [
                                   {
