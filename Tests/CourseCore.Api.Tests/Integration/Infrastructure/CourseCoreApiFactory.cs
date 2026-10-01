@@ -589,6 +589,9 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["RateLimiting:ResendConfirmation:PermitLimit"] = "100",
                 ["RateLimiting:ResendConfirmation:WindowSeconds"] = "60",
                 ["RateLimiting:ResendConfirmation:QueueLimit"] = "0",
+                ["RateLimiting:VisitorRegistration:PermitLimit"] = "100",
+                ["RateLimiting:VisitorRegistration:WindowSeconds"] = "60",
+                ["RateLimiting:VisitorRegistration:QueueLimit"] = "0",
                 ["Turnstile:SecretKey"] = "integration-test-turnstile-secret",
                 ["Resend:ApiKey"] = "integration-test-resend-api-key",
                 ["Resend:FromAddress"] = "no-reply@coursecore.local",
@@ -697,7 +700,8 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             CreatePermission(AuthPermissionNames.ManageCourses, "Manage courses", now),
             CreatePermission(AuthPermissionNames.ManageVideos, "Manage videos", now),
             CreatePermission(AuthPermissionNames.ReadProgress, "Read progress", now),
-            CreatePermission(AuthPermissionNames.ReadAudit, "Read audit", now)
+            CreatePermission(AuthPermissionNames.ReadAudit, "Read audit", now),
+            CreatePermission(AuthPermissionNames.ReadVisitors, "Read visitors", now)
         };
         dbContext.Permissions.AddRange(permissions);
         dbContext.UserRoles.Add(new UserRolePersistenceModel
