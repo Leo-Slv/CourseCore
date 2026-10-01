@@ -30,6 +30,7 @@ require, the workaround shipped instead, and a rough severity:
 | Lesson player (`/courses/[slug]/lessons/[lessonId]`) | [catalog/lesson-player.md](catalog/lesson-player.md) | **Blocking** |
 | My courses (`/my-courses`) | [catalog/my-courses.md](catalog/my-courses.md) | Feature gap |
 | Profile (`/profile`) | [auth/profile.md](auth/profile.md) | Feature gap |
+| Primeira vez — visitante (`1a`/`1b`, mockup `Primeira Vez.html`) | [visitors/first-time-visitor.md](visitors/first-time-visitor.md) | None — backend pronto |
 
 ## Skipped screens
 
