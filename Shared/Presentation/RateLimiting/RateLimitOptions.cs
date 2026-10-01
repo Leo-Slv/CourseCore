@@ -49,6 +49,13 @@ public sealed class RateLimitOptions
         PermitLimit = 5,
         WindowSeconds = 60
     };
+
+    // Looser than account registration: a reception kiosk submits many visitors from one IP.
+    public RateLimitPolicyOptions VisitorRegistration { get; init; } = new()
+    {
+        PermitLimit = 10,
+        WindowSeconds = 60
+    };
 }
 
 public sealed class RateLimitPolicyOptions

@@ -7,6 +7,7 @@ using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Progress.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Questions.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Testimonials.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Visitors.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -68,6 +69,8 @@ public class CourseCoreDbContext : DbContext
     public DbSet<CertificatePersistenceModel> Certificates => Set<CertificatePersistenceModel>();
 
     public DbSet<TestimonialPersistenceModel> Testimonials => Set<TestimonialPersistenceModel>();
+
+    public DbSet<VisitorPersistenceModel> Visitors => Set<VisitorPersistenceModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

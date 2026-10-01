@@ -10,4 +10,5 @@ public static class RateLimitPolicyNames
     public const string AuthForgotPassword = "AuthForgotPassword";
     public const string AuthResetPassword = "AuthResetPassword";
     public const string AuthChangePassword = "AuthChangePassword";
+    public const string VisitorRegistration = "VisitorRegistration";
 }

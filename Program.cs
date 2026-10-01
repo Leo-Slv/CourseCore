@@ -8,6 +8,7 @@ using CourseCore.Api.Modules.Media;
 using CourseCore.Api.Modules.Progress;
 using CourseCore.Api.Modules.Questions;
 using CourseCore.Api.Modules.Users;
+using CourseCore.Api.Modules.Visitors;
 using CourseCore.Api.Shared;
 using CourseCore.Api.Shared.Infrastructure.Configuration;
 using CourseCore.Api.Shared.Infrastructure.Persistence.Seed;
@@ -82,6 +83,7 @@ builder.Services.AddAuditLogsModule();
 builder.Services.AddCertificatesModule();
 builder.Services.AddTestimonialsModule();
 builder.Services.AddQuestionsModule();
+builder.Services.AddVisitorsModule();
 
 var app = builder.Build();
 

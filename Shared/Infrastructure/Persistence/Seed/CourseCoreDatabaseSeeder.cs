@@ -17,7 +17,8 @@ public sealed class CourseCoreDatabaseSeeder
         new("courses.manage", "Manage courses", "Manage courses"),
         new("videos.manage", "Manage videos", "Manage videos"),
         new("progress.read", "Read progress", "Read progress"),
-        new("audit.read", "Read audit logs", "Read audit logs")
+        new("audit.read", "Read audit logs", "Read audit logs"),
+        new("visitors.read", "Read visitors", "Read first-time visitor registrations")
     ];
 
     private static readonly SeedArea[] Areas =
