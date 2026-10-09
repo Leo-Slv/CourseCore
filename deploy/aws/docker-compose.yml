@@ -1,0 +1,45 @@
+# Production stack for a single AWS EC2 host: API + Caddy (automatic HTTPS).
+# PostgreSQL is external (Neon). Migrations are applied outside this stack
+# (see Docs/deployment-aws.md). The API port is never published to the host;
+# only Caddy exposes 80/443.
+services:
+  coursecore-api:
+    image: ${COURSECORE_IMAGE:?COURSECORE_IMAGE is required, e.g. ghcr.io/<owner>/coursecore:latest}
+    container_name: coursecore-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      # Trust X-Forwarded-* from Caddy. Safe because 8080 is only reachable
+      # inside the compose network.
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /health/live HTTP/1.0\\r\\nHost: localhost\\r\\nX-Forwarded-Proto: https\\r\\n\\r\\n\" >&3 && head -n1 <&3 | grep -q \" 200 \"'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  caddy:
+    image: caddy:2
+    container_name: coursecore-caddy
+    restart: unless-stopped
+    depends_on:
+      - coursecore-api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_HOST: ${API_HOST:?API_HOST is required, e.g. api.1-2-3-4.sslip.io}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

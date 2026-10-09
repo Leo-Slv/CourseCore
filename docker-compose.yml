@@ -70,6 +70,9 @@ services:
       Resend__ApiKey: ${Resend__ApiKey:?Resend__ApiKey is required}
       Resend__FromAddress: ${Resend__FromAddress:?Resend__FromAddress is required}
       Resend__FromName: ${Resend__FromName:-CourseCore}
+      Stripe__SecretKey: ${Stripe__SecretKey:?Stripe__SecretKey is required}
+      Stripe__WebhookSecret: ${Stripe__WebhookSecret:?Stripe__WebhookSecret is required}
+      Frontend__BaseUrl: ${Frontend__BaseUrl:-}
       Seed__Admin__Password: ${Seed__Admin__Password:?Seed__Admin__Password is required; use a non-secret placeholder only while seed is disabled}
       Seed__Admin__ResetPassword: ${Seed__Admin__ResetPassword:-false}
     ports:
