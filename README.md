@@ -321,8 +321,7 @@ Scalar/OpenAPI nao sao expostos por padrao em `Production`.
 Policies de acesso sao separadas por operacao:
 
 ```text
-ManageUserAreaAccess -> users.manage ou Admin
-ManageRoleAreaAccess -> roles.manage ou Admin
+ManageCourseAccess -> users.manage ou Admin
 ManageAreas -> areas.manage ou Admin
 CheckOwnCourseAccess -> qualquer usuario autenticado
 CheckUserCourseAccess -> users.manage, areas.manage, courses.manage ou Admin

@@ -107,8 +107,11 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 | Users | `POST /api/users` | Bearer; `ManageUsers` | body: `name`, `email`, `password` | `UserResponse` | 201, 400, 401, 403, 409, 500 | Create User |
 | Users | `PUT /api/users/{userId}` | Bearer; `ManageUsers` | path `userId`; body: `name`, `email`, `active` | `UserResponse` | 200, 400, 401, 403, 404, 409, 500 | Update User |
 | Users | `GET /api/users` | Bearer; `ManageUsers` | query `page`, `pageSize` | `PagedResponse<UserResponse>` | 200, 400, 401, 403, 500 | List Users - Paged |
-| Access | `POST /api/access/user-area` | Bearer; `ManageUserAreaAccess` | body: user/area/grant fields | `AreaAccessResponse` | 200, 400, 401, 403, 404, 500 | Grant User Area Access |
-| Access | `POST /api/access/role-area` | Bearer; `ManageRoleAreaAccess` | body: role/area/grant fields | `AreaAccessResponse` | 200, 400, 401, 403, 404, 500 | Grant Role Area Access |
+| Access | `GET /api/access/user-course/{userId}` | Bearer; `ManageCourseAccess` | path `userId` | array de `UserCourseAccessResponse` | 200, 400, 401, 403, 500 | List User Course Access |
+| Access | `DELETE /api/access/user-course/{userId}/{courseId}` | Bearer; `ManageCourseAccess` | paths `userId`, `courseId` | sem conteúdo | 204, 400, 401, 403, 404, 500 | Revoke User Course Access |
+| Payments | `POST /api/courses/{courseId}/checkout` | Bearer | path `courseId` | `CheckoutResponse` | 200, 401, 403, 404, 409, 502, 500 | Create Course Checkout |
+| Payments | `GET /api/orders/me` | Bearer | — | array de `OrderResponse` | 200, 401, 500 | List My Orders |
+| Payments | `POST /api/payments/stripe/webhook` | Público (assinatura `Stripe-Signature`) | corpo bruto do evento Stripe | sem conteúdo | 200, 400, 500 | (chamado pelo Stripe; fora do Postman) |
 | Access | `POST /api/access/course/check` | Bearer; `CheckOwnCourseAccess`; deprecated | body `courseId` | `CourseAccessResponse` | 200, 400, 401, 403, 500 | Deprecated folder |
 | Access | `GET /api/access/courses/{courseId}` | Bearer; `CheckOwnCourseAccess` | path `courseId` | `CourseAccessResponse` | 200, 400, 401, 500 | Check Own Course Access |
 | Access | `GET /api/access/users/{userId}/courses/{courseId}` | Bearer; `CheckUserCourseAccess` | paths `userId`, `courseId` | `CourseAccessResponse` | 200, 400, 401, 403, 500 | Check User Course Access - Admin |
@@ -138,8 +141,7 @@ Não há endpoint `me/current user`, controller de Audit Logs nem endpoints púb
 As policies resolvem assim:
 
 - `ManageUsers`: `users.manage` ou Admin;
-- `ManageUserAreaAccess`: `users.manage` ou Admin;
-- `ManageRoleAreaAccess`: `roles.manage` ou Admin;
+- `ManageCourseAccess`: `users.manage` ou Admin;
 - `ManageAreas`: `areas.manage` ou Admin;
 - `CheckOwnCourseAccess`: usuário autenticado;
 - `CheckUserCourseAccess`: `users.manage`, `areas.manage`, `courses.manage` ou Admin;

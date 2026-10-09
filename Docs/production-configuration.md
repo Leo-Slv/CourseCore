@@ -48,6 +48,9 @@ Media__Playback__SigningSecret=CHANGE_ME_USE_A_SEPARATE_MEDIA_SIGNING_SECRET
 Media__Playback__BaseUrl=https://media.your-domain.com
 Media__Playback__AllowedStorageProviders__0=Local
 Cors__AllowedOrigins__0=https://your-frontend-domain.com
+Stripe__SecretKey=sk_test_CHANGE_ME
+Stripe__WebhookSecret=whsec_CHANGE_ME
+Frontend__BaseUrl=https://your-frontend-domain.com
 Seed__Admin__Enabled=false
 ```
 
@@ -86,6 +89,8 @@ Media:Playback:SignedUrlExpirationMinutes
 Media:Playback:AllowedStorageProviders
 Cors:AllowedOrigins
 Auth:RefreshTokenCookie:Secure
+Stripe:SecretKey (must be sk_test_/rk_test_ while Stripe is in test mode)
+Stripe:WebhookSecret (must start with whsec_)
 ```
 
 Production also rejects equal JWT/media signing secrets and rejects a non-secure refresh-token cookie. `SameSite=None` is valid only with `Secure=true`.
