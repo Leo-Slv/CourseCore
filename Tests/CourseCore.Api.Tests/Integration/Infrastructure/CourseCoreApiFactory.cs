@@ -1,10 +1,12 @@
 using System.Text;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Auth.Application.Contracts;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Media.Application.Contracts;
+using CourseCore.Api.Modules.Payments.Application.Contracts;
 using CourseCore.Api.Modules.Media.Domain.Enums;
 using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
@@ -26,6 +28,7 @@ namespace CourseCore.Api.Tests.Integration.Infrastructure;
 
 public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
 {
+    public const string StripeWebhookSecret = "whsec_integrationtestsecret";
     public const string AdminEmail = "admin.integration@coursecore.local";
     public const string AdminPassword = "IntegrationAdmin123!";
     private const string JwtIssuer = "CourseCore.IntegrationTests";
@@ -280,7 +283,8 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         CoursePricingModel pricingModel = CoursePricingModel.Paid,
         bool lessonFreePreview = false,
         bool isFeatured = false,
-        bool areaIsPublic = false)
+        bool areaIsPublic = false,
+        decimal? priceAmount = null)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
@@ -293,9 +297,10 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             Slug = $"integration-course-{Guid.NewGuid():N}",
             Description = "Integration test course",
             Published = true,
-            DisplayOrder = 0,
-            PublishedAt = now,
             PricingModel = pricingModel.ToString(),
+            PublishedAt = now,
+            DisplayOrder = 0,
+            PriceAmount = priceAmount,
             IssuesCertificate = true,
             IsFeatured = isFeatured,
             CreatedAt = now,
@@ -338,13 +343,12 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
 
         if (grantUserAccess is not null)
         {
-            dbContext.UserAreaAccesses.Add(new UserAreaAccessPersistenceModel
+            dbContext.UserCourseAccesses.Add(new UserCourseAccessPersistenceModel
             {
                 Id = Guid.NewGuid(),
                 UserId = grantUserAccess.Value,
-                AreaId = area.Id,
-                CanView = true,
-                CanManage = false,
+                CourseId = course.Id,
+                Source = (int)CourseAccessSource.Manual,
                 CreatedAt = now,
                 UpdatedAt = now
             });
@@ -382,20 +386,19 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         dbContext.Courses.Add(course);
         dbContext.CourseAreas.Add(new CourseAreaPersistenceModel
         {
-            CourseId = course.Id,
             AreaId = area.Id,
+            CourseId = course.Id,
             CreatedAt = now
         });
 
         if (grantUserAccess is not null)
         {
-            dbContext.UserAreaAccesses.Add(new UserAreaAccessPersistenceModel
+            dbContext.UserCourseAccesses.Add(new UserCourseAccessPersistenceModel
             {
                 Id = Guid.NewGuid(),
                 UserId = grantUserAccess.Value,
-                AreaId = area.Id,
-                CanView = true,
-                CanManage = false,
+                CourseId = course.Id,
+                Source = (int)CourseAccessSource.Manual,
                 CreatedAt = now,
                 UpdatedAt = now
             });
@@ -453,39 +456,18 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
         return lesson.Id;
     }
 
-    public async Task GrantUserAreaAccessAsync(Guid userId, Guid areaId, bool canView = true, bool canManage = false)
+    public async Task GrantUserCourseAccessAsync(Guid userId, Guid courseId)
     {
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
         var now = DateTime.UtcNow;
 
-        dbContext.UserAreaAccesses.Add(new UserAreaAccessPersistenceModel
+        dbContext.UserCourseAccesses.Add(new UserCourseAccessPersistenceModel
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            AreaId = areaId,
-            CanView = canView,
-            CanManage = canManage,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
-
-        await dbContext.SaveChangesAsync();
-    }
-
-    public async Task GrantRoleAreaAccessAsync(Guid roleId, Guid areaId, bool canView = true, bool canManage = false)
-    {
-        using var scope = Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
-        var now = DateTime.UtcNow;
-
-        dbContext.RoleAreaAccesses.Add(new RoleAreaAccessPersistenceModel
-        {
-            Id = Guid.NewGuid(),
-            RoleId = roleId,
-            AreaId = areaId,
-            CanView = canView,
-            CanManage = canManage,
+            CourseId = courseId,
+            Source = (int)CourseAccessSource.Manual,
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -606,6 +588,9 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
                 ["Media:S3:BucketName"] = "integration-test-bucket",
                 ["Media:S3:Region"] = "us-east-1",
                 ["Cors:AllowedOrigins:0"] = "https://localhost",
+                ["Stripe:SecretKey"] = "sk_test_integrationtestkey",
+                ["Stripe:WebhookSecret"] = StripeWebhookSecret,
+                ["Frontend:BaseUrl"] = "https://app.coursecore.local",
                 ["Seed:Admin:Enabled"] = "false"
             };
 
@@ -641,6 +626,9 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IEmailSender, FakeEmailSender>();
             services.RemoveAll<IS3PresignedUrlProvider>();
             services.AddSingleton<IS3PresignedUrlProvider, FakeS3PresignedUrlProvider>();
+            services.RemoveAll<IStripeGateway>();
+            services.AddSingleton<FakeStripeGateway>();
+            services.AddSingleton<IStripeGateway>(provider => provider.GetRequiredService<FakeStripeGateway>());
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();

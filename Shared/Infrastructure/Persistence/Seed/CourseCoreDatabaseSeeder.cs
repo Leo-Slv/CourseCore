@@ -65,12 +65,11 @@ public sealed class CourseCoreDatabaseSeeder
 
         var adminRole = await EnsureAdminRoleAsync(now, cancellationToken);
         var permissions = await EnsurePermissionsAsync(now, cancellationToken);
-        var areas = await EnsureAreasAsync(now, cancellationToken);
+        await EnsureAreasAsync(now, cancellationToken);
         var adminUser = await EnsureAdminUserAsync(adminName, adminEmail, adminPassword, now, cancellationToken);
 
         EnsureAdminUserRole(adminUser.Id, adminRole.Id, now);
         EnsureAdminRolePermissions(adminRole.Id, permissions, now);
-        EnsureAdminRoleAreaAccesses(adminRole.Id, areas, now);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -262,40 +261,6 @@ public sealed class CourseCoreDatabaseSeeder
                 PermissionId = permission.Id,
                 CreatedAt = now
             });
-        }
-    }
-
-    private void EnsureAdminRoleAreaAccesses(
-        Guid roleId,
-        IReadOnlyCollection<AreaPersistenceModel> areas,
-        DateTime now)
-    {
-        foreach (var area in areas)
-        {
-            var access = _dbContext.RoleAreaAccesses.Local.FirstOrDefault(
-                    item => item.RoleId == roleId && item.AreaId == area.Id) ??
-                _dbContext.RoleAreaAccesses.FirstOrDefault(
-                    item => item.RoleId == roleId && item.AreaId == area.Id);
-
-            if (access is null)
-            {
-                _dbContext.RoleAreaAccesses.Add(new RoleAreaAccessPersistenceModel
-                {
-                    Id = Guid.NewGuid(),
-                    RoleId = roleId,
-                    AreaId = area.Id,
-                    CanView = true,
-                    CanManage = true,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                });
-
-                continue;
-            }
-
-            access.CanView = true;
-            access.CanManage = true;
-            access.UpdatedAt = now;
         }
     }
 

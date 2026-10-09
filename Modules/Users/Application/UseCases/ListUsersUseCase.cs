@@ -11,13 +11,13 @@ public class ListUsersUseCase
 {
     private readonly IUserRepository _users;
     private readonly IRoleRepository _roles;
-    private readonly IAreaRepository _areas;
+    private readonly IUserCourseAccessRepository _courseAccesses;
 
-    public ListUsersUseCase(IUserRepository users, IRoleRepository roles, IAreaRepository areas)
+    public ListUsersUseCase(IUserRepository users, IRoleRepository roles, IUserCourseAccessRepository courseAccesses)
     {
         _users = users;
         _roles = roles;
-        _areas = areas;
+        _courseAccesses = courseAccesses;
     }
 
     public async Task<UserListOutput> ExecuteAsync(
@@ -39,7 +39,7 @@ public class ListUsersUseCase
         var (users, totalCount) = await _users.ListPagedAsync(input.Page, input.PageSize, search, cancellationToken);
         var userIds = users.Select(user => user.Id).ToList();
         var roleNamesByUserId = await _roles.FindRoleNamesByUserIdsAsync(userIds, cancellationToken);
-        var areaNamesByUserId = await _areas.FindGrantedAreaNamesByUserIdsAsync(userIds, cancellationToken);
+        var courseTitlesByUserId = await _courseAccesses.FindGrantedCourseTitlesByUserIdsAsync(userIds, cancellationToken);
         var totalRegistered = await _users.CountAsync(cancellationToken);
         var totalConfirmed = await _users.CountConfirmedAsync(cancellationToken);
 
@@ -49,7 +49,7 @@ public class ListUsersUseCase
                 .Select(user => UserOutput.FromUser(
                     user,
                     roleNamesByUserId.TryGetValue(user.Id, out var roleNames) ? roleNames : null,
-                    areaNamesByUserId.TryGetValue(user.Id, out var areaNames) ? areaNames : null))
+                    courseTitlesByUserId.TryGetValue(user.Id, out var courseTitles) ? courseTitles : null))
                 .ToList(),
             Page = input.Page,
             PageSize = input.PageSize,

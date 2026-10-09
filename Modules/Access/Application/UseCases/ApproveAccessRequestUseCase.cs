@@ -1,5 +1,5 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
-using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
@@ -17,6 +17,7 @@ public class ApproveAccessRequestUseCase
     private readonly ICourseRepository _courses;
     private readonly IAreaRepository _areas;
     private readonly IUserRepository _users;
+    private readonly UserCourseAccessGranter _courseAccessGranter;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
 
@@ -25,6 +26,7 @@ public class ApproveAccessRequestUseCase
         ICourseRepository courses,
         IAreaRepository areas,
         IUserRepository users,
+        UserCourseAccessGranter courseAccessGranter,
         IUnitOfWork unitOfWork,
         IAuditLogService auditLogs)
     {
@@ -32,6 +34,7 @@ public class ApproveAccessRequestUseCase
         _courses = courses;
         _areas = areas;
         _users = users;
+        _courseAccessGranter = courseAccessGranter;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
     }
@@ -81,21 +84,11 @@ public class ApproveAccessRequestUseCase
                 throw new ConflictException("Course has no active linked areas to grant.");
             }
 
-            foreach (var areaId in targetAreaIds)
-            {
-                var existing = await _areas.FindUserAreaAccessAsync(request.UserId, areaId, cancellationToken);
-
-                if (existing is null)
-                {
-                    var access = UserAreaAccess.Create(request.UserId, areaId, canView: true, canManage: false);
-                    await _areas.CreateUserAreaAccessAsync(access, cancellationToken);
-                }
-                else
-                {
-                    existing.ChangePermissions(canView: true, existing.CanManage);
-                    await _areas.UpdateUserAreaAccessAsync(existing, cancellationToken);
-                }
-            }
+            await _courseAccessGranter.EnsureGrantedAsync(
+                request.UserId,
+                request.CourseId,
+                CourseAccessSource.Manual,
+                cancellationToken);
 
             request.Approve(input.DecidedByUserId);
             await _accessRequests.UpdateAsync(request, cancellationToken);
@@ -110,7 +103,6 @@ public class ApproveAccessRequestUseCase
                 {
                     ["targetUserId"] = request.UserId.ToString(),
                     ["courseId"] = request.CourseId.ToString(),
-                    ["grantedAreaIds"] = string.Join(",", targetAreaIds),
                     ["displayName"] = $"{requestingUser?.Email.Value ?? request.UserId.ToString()} → {course.Title}"
                 },
                 userId: input.DecidedByUserId,

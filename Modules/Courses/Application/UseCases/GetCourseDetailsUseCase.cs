@@ -54,7 +54,7 @@ public class GetCourseDetailsUseCase
 
         var isLockedButBrowsable = access.Reason is CourseAccessDenialReasons.CourseHasNoLinkedAreas
             or CourseAccessDenialReasons.CourseHasNoActiveLinkedAreas
-            or CourseAccessDenialReasons.NoAreaAccessFound;
+            or CourseAccessDenialReasons.NoCourseAccessFound;
 
         if (!access.CanAccess && !isLockedButBrowsable)
         {

@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
@@ -153,6 +154,7 @@ public class GetCourseDetailsUseCaseTests
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
         var areas = new FakeAreaRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var courses = new FakeCourseRepository();
         var inputUser = TestEntityFactory.User(email: $"input-{Guid.NewGuid():N}@coursecore.local");
         var otherUser = TestEntityFactory.User(email: $"other-{Guid.NewGuid():N}@coursecore.local");
@@ -170,15 +172,15 @@ public class GetCourseDetailsUseCaseTests
 
         if (grantAccessToInputUser)
         {
-            areas.UserAreaAccesses.Add(UserAreaAccess.Create(inputUser.Id, area.Id, canView: true, canManage: false));
+            courseAccesses.Accesses.Add(UserCourseAccess.Create(inputUser.Id, course.Id, CourseAccessSource.Manual));
         }
 
         if (grantAccessToOtherUser)
         {
-            areas.UserAreaAccesses.Add(UserAreaAccess.Create(otherUser.Id, area.Id, canView: true, canManage: false));
+            courseAccesses.Accesses.Add(UserCourseAccess.Create(otherUser.Id, course.Id, CourseAccessSource.Manual));
         }
 
-        var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var courseAccessService = new CourseAccessService(users, roles, areas, courses, courseAccesses);
         var videos = new FakeVideoRepository();
         var certificates = new FakeCertificateRepository();
         var useCase = new GetCourseDetailsUseCase(courses, courseAccessService, videos, certificates);

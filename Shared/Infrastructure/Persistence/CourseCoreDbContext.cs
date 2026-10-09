@@ -7,6 +7,7 @@ using CourseCore.Api.Modules.Media.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Progress.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Questions.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Testimonials.Infrastructure.Persistence.Models;
+using CourseCore.Api.Modules.Payments.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Visitors.Infrastructure.Persistence.Models;
 using CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models;
 using Microsoft.EntityFrameworkCore;
@@ -38,9 +39,7 @@ public class CourseCoreDbContext : DbContext
 
     public DbSet<AreaPersistenceModel> Areas => Set<AreaPersistenceModel>();
 
-    public DbSet<UserAreaAccessPersistenceModel> UserAreaAccesses => Set<UserAreaAccessPersistenceModel>();
-
-    public DbSet<RoleAreaAccessPersistenceModel> RoleAreaAccesses => Set<RoleAreaAccessPersistenceModel>();
+    public DbSet<UserCourseAccessPersistenceModel> UserCourseAccesses => Set<UserCourseAccessPersistenceModel>();
 
     public DbSet<AccessRequestPersistenceModel> AccessRequests => Set<AccessRequestPersistenceModel>();
 
@@ -71,6 +70,8 @@ public class CourseCoreDbContext : DbContext
     public DbSet<TestimonialPersistenceModel> Testimonials => Set<TestimonialPersistenceModel>();
 
     public DbSet<VisitorPersistenceModel> Visitors => Set<VisitorPersistenceModel>();
+
+    public DbSet<OrderPersistenceModel> Orders => Set<OrderPersistenceModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -32,12 +32,6 @@ public class UserConfiguration : IEntityTypeConfiguration<UserPersistenceModel>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder
-            .HasMany(x => x.AreaAccesses)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder
             .HasMany(x => x.CourseProgresses)
             .WithOne(x => x.User)
             .HasForeignKey(x => x.UserId)

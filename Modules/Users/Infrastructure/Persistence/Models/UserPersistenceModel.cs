@@ -29,8 +29,6 @@ public class UserPersistenceModel
 
     public ICollection<UserRolePersistenceModel> UserRoles { get; set; } = new List<UserRolePersistenceModel>();
 
-    public ICollection<UserAreaAccessPersistenceModel> AreaAccesses { get; set; } = new List<UserAreaAccessPersistenceModel>();
-
     public ICollection<UserCourseProgressPersistenceModel> CourseProgresses { get; set; } = new List<UserCourseProgressPersistenceModel>();
 
     public ICollection<UserLessonProgressPersistenceModel> LessonProgresses { get; set; } = new List<UserLessonProgressPersistenceModel>();

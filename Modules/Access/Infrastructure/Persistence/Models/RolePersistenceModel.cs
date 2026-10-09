@@ -17,6 +17,4 @@ public class RolePersistenceModel
     public ICollection<UserRolePersistenceModel> UserRoles { get; set; } = new List<UserRolePersistenceModel>();
 
     public ICollection<RolePermissionPersistenceModel> RolePermissions { get; set; } = new List<RolePermissionPersistenceModel>();
-
-    public ICollection<RoleAreaAccessPersistenceModel> AreaAccesses { get; set; } = new List<RoleAreaAccessPersistenceModel>();
 }

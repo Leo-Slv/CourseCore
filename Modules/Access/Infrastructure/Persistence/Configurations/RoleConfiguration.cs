@@ -31,11 +31,5 @@ public class RoleConfiguration : IEntityTypeConfiguration<RolePersistenceModel>
             .WithOne(x => x.Role)
             .HasForeignKey(x => x.RoleId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder
-            .HasMany(x => x.AreaAccesses)
-            .WithOne(x => x.Role)
-            .HasForeignKey(x => x.RoleId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

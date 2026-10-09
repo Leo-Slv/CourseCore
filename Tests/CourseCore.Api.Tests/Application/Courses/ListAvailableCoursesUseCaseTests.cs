@@ -1,3 +1,5 @@
+using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Courses.Application.UseCases;
@@ -58,6 +60,7 @@ public class ListAvailableCoursesUseCaseTests
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
         var areas = new FakeAreaRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var courses = new FakeCourseRepository();
         var videos = new FakeVideoRepository();
         var certificates = new FakeCertificateRepository();
@@ -69,7 +72,7 @@ public class ListAvailableCoursesUseCaseTests
         areas.Areas.Add(area);
         courses.Courses.Add(course);
 
-        var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var courseAccessService = new CourseAccessService(users, roles, areas, courses, courseAccesses);
         var useCase = new ListAvailableCoursesUseCase(courseAccessService, courses, videos, certificates);
 
         return new ListAvailableCoursesFixture(useCase, user.Id, course.Id, course, videos, certificates);

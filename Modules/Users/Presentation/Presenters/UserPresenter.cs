@@ -46,7 +46,7 @@ public static class UserPresenter
             Active = output.Active,
             EmailVerifiedAt = output.EmailVerifiedAt,
             RoleNames = output.RoleNames,
-            AreaNames = output.AreaNames,
+            CourseTitles = output.CourseTitles,
             CreatedAt = output.CreatedAt,
             UpdatedAt = output.UpdatedAt
         };

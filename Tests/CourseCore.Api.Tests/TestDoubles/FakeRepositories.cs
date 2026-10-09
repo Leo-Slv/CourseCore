@@ -207,10 +207,6 @@ public sealed class FakeAreaRepository : IAreaRepository
 {
     public List<Area> Areas { get; } = [];
 
-    public List<UserAreaAccess> UserAreaAccesses { get; } = [];
-
-    public List<RoleAreaAccess> RoleAreaAccesses { get; } = [];
-
     public Task<Area?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(Areas.FirstOrDefault(area => area.Id == id));
@@ -226,13 +222,6 @@ public sealed class FakeAreaRepository : IAreaRepository
         return Task.FromResult<IReadOnlyCollection<Area>>(Areas.ToArray());
     }
 
-    public Task<IReadOnlyCollection<Area>> ListByUserAccessAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        var areaIds = UserAreaAccesses.Where(access => access.UserId == userId).Select(access => access.AreaId).ToHashSet();
-
-        return Task.FromResult<IReadOnlyCollection<Area>>(Areas.Where(area => areaIds.Contains(area.Id)).ToArray());
-    }
-
     public Task CreateAsync(Area area, CancellationToken cancellationToken = default)
     {
         Areas.Add(area);
@@ -243,65 +232,6 @@ public sealed class FakeAreaRepository : IAreaRepository
     public Task UpdateAsync(Area area, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
-    }
-
-    public Task CreateUserAreaAccessAsync(UserAreaAccess access, CancellationToken cancellationToken = default)
-    {
-        UserAreaAccesses.Add(access);
-
-        return Task.CompletedTask;
-    }
-
-    public Task CreateRoleAreaAccessAsync(RoleAreaAccess access, CancellationToken cancellationToken = default)
-    {
-        RoleAreaAccesses.Add(access);
-
-        return Task.CompletedTask;
-    }
-
-    public Task<UserAreaAccess?> FindUserAreaAccessAsync(Guid userId, Guid areaId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(UserAreaAccesses.FirstOrDefault(x => x.UserId == userId && x.AreaId == areaId));
-
-    public Task<RoleAreaAccess?> FindRoleAreaAccessAsync(Guid roleId, Guid areaId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(RoleAreaAccesses.FirstOrDefault(x => x.RoleId == roleId && x.AreaId == areaId));
-
-    public Task UpdateUserAreaAccessAsync(UserAreaAccess access, CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-    public Task UpdateRoleAreaAccessAsync(RoleAreaAccess access, CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-    public Task<IReadOnlyCollection<UserAreaAccess>> ListUserAreaAccessesAsync(
-        Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult<IReadOnlyCollection<UserAreaAccess>>(
-            UserAreaAccesses.Where(access => access.UserId == userId).ToArray());
-    }
-
-    public Task<IReadOnlyCollection<RoleAreaAccess>> ListRoleAreaAccessesAsync(
-        IReadOnlyCollection<Guid> roleIds,
-        CancellationToken cancellationToken = default)
-    {
-        var roleIdSet = roleIds.ToHashSet();
-
-        return Task.FromResult<IReadOnlyCollection<RoleAreaAccess>>(
-            RoleAreaAccesses.Where(access => roleIdSet.Contains(access.RoleId)).ToArray());
-    }
-
-    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindGrantedAreaNamesByUserIdsAsync(
-        IReadOnlyCollection<Guid> userIds,
-        CancellationToken cancellationToken = default)
-    {
-        var userIdSet = userIds.ToHashSet();
-        var activeAreaIds = Areas.Where(area => area.Active).ToDictionary(area => area.Id, area => area.Name);
-
-        var result = UserAreaAccesses
-            .Where(access => userIdSet.Contains(access.UserId) && access.CanView && activeAreaIds.ContainsKey(access.AreaId))
-            .GroupBy(access => access.UserId)
-            .ToDictionary(
-                group => group.Key,
-                group => (IReadOnlyCollection<string>)group.Select(access => activeAreaIds[access.AreaId]).ToList());
-
-        return Task.FromResult<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>>(result);
     }
 }
 
@@ -702,6 +632,60 @@ public sealed class FakeAccessRequestRepository : IAccessRequestRepository
 
     public Task UpdateAsync(AccessRequest request, CancellationToken cancellationToken = default)
     {
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class FakeUserCourseAccessRepository : IUserCourseAccessRepository
+{
+    public List<UserCourseAccess> Accesses { get; } = [];
+
+    public Dictionary<Guid, string> CourseTitles { get; } = [];
+
+    public Task<UserCourseAccess?> FindAsync(Guid userId, Guid courseId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Accesses.FirstOrDefault(x => x.UserId == userId && x.CourseId == courseId));
+    }
+
+    public Task<bool> ExistsAsync(Guid userId, Guid courseId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Accesses.Any(x => x.UserId == userId && x.CourseId == courseId));
+    }
+
+    public Task<IReadOnlyCollection<UserCourseAccess>> ListByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<UserCourseAccess>>(
+            Accesses.Where(x => x.UserId == userId).ToArray());
+    }
+
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindGrantedCourseTitlesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        var userIdSet = userIds.ToHashSet();
+        var result = Accesses
+            .Where(x => userIdSet.Contains(x.UserId) && CourseTitles.ContainsKey(x.CourseId))
+            .GroupBy(x => x.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyCollection<string>)group.Select(x => CourseTitles[x.CourseId]).ToList());
+
+        return Task.FromResult<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>>(result);
+    }
+
+    public Task CreateAsync(UserCourseAccess access, CancellationToken cancellationToken = default)
+    {
+        Accesses.Add(access);
+
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(UserCourseAccess access, CancellationToken cancellationToken = default)
+    {
+        Accesses.RemoveAll(x => x.Id == access.Id);
+
         return Task.CompletedTask;
     }
 }

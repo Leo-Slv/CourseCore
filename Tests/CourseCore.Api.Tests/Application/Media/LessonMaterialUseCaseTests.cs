@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
@@ -172,6 +173,7 @@ public class LessonMaterialUseCaseTests
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
         var areas = new FakeAreaRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var courses = new FakeCourseRepository();
         var lessons = new FakeLessonRepository();
         var user = TestEntityFactory.User();
@@ -200,10 +202,10 @@ public class LessonMaterialUseCaseTests
 
         if (grantAccess)
         {
-            areas.UserAreaAccesses.Add(UserAreaAccess.Create(user.Id, area.Id, canView: true, canManage: false));
+            courseAccesses.Accesses.Add(UserCourseAccess.Create(user.Id, course.Id, CourseAccessSource.Manual));
         }
 
-        var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var courseAccessService = new CourseAccessService(users, roles, areas, courses, courseAccesses);
         var listUseCase = new ListLessonMaterialsUseCase(materials, lessons, courses, courseAccessService);
 
         return new ListMaterialsFixture(listUseCase, user.Id);

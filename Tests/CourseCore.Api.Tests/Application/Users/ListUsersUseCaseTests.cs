@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Users.Application.DTOs;
 using CourseCore.Api.Modules.Users.Application.UseCases;
@@ -14,7 +15,7 @@ public class ListUsersUseCaseTests
         var users = new FakeUserRepository();
         users.Add(TestEntityFactory.User(email: "confirmed@coursecore.local", emailVerified: true));
         users.Add(TestEntityFactory.User(email: "pending@coursecore.local", emailVerified: false));
-        var useCase = new ListUsersUseCase(users, new FakeRoleRepository(), new FakeAreaRepository());
+        var useCase = new ListUsersUseCase(users, new FakeRoleRepository(), new FakeUserCourseAccessRepository());
 
         var output = await useCase.ExecuteAsync(new ListUsersInput());
 
@@ -29,7 +30,7 @@ public class ListUsersUseCaseTests
         var target = TestEntityFactory.User(email: "target@coursecore.local");
         users.Add(target);
         users.Add(TestEntityFactory.User(email: "other@coursecore.local"));
-        var useCase = new ListUsersUseCase(users, new FakeRoleRepository(), new FakeAreaRepository());
+        var useCase = new ListUsersUseCase(users, new FakeRoleRepository(), new FakeUserCourseAccessRepository());
 
         var output = await useCase.ExecuteAsync(new ListUsersInput { Search = "target" });
 
@@ -46,7 +47,7 @@ public class ListUsersUseCaseTests
         users.Add(user);
         var role = TestEntityFactory.Role(name: "Admin");
         roles.AddForUser(user.Id, role);
-        var useCase = new ListUsersUseCase(users, roles, new FakeAreaRepository());
+        var useCase = new ListUsersUseCase(users, roles, new FakeUserCourseAccessRepository());
 
         var output = await useCase.ExecuteAsync(new ListUsersInput());
 
@@ -55,33 +56,30 @@ public class ListUsersUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldIncludeGrantedAreaNamesPerUser()
+    public async Task ExecuteAsync_ShouldIncludeGrantedCourseTitlesPerUser()
     {
         var users = new FakeUserRepository();
-        var areas = new FakeAreaRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var user = TestEntityFactory.User();
         users.Add(user);
-        var grantedArea = TestEntityFactory.Area();
-        var revokedArea = TestEntityFactory.Area();
-        areas.Areas.Add(grantedArea);
-        areas.Areas.Add(revokedArea);
-        areas.UserAreaAccesses.Add(UserAreaAccess.Create(user.Id, grantedArea.Id, canView: true, canManage: false));
-        var revokedAccess = UserAreaAccess.Create(user.Id, revokedArea.Id, canView: true, canManage: false);
-        revokedAccess.Revoke();
-        areas.UserAreaAccesses.Add(revokedAccess);
-        var useCase = new ListUsersUseCase(users, new FakeRoleRepository(), areas);
+        var grantedCourse = TestEntityFactory.PublishedCourse(Guid.NewGuid());
+        var otherCourse = TestEntityFactory.PublishedCourse(Guid.NewGuid());
+        courseAccesses.CourseTitles[grantedCourse.Id] = grantedCourse.Title;
+        courseAccesses.CourseTitles[otherCourse.Id] = otherCourse.Title;
+        courseAccesses.Accesses.Add(UserCourseAccess.Create(user.Id, grantedCourse.Id, CourseAccessSource.Manual));
+        var useCase = new ListUsersUseCase(users, new FakeRoleRepository(), courseAccesses);
 
         var output = await useCase.ExecuteAsync(new ListUsersInput());
 
         var item = Assert.Single(output.Page.Items);
-        var areaName = Assert.Single(item.AreaNames);
-        Assert.Equal(grantedArea.Name, areaName);
+        var courseTitle = Assert.Single(item.CourseTitles);
+        Assert.Equal(grantedCourse.Title, courseTitle);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenPageIsInvalid_ShouldThrow()
     {
-        var useCase = new ListUsersUseCase(new FakeUserRepository(), new FakeRoleRepository(), new FakeAreaRepository());
+        var useCase = new ListUsersUseCase(new FakeUserRepository(), new FakeRoleRepository(), new FakeUserCourseAccessRepository());
 
         await Assert.ThrowsAsync<ApplicationValidationException>(
             () => useCase.ExecuteAsync(new ListUsersInput { Page = 0 }));

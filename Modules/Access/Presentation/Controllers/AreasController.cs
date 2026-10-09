@@ -15,116 +15,53 @@ namespace CourseCore.Api.Modules.Access.Presentation.Controllers;
 [Authorize]
 public class AreasController : ControllerBase
 {
-    private readonly GrantUserAreaAccessUseCase _grantUserAreaAccessUseCase;
-    private readonly GrantRoleAreaAccessUseCase _grantRoleAreaAccessUseCase;
     private readonly CheckCourseAccessUseCase _checkCourseAccessUseCase;
-    private readonly ListUserAreaAccessUseCase _listUserAreaAccessUseCase;
-    private readonly ListRoleAreaAccessUseCase _listRoleAreaAccessUseCase;
-    private readonly RevokeUserAreaAccessUseCase _revokeUserAreaAccessUseCase;
+    private readonly ListUserCourseAccessUseCase _listUserCourseAccessUseCase;
+    private readonly RevokeUserCourseAccessUseCase _revokeUserCourseAccessUseCase;
     private readonly ICurrentUserService _currentUserService;
 
     public AreasController(
-        GrantUserAreaAccessUseCase grantUserAreaAccessUseCase,
-        GrantRoleAreaAccessUseCase grantRoleAreaAccessUseCase,
         CheckCourseAccessUseCase checkCourseAccessUseCase,
-        ListUserAreaAccessUseCase listUserAreaAccessUseCase,
-        ListRoleAreaAccessUseCase listRoleAreaAccessUseCase,
-        RevokeUserAreaAccessUseCase revokeUserAreaAccessUseCase,
+        ListUserCourseAccessUseCase listUserCourseAccessUseCase,
+        RevokeUserCourseAccessUseCase revokeUserCourseAccessUseCase,
         ICurrentUserService currentUserService)
     {
-        _grantUserAreaAccessUseCase = grantUserAreaAccessUseCase;
-        _grantRoleAreaAccessUseCase = grantRoleAreaAccessUseCase;
         _checkCourseAccessUseCase = checkCourseAccessUseCase;
-        _listUserAreaAccessUseCase = listUserAreaAccessUseCase;
-        _listRoleAreaAccessUseCase = listRoleAreaAccessUseCase;
-        _revokeUserAreaAccessUseCase = revokeUserAreaAccessUseCase;
+        _listUserCourseAccessUseCase = listUserCourseAccessUseCase;
+        _revokeUserCourseAccessUseCase = revokeUserCourseAccessUseCase;
         _currentUserService = currentUserService;
     }
 
-    [HttpPost("user-area")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
-    [ProducesResponseType(typeof(AreaAccessResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<AreaAccessResponse>> GrantUserAreaAccessAsync(
-        GrantUserAreaAccessRequest request,
-        CancellationToken cancellationToken)
-    {
-        var output = await _grantUserAreaAccessUseCase.ExecuteAsync(
-            AccessPresenter.ToInput(request),
-            cancellationToken);
-
-        return Ok(AccessPresenter.ToResponse(output));
-    }
-
-    [HttpPost("role-area")]
-    [Authorize(Policy = AuthPolicyNames.ManageRoleAreaAccess)]
-    [ProducesResponseType(typeof(AreaAccessResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<AreaAccessResponse>> GrantRoleAreaAccessAsync(
-        GrantRoleAreaAccessRequest request,
-        CancellationToken cancellationToken)
-    {
-        var output = await _grantRoleAreaAccessUseCase.ExecuteAsync(
-            AccessPresenter.ToInput(request),
-            cancellationToken);
-
-        return Ok(AccessPresenter.ToResponse(output));
-    }
-
-    [HttpGet("user-area/{userId:guid}")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
-    [ProducesResponseType(typeof(IReadOnlyCollection<AreaAccessResponse>), StatusCodes.Status200OK)]
+    [HttpGet("user-course/{userId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourseAccess)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<UserCourseAccessResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyCollection<AreaAccessResponse>>> ListUserAreaAccessAsync(
+    public async Task<ActionResult<IReadOnlyCollection<UserCourseAccessResponse>>> ListUserCourseAccessAsync(
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var outputs = await _listUserAreaAccessUseCase.ExecuteAsync(userId, cancellationToken);
+        var outputs = await _listUserCourseAccessUseCase.ExecuteAsync(userId, cancellationToken);
 
         return Ok(outputs.Select(AccessPresenter.ToResponse).ToList());
     }
 
-    [HttpGet("role-area/{roleId:guid}")]
-    [Authorize(Policy = AuthPolicyNames.ManageRoleAreaAccess)]
-    [ProducesResponseType(typeof(IReadOnlyCollection<AreaAccessResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyCollection<AreaAccessResponse>>> ListRoleAreaAccessAsync(
-        Guid roleId,
-        CancellationToken cancellationToken)
-    {
-        var outputs = await _listRoleAreaAccessUseCase.ExecuteAsync(roleId, cancellationToken);
-
-        return Ok(outputs.Select(AccessPresenter.ToResponse).ToList());
-    }
-
-    [HttpDelete("user-area/{userId:guid}/{areaId:guid}")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [HttpDelete("user-course/{userId:guid}/{courseId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.ManageCourseAccess)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RevokeUserAreaAccessAsync(
+    public async Task<IActionResult> RevokeUserCourseAccessAsync(
         Guid userId,
-        Guid areaId,
+        Guid courseId,
         CancellationToken cancellationToken)
     {
-        await _revokeUserAreaAccessUseCase.ExecuteAsync(userId, areaId, cancellationToken);
+        await _revokeUserCourseAccessUseCase.ExecuteAsync(userId, courseId, cancellationToken);
 
         return NoContent();
     }

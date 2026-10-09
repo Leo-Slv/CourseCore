@@ -12,9 +12,9 @@ public static class AccessDependencyInjection
         services.AddScoped<IRoleRepository, EfRoleRepository>();
         services.AddScoped<IAreaRepository, EfAreaRepository>();
         services.AddScoped<IAccessRequestRepository, EfAccessRequestRepository>();
+        services.AddScoped<IUserCourseAccessRepository, EfUserCourseAccessRepository>();
+        services.AddScoped<UserCourseAccessGranter>();
         services.AddScoped<CourseAccessService>();
-        services.AddScoped<GrantUserAreaAccessUseCase>();
-        services.AddScoped<GrantRoleAreaAccessUseCase>();
         services.AddScoped<CheckCourseAccessUseCase>();
         services.AddScoped<CreateAreaUseCase>();
         services.AddScoped<UpdateAreaUseCase>();
@@ -25,9 +25,8 @@ public static class AccessDependencyInjection
         services.AddScoped<RejectAccessRequestUseCase>();
         services.AddScoped<ListAccessRequestsUseCase>();
         services.AddScoped<ListMyAccessRequestsUseCase>();
-        services.AddScoped<ListUserAreaAccessUseCase>();
-        services.AddScoped<ListRoleAreaAccessUseCase>();
-        services.AddScoped<RevokeUserAreaAccessUseCase>();
+        services.AddScoped<ListUserCourseAccessUseCase>();
+        services.AddScoped<RevokeUserCourseAccessUseCase>();
         services.AddScoped<GrantCourseAccessUseCase>();
         services.AddScoped<ListGrantedCourseAccessUseCase>();
         services.AddScoped<ListRolesUseCase>();

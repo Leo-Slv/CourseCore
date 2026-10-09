@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Domain.Entities;
@@ -23,14 +24,14 @@ public class GrantCourseAccessUseCaseTests
     public async Task ExecuteAsync_WhenUserAlreadyHasAccess_ShouldThrowConflictException()
     {
         var fixture = CreateFixture(CoursePricingModel.Paid);
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.CourseAccesses.Accesses.Add(UserCourseAccess.Create(fixture.UserId, fixture.CourseId, CourseAccessSource.Manual));
 
         await Assert.ThrowsAsync<ConflictException>(() => fixture.UseCase.ExecuteAsync(
             fixture.UserId, fixture.CourseId, fixture.AdminUserId));
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenNoExistingRequest_ShouldCreateApprovedRequestAndGrantAreaAccess()
+    public async Task ExecuteAsync_WhenNoExistingRequest_ShouldCreateApprovedRequestAndGrantCourseAccess()
     {
         var fixture = CreateFixture(CoursePricingModel.Paid);
 
@@ -38,8 +39,7 @@ public class GrantCourseAccessUseCaseTests
 
         Assert.Equal("Approved", output.Status);
         Assert.Single(fixture.AccessRequests.Requests);
-        var access = fixture.Areas.UserAreaAccesses.Single(a => a.UserId == fixture.UserId && a.AreaId == fixture.AreaId);
-        Assert.True(access.CanView);
+        var access = fixture.CourseAccesses.Accesses.Single(a => a.UserId == fixture.UserId && a.CourseId == fixture.CourseId);
         var auditLog = Assert.Single(fixture.AuditLogs.Entries, e => e.Action == AuditLogActionNames.AccessRequestApproved);
         Assert.Equal($"{fixture.UserEmail} → {fixture.CourseTitle}", auditLog.Metadata["displayName"]);
     }
@@ -63,6 +63,7 @@ public class GrantCourseAccessUseCaseTests
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
         var areas = new FakeAreaRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var courses = new FakeCourseRepository();
         var accessRequests = new FakeAccessRequestRepository();
         var user = TestEntityFactory.User(email: $"user-{Guid.NewGuid():N}@coursecore.local");
@@ -73,13 +74,14 @@ public class GrantCourseAccessUseCaseTests
         areas.Areas.Add(area);
         courses.Courses.Add(course);
 
-        var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var courseAccessService = new CourseAccessService(users, roles, areas, courses, courseAccesses);
         var auditLogs = new FakeAuditLogService();
         var useCase = new GrantCourseAccessUseCase(
-            users, courses, areas, accessRequests, courseAccessService, new FakeUnitOfWork(), auditLogs);
+            users, courses, areas, accessRequests, courseAccessService,
+            new UserCourseAccessGranter(courseAccesses), new FakeUnitOfWork(), auditLogs);
 
         return new GrantCourseAccessFixture(
-            useCase, user.Id, course.Id, area.Id, Guid.NewGuid(), areas, accessRequests, auditLogs, user.Email.Value, course.Title);
+            useCase, user.Id, course.Id, area.Id, Guid.NewGuid(), areas, courseAccesses, accessRequests, auditLogs, user.Email.Value, course.Title);
     }
 
     private sealed record GrantCourseAccessFixture(
@@ -89,6 +91,7 @@ public class GrantCourseAccessUseCaseTests
         Guid AreaId,
         Guid AdminUserId,
         FakeAreaRepository Areas,
+        FakeUserCourseAccessRepository CourseAccesses,
         FakeAccessRequestRepository AccessRequests,
         FakeAuditLogService AuditLogs,
         string UserEmail,

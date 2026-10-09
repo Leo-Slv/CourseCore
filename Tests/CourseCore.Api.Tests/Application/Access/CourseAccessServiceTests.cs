@@ -1,5 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Tests.TestDoubles;
 
@@ -11,7 +13,7 @@ public class CourseAccessServiceTests
     public async Task CanUserAccessCourseAsync_WhenEmailIsNotVerified_ShouldDenyAccessEvenWithGrant()
     {
         var fixture = CreateFixture(emailVerified: false);
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.Grant();
 
         var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
 
@@ -71,10 +73,10 @@ public class CourseAccessServiceTests
     }
 
     [Fact]
-    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeInNonPublicAreaButUserHasAreaAccess_ShouldAllowAccess()
+    public async Task CanUserAccessCourseAsync_WhenCourseIsFreeInNonPublicAreaButUserHasCourseAccess_ShouldAllowAccess()
     {
         var fixture = CreateFixture(pricingModel: CoursePricingModel.Free);
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.Grant();
 
         var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
 
@@ -85,7 +87,7 @@ public class CourseAccessServiceTests
     public async Task ListCatalogAsync_ShouldMarkGrantedAndPublicAreaFreeCoursesAsAccessibleAndOthersAsLocked()
     {
         var fixture = CreateFixture();
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.Grant();
         var publicArea = TestEntityFactory.Area(isPublic: true);
         var privateArea = TestEntityFactory.Area();
         var freeCourseInPublicArea = TestEntityFactory.PublishedCourse(publicArea.Id, CoursePricingModel.Free);
@@ -116,10 +118,24 @@ public class CourseAccessServiceTests
     }
 
     [Fact]
-    public async Task CanUserAccessCourseAsync_WhenUserHasValidAreaAccess_ShouldAllowAccess()
+    public async Task ListCatalogAsync_WhenUserHasGrantForOneCourse_ShouldNotUnlockOtherPaidCoursesInSameArea()
     {
         var fixture = CreateFixture();
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.Grant();
+        var otherPaidCourse = TestEntityFactory.PublishedCourse(fixture.AreaId, CoursePricingModel.Paid);
+        fixture.Courses.Courses.Add(otherPaidCourse);
+
+        var entries = await fixture.Service.ListCatalogAsync(fixture.UserId);
+
+        Assert.True(entries.Single(entry => entry.Course.Id == fixture.CourseId).HasAccess);
+        Assert.False(entries.Single(entry => entry.Course.Id == otherPaidCourse.Id).HasAccess);
+    }
+
+    [Fact]
+    public async Task CanUserAccessCourseAsync_WhenUserHasCourseAccess_ShouldAllowAccess()
+    {
+        var fixture = CreateFixture();
+        fixture.Grant();
 
         var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
 
@@ -127,25 +143,58 @@ public class CourseAccessServiceTests
     }
 
     [Fact]
-    public async Task CanUserAccessCourseAsync_WhenUserHasRoleAreaAccess_ShouldAllowAccess()
+    public async Task CanUserAccessCourseAsync_WhenUserHasGrantForAnotherCourseInSameArea_ShouldDenyAccess()
     {
         var fixture = CreateFixture();
-        fixture.Areas.RoleAreaAccesses.Add(RoleAreaAccess.Create(fixture.RoleId, fixture.AreaId, canView: true, canManage: false));
-
-        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
-
-        Assert.True(output.CanAccess);
-    }
-
-    [Fact]
-    public async Task CanUserAccessCourseAsync_WhenUserHasInactiveRoleAreaAccess_ShouldDenyAccess()
-    {
-        var fixture = CreateFixture(roleActive: false);
-        fixture.Areas.RoleAreaAccesses.Add(RoleAreaAccess.Create(fixture.RoleId, fixture.AreaId, canView: true, canManage: false));
+        var otherPaidCourse = TestEntityFactory.PublishedCourse(fixture.AreaId, CoursePricingModel.Paid);
+        fixture.Courses.Courses.Add(otherPaidCourse);
+        fixture.Grant(otherPaidCourse.Id);
 
         var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
 
         Assert.False(output.CanAccess);
+        Assert.Equal(CourseAccessDenialReasons.NoCourseAccessFound, output.Reason);
+    }
+
+    [Fact]
+    public async Task CanUserAccessCourseAsync_WhenUserHasAdminRole_ShouldAllowAccess()
+    {
+        var fixture = CreateFixture(roleName: AuthRoleNames.Admin);
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.True(output.CanAccess);
+    }
+
+    [Fact]
+    public async Task CanUserAccessCourseAsync_WhenUserHasManageCoursesPermission_ShouldAllowAccess()
+    {
+        var fixture = CreateFixture();
+        fixture.Roles.AddPermissionForUser(fixture.UserId, AuthPermissionNames.ManageCourses);
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.True(output.CanAccess);
+    }
+
+    [Fact]
+    public async Task CanUserAccessCourseAsync_WhenAdminRoleIsInactive_ShouldDenyAccess()
+    {
+        var fixture = CreateFixture(roleName: AuthRoleNames.Admin, roleActive: false);
+
+        var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
+
+        Assert.False(output.CanAccess);
+    }
+
+    [Fact]
+    public async Task ListCatalogAsync_WhenUserIsStaff_ShouldMarkPaidCoursesAsAccessible()
+    {
+        var fixture = CreateFixture(roleName: AuthRoleNames.Admin);
+
+        var entries = await fixture.Service.ListCatalogAsync(fixture.UserId);
+
+        Assert.True(entries.Single(entry => entry.Course.Id == fixture.CourseId).HasAccess);
     }
 
     [Fact]
@@ -162,7 +211,7 @@ public class CourseAccessServiceTests
     public async Task CanUserAccessCourseAsync_WhenUserIsInactive_ShouldDenyAccess()
     {
         var fixture = CreateFixture(userActive: false);
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.Grant();
 
         var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
 
@@ -173,7 +222,7 @@ public class CourseAccessServiceTests
     public async Task CanUserAccessCourseAsync_WhenAreaIsInactive_ShouldDenyAccess()
     {
         var fixture = CreateFixture(areaActive: false);
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.Grant();
 
         var output = await fixture.Service.CanUserAccessCourseAsync(fixture.UserId, fixture.CourseId);
 
@@ -186,7 +235,8 @@ public class CourseAccessServiceTests
         bool roleActive = true,
         bool emailVerified = true,
         bool areaIsPublic = false,
-        CoursePricingModel pricingModel = CoursePricingModel.Paid)
+        CoursePricingModel pricingModel = CoursePricingModel.Paid,
+        string roleName = "Student")
     {
         var userId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
@@ -195,8 +245,9 @@ public class CourseAccessServiceTests
         var roles = new FakeRoleRepository();
         var areas = new FakeAreaRepository();
         var courses = new FakeCourseRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var user = TestEntityFactory.User(userId, active: userActive, emailVerified: emailVerified);
-        var role = TestEntityFactory.Role(roleId, active: roleActive);
+        var role = TestEntityFactory.Role(roleId, roleName, active: roleActive);
         var area = TestEntityFactory.Area(areaId, areaActive, areaIsPublic);
         var course = TestEntityFactory.PublishedCourse(area.Id, pricingModel);
 
@@ -206,11 +257,12 @@ public class CourseAccessServiceTests
         courses.Courses.Add(course);
 
         return new CourseAccessFixture(
-            new CourseAccessService(users, roles, areas, courses),
+            new CourseAccessService(users, roles, areas, courses, courseAccesses),
             areas,
             courses,
+            roles,
+            courseAccesses,
             user.Id,
-            role.Id,
             area.Id,
             course.Id);
     }
@@ -219,8 +271,16 @@ public class CourseAccessServiceTests
         CourseAccessService Service,
         FakeAreaRepository Areas,
         FakeCourseRepository Courses,
+        FakeRoleRepository Roles,
+        FakeUserCourseAccessRepository CourseAccesses,
         Guid UserId,
-        Guid RoleId,
         Guid AreaId,
-        Guid CourseId);
+        Guid CourseId)
+    {
+        public void Grant(Guid? courseId = null)
+        {
+            CourseAccesses.Accesses.Add(
+                UserCourseAccess.Create(UserId, courseId ?? CourseId, CourseAccessSource.Manual));
+        }
+    }
 }

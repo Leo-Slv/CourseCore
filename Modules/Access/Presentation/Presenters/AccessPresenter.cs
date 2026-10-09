@@ -7,30 +7,6 @@ namespace CourseCore.Api.Modules.Access.Presentation.Presenters;
 
 public static class AccessPresenter
 {
-    public static GrantUserAreaAccessInput ToInput(GrantUserAreaAccessRequest request)
-    {
-        return new GrantUserAreaAccessInput
-        {
-            UserId = request.UserId,
-            AreaId = request.AreaId,
-            CanView = request.CanView,
-            CanManage = request.CanManage,
-            StartsAt = request.StartsAt,
-            ExpiresAt = request.ExpiresAt
-        };
-    }
-
-    public static GrantRoleAreaAccessInput ToInput(GrantRoleAreaAccessRequest request)
-    {
-        return new GrantRoleAreaAccessInput
-        {
-            RoleId = request.RoleId,
-            AreaId = request.AreaId,
-            CanView = request.CanView,
-            CanManage = request.CanManage
-        };
-    }
-
     public static CheckCourseAccessInput ToInput(Guid userId, CheckCourseAccessRequest request)
     {
         return new CheckCourseAccessInput
@@ -49,13 +25,14 @@ public static class AccessPresenter
         };
     }
 
-    public static AreaAccessResponse ToResponse(AreaAccessOutput output)
+    public static UserCourseAccessResponse ToResponse(UserCourseAccessOutput output)
     {
-        return new AreaAccessResponse
+        return new UserCourseAccessResponse
         {
-            AreaId = output.AreaId,
-            CanView = output.CanView,
-            CanManage = output.CanManage
+            UserId = output.UserId,
+            CourseId = output.CourseId,
+            Source = output.Source,
+            GrantedAt = output.GrantedAt
         };
     }
 

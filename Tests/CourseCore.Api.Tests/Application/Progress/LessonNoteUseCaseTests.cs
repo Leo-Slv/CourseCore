@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
@@ -156,6 +157,7 @@ public class LessonNoteUseCaseTests
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
         var areas = new FakeAreaRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var courses = new FakeCourseRepository();
         var lessons = new FakeLessonRepository();
         var notes = new FakeLessonNoteRepository();
@@ -175,10 +177,10 @@ public class LessonNoteUseCaseTests
 
         if (grantAccess)
         {
-            areas.UserAreaAccesses.Add(UserAreaAccess.Create(user.Id, area.Id, canView: true, canManage: false));
+            courseAccesses.Accesses.Add(UserCourseAccess.Create(user.Id, course.Id, CourseAccessSource.Manual));
         }
 
-        var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var courseAccessService = new CourseAccessService(users, roles, areas, courses, courseAccesses);
         var upsertUseCase = new UpsertLessonNoteUseCase(users, lessons, courses, notes, courseAccessService, unitOfWork);
         var getUseCase = new GetLessonNoteUseCase(notes);
         var removeUseCase = new RemoveLessonNoteUseCase(notes, unitOfWork);

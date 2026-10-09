@@ -27,8 +27,4 @@ public class AreaPersistenceModel
     public DateTime UpdatedAt { get; set; }
 
     public ICollection<CourseAreaPersistenceModel> CourseAreas { get; set; } = new List<CourseAreaPersistenceModel>();
-
-    public ICollection<UserAreaAccessPersistenceModel> UserAccesses { get; set; } = new List<UserAreaAccessPersistenceModel>();
-
-    public ICollection<RoleAreaAccessPersistenceModel> RoleAccesses { get; set; } = new List<RoleAreaAccessPersistenceModel>();
 }

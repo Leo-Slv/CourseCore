@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Domain.Entities;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
+using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Courses.Domain.Entities;
 using CourseCore.Api.Modules.Courses.Domain.Enums;
 using CourseCore.Api.Modules.Courses.Domain.Repositories;
@@ -14,17 +15,20 @@ public class CourseAccessService
     private readonly IRoleRepository _roles;
     private readonly IAreaRepository _areas;
     private readonly ICourseRepository _courses;
+    private readonly IUserCourseAccessRepository _userCourseAccesses;
 
     public CourseAccessService(
         IUserRepository users,
         IRoleRepository roles,
         IAreaRepository areas,
-        ICourseRepository courses)
+        ICourseRepository courses,
+        IUserCourseAccessRepository userCourseAccesses)
     {
         _users = users;
         _roles = roles;
         _areas = areas;
         _courses = courses;
+        _userCourseAccesses = userCourseAccesses;
     }
 
     public async Task<CourseAccessOutput> CanUserAccessCourseAsync(
@@ -87,24 +91,17 @@ public class CourseAccessService
             return Allowed(userId, courseId, "Access granted by public area free course.");
         }
 
-        var now = DateTime.UtcNow;
-        var userAccesses = await _areas.ListUserAreaAccessesAsync(userId, cancellationToken);
-
-        if (userAccesses.Any(access => activeCourseAreaIds.Contains(access.AreaId) && access.IsValidAt(now)))
+        if (await _userCourseAccesses.ExistsAsync(userId, courseId, cancellationToken))
         {
-            return Allowed(userId, courseId, "Access granted by user area access.");
+            return Allowed(userId, courseId, "Access granted by user course access.");
         }
 
-        var roles = await _roles.FindByUserIdAsync(userId, cancellationToken);
-        var roleIds = roles.Select(role => role.Id).ToArray();
-        var roleAccesses = await _areas.ListRoleAreaAccessesAsync(roleIds, cancellationToken);
-
-        if (roleAccesses.Any(access => activeCourseAreaIds.Contains(access.AreaId) && HasPermission(access)))
+        if (await IsCourseStaffAsync(userId, cancellationToken))
         {
-            return Allowed(userId, courseId, "Access granted by role area access.");
+            return Allowed(userId, courseId, "Access granted by course management permission.");
         }
 
-        return Denied(userId, courseId, CourseAccessDenialReasons.NoAreaAccessFound);
+        return Denied(userId, courseId, CourseAccessDenialReasons.NoCourseAccessFound);
     }
 
     public async Task<IReadOnlyCollection<AreaOutput>> ListActiveAreasAsync(CancellationToken cancellationToken = default)
@@ -129,21 +126,31 @@ public class CourseAccessService
         var allAreas = await _areas.ListAsync(cancellationToken);
         var activeAreaIds = allAreas.Where(area => area.Active).Select(area => area.Id).ToHashSet();
         var publicAreaIds = allAreas.Where(area => area.Active && area.IsPublic).Select(area => area.Id).ToHashSet();
-        var accessibleAreaIds = await GetAccessibleAreaIdsAsync(userId, activeAreaIds, cancellationToken);
+        var grantedCourseIds = (await _userCourseAccesses.ListByUserIdAsync(userId, cancellationToken))
+            .Select(access => access.CourseId)
+            .ToHashSet();
+        var isStaff = await IsCourseStaffAsync(userId, cancellationToken);
 
         return courses
             .Select(course => new CourseCatalogEntry(
                 course,
-                HasCatalogAccess(course, accessibleAreaIds, publicAreaIds)))
+                HasCatalogAccess(course, activeAreaIds, publicAreaIds, grantedCourseIds, isStaff)))
             .ToList();
     }
 
     private static bool HasCatalogAccess(
         Course course,
-        HashSet<Guid> accessibleAreaIds,
-        HashSet<Guid> publicAreaIds)
+        HashSet<Guid> activeAreaIds,
+        HashSet<Guid> publicAreaIds,
+        HashSet<Guid> grantedCourseIds,
+        bool isStaff)
     {
-        if (course.AreaIds.Any(accessibleAreaIds.Contains))
+        if (!course.AreaIds.Any(activeAreaIds.Contains))
+        {
+            return false;
+        }
+
+        if (isStaff || grantedCourseIds.Contains(course.Id))
         {
             return true;
         }
@@ -158,26 +165,18 @@ public class CourseAccessService
         return areas.Any(area => areaIds.Contains(area.Id) && area.IsPublic);
     }
 
-    private async Task<HashSet<Guid>> GetAccessibleAreaIdsAsync(
-        Guid userId,
-        HashSet<Guid> activeAreaIds,
-        CancellationToken cancellationToken)
+    private async Task<bool> IsCourseStaffAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
-        var accessibleAreaIds = (await _areas.ListUserAreaAccessesAsync(userId, cancellationToken))
-            .Where(access => activeAreaIds.Contains(access.AreaId) && access.IsValidAt(now))
-            .Select(access => access.AreaId).ToHashSet();
-        var roleIds = (await _roles.FindByUserIdAsync(userId, cancellationToken)).Select(role => role.Id).ToArray();
+        var roles = await _roles.FindByUserIdAsync(userId, cancellationToken);
 
-        foreach (var access in await _areas.ListRoleAreaAccessesAsync(roleIds, cancellationToken))
+        if (roles.Any(role => string.Equals(role.Name, AuthRoleNames.Admin, StringComparison.OrdinalIgnoreCase)))
         {
-            if (activeAreaIds.Contains(access.AreaId) && HasPermission(access))
-            {
-                accessibleAreaIds.Add(access.AreaId);
-            }
+            return true;
         }
 
-        return accessibleAreaIds;
+        var permissions = await _roles.FindPermissionKeysByUserIdAsync(userId, cancellationToken);
+
+        return permissions.Contains(AuthPermissionNames.ManageCourses);
     }
 
     private async Task<HashSet<Guid>> GetActiveAreaIdsAsync(
@@ -190,11 +189,6 @@ public class CourseAccessService
             .Where(area => area.Active && areaIds.Contains(area.Id))
             .Select(area => area.Id)
             .ToHashSet();
-    }
-
-    private static bool HasPermission(RoleAreaAccess access)
-    {
-        return access.CanView || access.CanManage;
     }
 
     private static CourseAccessOutput Allowed(Guid userId, Guid courseId, string reason)

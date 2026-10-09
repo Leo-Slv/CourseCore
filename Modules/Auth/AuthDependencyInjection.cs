@@ -93,12 +93,8 @@ public static class AuthDependencyInjection
             AddPermissionPolicy(options, AuthPolicyNames.ManageUsers, AuthPermissionNames.ManageUsers);
             AddPermissionPolicy(
                 options,
-                AuthPolicyNames.ManageUserAreaAccess,
+                AuthPolicyNames.ManageCourseAccess,
                 AuthPermissionNames.ManageUsers);
-            AddPermissionPolicy(
-                options,
-                AuthPolicyNames.ManageRoleAreaAccess,
-                AuthPermissionNames.ManageRoles);
             AddPermissionPolicy(
                 options,
                 AuthPolicyNames.ManageAreas,

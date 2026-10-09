@@ -23,7 +23,9 @@ public class ProductionConfigurationValidatorTests
             ["Auth:RefreshTokenCookie:SameSite"] = "Lax",
             ["Turnstile:SecretKey"] = "production-turnstile-secret",
             ["Resend:ApiKey"] = "production-resend-api-key",
-            ["Resend:FromAddress"] = "no-reply@coursecore.local"
+            ["Resend:FromAddress"] = "no-reply@coursecore.local",
+            ["Stripe:SecretKey"] = "sk_test_productionvalidatorkey",
+            ["Stripe:WebhookSecret"] = "whsec_productionvalidatorsecret"
         });
 
         var exception = Record.Exception(configuration.ValidateProductionConfiguration);
@@ -41,6 +43,8 @@ public class ProductionConfigurationValidatorTests
     [InlineData("Turnstile:SecretKey")]
     [InlineData("Resend:ApiKey")]
     [InlineData("Resend:FromAddress")]
+    [InlineData("Stripe:SecretKey")]
+    [InlineData("Stripe:WebhookSecret")]
     public void ValidateProductionConfiguration_WhenRequiredValueIsMissing_ShouldThrow(string key)
     {
         var values = ValidValues();
@@ -136,6 +140,39 @@ public class ProductionConfigurationValidatorTests
         Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
     }
 
+    [Theory]
+    [InlineData("sk_live_productionkey")]
+    [InlineData("rk_live_productionkey")]
+    [InlineData("not-a-stripe-key")]
+    public void ValidateProductionConfiguration_WhenStripeSecretKeyIsNotTestMode_ShouldThrow(string secretKey)
+    {
+        var values = ValidValues();
+        values["Stripe:SecretKey"] = secretKey;
+        var configuration = CreateConfiguration(values);
+
+        Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
+    }
+
+    [Fact]
+    public void ValidateProductionConfiguration_WhenStripeApiBaseIsSet_ShouldThrow()
+    {
+        var values = ValidValues();
+        values["Stripe:ApiBase"] = "http://localhost:12111";
+        var configuration = CreateConfiguration(values);
+
+        Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
+    }
+
+    [Fact]
+    public void ValidateProductionConfiguration_WhenStripeWebhookSecretIsNotASigningSecret_ShouldThrow()
+    {
+        var values = ValidValues();
+        values["Stripe:WebhookSecret"] = "not-a-signing-secret";
+        var configuration = CreateConfiguration(values);
+
+        Assert.Throws<InvalidOperationException>(configuration.ValidateProductionConfiguration);
+    }
+
     private static Dictionary<string, string?> ValidValues()
     {
         return new Dictionary<string, string?>
@@ -153,7 +190,9 @@ public class ProductionConfigurationValidatorTests
             ["Auth:RefreshTokenCookie:SameSite"] = "Lax",
             ["Turnstile:SecretKey"] = "production-turnstile-secret",
             ["Resend:ApiKey"] = "production-resend-api-key",
-            ["Resend:FromAddress"] = "no-reply@coursecore.local"
+            ["Resend:FromAddress"] = "no-reply@coursecore.local",
+            ["Stripe:SecretKey"] = "sk_test_productionvalidatorkey",
+            ["Stripe:WebhookSecret"] = "whsec_productionvalidatorsecret"
         };
     }
 

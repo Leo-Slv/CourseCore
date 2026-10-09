@@ -1,5 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Application.UseCases;
+using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.Courses.Application.DTOs;
 using CourseCore.Api.Modules.Auth.Application.Services;
@@ -69,63 +71,45 @@ public class SensitiveActionAuditTests
     }
 
     [Fact]
-    public async Task GrantUserAreaAccess_ShouldRecordUserAreaAccessGrantedAuditLog()
+    public async Task RevokeUserCourseAccess_ShouldRemoveGrantAndRecordUserCourseAccessRevokedAuditLog()
     {
         var user = TestEntityFactory.User();
-        var area = TestEntityFactory.Area();
+        var course = TestEntityFactory.PublishedCourse(Guid.NewGuid());
         var users = new FakeUserRepository();
-        var areas = new FakeAreaRepository();
+        var courses = new FakeCourseRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         users.Add(user);
-        areas.Areas.Add(area);
+        courses.Courses.Add(course);
+        var access = UserCourseAccess.Create(user.Id, course.Id, CourseAccessSource.Purchase);
+        courseAccesses.Accesses.Add(access);
         var auditLogs = new FakeAuditLogService();
-        var useCase = new GrantUserAreaAccessUseCase(users, areas, new FakeUnitOfWork(), auditLogs);
+        var useCase = new RevokeUserCourseAccessUseCase(
+            courseAccesses, users, courses, new FakeUnitOfWork(), auditLogs);
 
-        await useCase.ExecuteAsync(new GrantUserAreaAccessInput
-        {
-            UserId = user.Id,
-            AreaId = area.Id,
-            CanView = true,
-            CanManage = false
-        });
+        await useCase.ExecuteAsync(user.Id, course.Id);
 
-        var access = Assert.Single(areas.UserAreaAccesses);
+        Assert.Empty(courseAccesses.Accesses);
         var auditLog = Assert.Single(auditLogs.Entries);
-        Assert.Equal(AuditLogActionNames.UserAreaAccessGranted, auditLog.Action);
-        Assert.Equal("UserAreaAccess", auditLog.EntityName);
+        Assert.Equal(AuditLogActionNames.UserCourseAccessRevoked, auditLog.Action);
+        Assert.Equal("UserCourseAccess", auditLog.EntityName);
         Assert.Equal(access.Id, auditLog.EntityId);
         Assert.Equal(user.Id.ToString(), auditLog.Metadata["targetUserId"]);
-        Assert.Equal(area.Id.ToString(), auditLog.Metadata["areaId"]);
-        Assert.Equal($"{user.Email.Value} → {area.Name}", auditLog.Metadata["displayName"]);
+        Assert.Equal(course.Id.ToString(), auditLog.Metadata["courseId"]);
+        Assert.Equal($"{user.Email.Value} → {course.Title}", auditLog.Metadata["displayName"]);
     }
 
     [Fact]
-    public async Task GrantRoleAreaAccess_ShouldRecordRoleAreaAccessGrantedAuditLog()
+    public async Task RevokeUserCourseAccess_WhenGrantDoesNotExist_ShouldThrowNotFoundException()
     {
-        var role = TestEntityFactory.Role();
-        var area = TestEntityFactory.Area();
-        var roles = new FakeRoleRepository();
-        var areas = new FakeAreaRepository();
-        roles.AddForUser(Guid.NewGuid(), role);
-        areas.Areas.Add(area);
-        var auditLogs = new FakeAuditLogService();
-        var useCase = new GrantRoleAreaAccessUseCase(roles, areas, new FakeUnitOfWork(), auditLogs);
+        var useCase = new RevokeUserCourseAccessUseCase(
+            new FakeUserCourseAccessRepository(),
+            new FakeUserRepository(),
+            new FakeCourseRepository(),
+            new FakeUnitOfWork(),
+            new FakeAuditLogService());
 
-        await useCase.ExecuteAsync(new GrantRoleAreaAccessInput
-        {
-            RoleId = role.Id,
-            AreaId = area.Id,
-            CanView = true,
-            CanManage = true
-        });
-
-        var access = Assert.Single(areas.RoleAreaAccesses);
-        var auditLog = Assert.Single(auditLogs.Entries);
-        Assert.Equal(AuditLogActionNames.RoleAreaAccessGranted, auditLog.Action);
-        Assert.Equal("RoleAreaAccess", auditLog.EntityName);
-        Assert.Equal(access.Id, auditLog.EntityId);
-        Assert.Equal(role.Id.ToString(), auditLog.Metadata["roleId"]);
-        Assert.Equal(area.Id.ToString(), auditLog.Metadata["areaId"]);
-        Assert.Equal($"{role.Name} → {area.Name}", auditLog.Metadata["displayName"]);
+        await Assert.ThrowsAsync<CourseCore.Api.Shared.Application.Exceptions.NotFoundException>(
+            () => useCase.ExecuteAsync(Guid.NewGuid(), Guid.NewGuid()));
     }
 
     [Fact]

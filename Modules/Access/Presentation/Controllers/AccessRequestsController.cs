@@ -78,7 +78,7 @@ public class AccessRequestsController : ControllerBase
     }
 
     [HttpGet("")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [Authorize(Policy = AuthPolicyNames.ManageCourseAccess)]
     [ProducesResponseType(typeof(IReadOnlyCollection<AccessRequestResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -96,7 +96,7 @@ public class AccessRequestsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/approve")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [Authorize(Policy = AuthPolicyNames.ManageCourseAccess)]
     [ProducesResponseType(typeof(AccessRequestResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -116,7 +116,7 @@ public class AccessRequestsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [Authorize(Policy = AuthPolicyNames.ManageCourseAccess)]
     [ProducesResponseType(typeof(AccessRequestResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -136,7 +136,7 @@ public class AccessRequestsController : ControllerBase
     }
 
     [HttpPost("grant")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [Authorize(Policy = AuthPolicyNames.ManageCourseAccess)]
     [ProducesResponseType(typeof(AccessRequestResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -158,7 +158,7 @@ public class AccessRequestsController : ControllerBase
     }
 
     [HttpGet("users/{userId:guid}/granted")]
-    [Authorize(Policy = AuthPolicyNames.ManageUserAreaAccess)]
+    [Authorize(Policy = AuthPolicyNames.ManageCourseAccess)]
     [ProducesResponseType(typeof(IReadOnlyCollection<AccessRequestResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

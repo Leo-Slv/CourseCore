@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Application.UseCases;
@@ -24,7 +25,7 @@ public class RequestCourseAccessUseCaseTests
     public async Task ExecuteAsync_WhenUserAlreadyHasAccess_ShouldThrowConflictException()
     {
         var fixture = CreateFixture(CoursePricingModel.Paid);
-        fixture.Areas.UserAreaAccesses.Add(UserAreaAccess.Create(fixture.UserId, fixture.AreaId, canView: true, canManage: false));
+        fixture.CourseAccesses.Accesses.Add(UserCourseAccess.Create(fixture.UserId, fixture.CourseId, CourseAccessSource.Manual));
 
         await Assert.ThrowsAsync<ConflictException>(() => fixture.UseCase.ExecuteAsync(
             new RequestCourseAccessInput { UserId = fixture.UserId, CourseId = fixture.CourseId }));
@@ -59,6 +60,7 @@ public class RequestCourseAccessUseCaseTests
         var users = new FakeUserRepository();
         var roles = new FakeRoleRepository();
         var areas = new FakeAreaRepository();
+        var courseAccesses = new FakeUserCourseAccessRepository();
         var courses = new FakeCourseRepository();
         var accessRequests = new FakeAccessRequestRepository();
         var user = TestEntityFactory.User(email: $"user-{Guid.NewGuid():N}@coursecore.local");
@@ -69,13 +71,13 @@ public class RequestCourseAccessUseCaseTests
         areas.Areas.Add(area);
         courses.Courses.Add(course);
 
-        var courseAccessService = new CourseAccessService(users, roles, areas, courses);
+        var courseAccessService = new CourseAccessService(users, roles, areas, courses, courseAccesses);
         var auditLogs = new FakeAuditLogService();
         var useCase = new RequestCourseAccessUseCase(
             users, courses, accessRequests, courseAccessService, new FakeUnitOfWork(), auditLogs);
 
         return new RequestCourseAccessFixture(
-            useCase, user.Id, course.Id, area.Id, areas, accessRequests, auditLogs, user.Email.Value, course.Title);
+            useCase, user.Id, course.Id, area.Id, courseAccesses, accessRequests, auditLogs, user.Email.Value, course.Title);
     }
 
     private sealed record RequestCourseAccessFixture(
@@ -83,7 +85,7 @@ public class RequestCourseAccessUseCaseTests
         Guid UserId,
         Guid CourseId,
         Guid AreaId,
-        FakeAreaRepository Areas,
+        FakeUserCourseAccessRepository CourseAccesses,
         FakeAccessRequestRepository AccessRequests,
         FakeAuditLogService AuditLogs,
         string UserEmail,

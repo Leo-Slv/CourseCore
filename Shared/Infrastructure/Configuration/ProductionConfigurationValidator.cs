@@ -48,6 +48,33 @@ public static class ProductionConfigurationValidator
         ValidateRequired(configuration["Turnstile:SecretKey"], "Turnstile:SecretKey");
         ValidateRequired(configuration["Resend:ApiKey"], "Resend:ApiKey");
         ValidateRequired(configuration["Resend:FromAddress"], "Resend:FromAddress");
+        ValidateStripe(configuration);
+    }
+
+    // Stripe runs in test mode only for now: live keys are rejected on purpose until live mode is approved.
+    private static void ValidateStripe(IConfiguration configuration)
+    {
+        var secretKey = configuration["Stripe:SecretKey"];
+        ValidateRequired(secretKey, "Stripe:SecretKey");
+
+        if (!secretKey!.StartsWith("sk_test_", StringComparison.Ordinal)
+            && !secretKey.StartsWith("rk_test_", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Stripe:SecretKey must be a test-mode key (sk_test_ or rk_test_).");
+        }
+
+        if (!string.IsNullOrWhiteSpace(configuration["Stripe:ApiBase"]))
+        {
+            throw new InvalidOperationException("Stripe:ApiBase must not be set in Production.");
+        }
+
+        var webhookSecret = configuration["Stripe:WebhookSecret"];
+        ValidateRequired(webhookSecret, "Stripe:WebhookSecret");
+
+        if (!webhookSecret!.StartsWith("whsec_", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Stripe:WebhookSecret must be a Stripe webhook signing secret (whsec_).");
+        }
     }
 
     private static void ValidateSecretsAreDistinct(string jwtSecret, string mediaSigningSecret)

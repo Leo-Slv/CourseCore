@@ -156,42 +156,6 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.ToTable("permissions", (string)null);
                 });
 
-            modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.RoleAreaAccessPersistenceModel", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AreaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("CanManage")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("CanView")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AreaId");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("RoleId", "AreaId")
-                        .IsUnique();
-
-                    b.ToTable("role_area_accesses", (string)null);
-                });
-
             modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.RolePermissionPersistenceModel", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -243,29 +207,20 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.ToTable("roles", (string)null);
                 });
 
-            modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.UserAreaAccessPersistenceModel", b =>
+            modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.UserCourseAccessPersistenceModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("AreaId")
+                    b.Property<Guid>("CourseId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("CanManage")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("CanView")
-                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("StartsAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -275,14 +230,14 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AreaId");
+                    b.HasIndex("CourseId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "AreaId")
+                    b.HasIndex("UserId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("user_area_accesses", (string)null);
+                    b.ToTable("user_course_accesses", (string)null);
                 });
 
             modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.UserRolePersistenceModel", b =>
@@ -787,6 +742,53 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.ToTable("videos", (string)null);
                 });
 
+            modelBuilder.Entity("CourseCore.Api.Modules.Payments.Infrastructure.Persistence.Models.OrderPersistenceModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountInCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StripeCheckoutSessionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("StripeCheckoutSessionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("orders", (string)null);
+                });
+
             modelBuilder.Entity("CourseCore.Api.Modules.Progress.Infrastructure.Persistence.Models.LessonNotePersistenceModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1111,25 +1113,6 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.RoleAreaAccessPersistenceModel", b =>
-                {
-                    b.HasOne("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.AreaPersistenceModel", "Area")
-                        .WithMany("RoleAccesses")
-                        .HasForeignKey("AreaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.RolePersistenceModel", "Role")
-                        .WithMany("AreaAccesses")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Area");
-
-                    b.Navigation("Role");
-                });
-
             modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.RolePermissionPersistenceModel", b =>
                 {
                     b.HasOne("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.PermissionPersistenceModel", "Permission")
@@ -1149,21 +1132,21 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.UserAreaAccessPersistenceModel", b =>
+            modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.UserCourseAccessPersistenceModel", b =>
                 {
-                    b.HasOne("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.AreaPersistenceModel", "Area")
-                        .WithMany("UserAccesses")
-                        .HasForeignKey("AreaId")
+                    b.HasOne("CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models.CoursePersistenceModel", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models.UserPersistenceModel", "User")
-                        .WithMany("AreaAccesses")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Area");
+                    b.Navigation("Course");
 
                     b.Navigation("User");
                 });
@@ -1306,6 +1289,25 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.Navigation("Lesson");
                 });
 
+            modelBuilder.Entity("CourseCore.Api.Modules.Payments.Infrastructure.Persistence.Models.OrderPersistenceModel", b =>
+                {
+                    b.HasOne("CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models.CoursePersistenceModel", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models.UserPersistenceModel", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CourseCore.Api.Modules.Progress.Infrastructure.Persistence.Models.LessonNotePersistenceModel", b =>
                 {
                     b.HasOne("CourseCore.Api.Modules.Courses.Infrastructure.Persistence.Models.LessonPersistenceModel", "Lesson")
@@ -1394,10 +1396,6 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.AreaPersistenceModel", b =>
                 {
                     b.Navigation("CourseAreas");
-
-                    b.Navigation("RoleAccesses");
-
-                    b.Navigation("UserAccesses");
                 });
 
             modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.PermissionPersistenceModel", b =>
@@ -1407,8 +1405,6 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("CourseCore.Api.Modules.Access.Infrastructure.Persistence.Models.RolePersistenceModel", b =>
                 {
-                    b.Navigation("AreaAccesses");
-
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserRoles");
@@ -1443,8 +1439,6 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("CourseCore.Api.Modules.Users.Infrastructure.Persistence.Models.UserPersistenceModel", b =>
                 {
-                    b.Navigation("AreaAccesses");
-
                     b.Navigation("CourseProgresses");
 
                     b.Navigation("LessonNotes");

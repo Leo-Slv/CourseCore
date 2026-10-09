@@ -400,17 +400,31 @@ public class CoursesIntegrationTests : IClassFixture<CourseCoreApiFactory>
     public async Task GetCourseDetails_WhenUserHasNoAccess_ShouldReturnPreview()
     {
         using var client = CreateClient();
+        var user = await _factory.SeedUserAsync();
         var courseId = await _factory.SeedPublishedCourseAsync(grantAdminAccess: false);
-        var login = await LoginAsync(client);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
 
         var response = await client.GetAsync($"/api/courses/{courseId}");
         var body = await response.Content.ReadFromJsonAsync<CourseDetailsResponse>();
 
-        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
         Assert.False(body!.HasAccess);
+    }
+
+    [Fact]
+    public async Task GetCourseDetails_WhenUserIsAdmin_ShouldHaveAccessWithoutExplicitGrant()
+    {
+        using var client = CreateClient();
+        var courseId = await _factory.SeedPublishedCourseAsync(grantAdminAccess: false);
+        await IntegrationAuth.AuthenticateAsAdminAsync(client);
+
+        var response = await client.GetAsync($"/api/courses/{courseId}");
+        var body = await response.Content.ReadFromJsonAsync<CourseDetailsResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.True(body!.HasAccess);
     }
 
     [Fact]

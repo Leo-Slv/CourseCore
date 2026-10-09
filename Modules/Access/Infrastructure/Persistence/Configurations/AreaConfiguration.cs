@@ -34,17 +34,5 @@ public class AreaConfiguration : IEntityTypeConfiguration<AreaPersistenceModel>
             .WithOne(x => x.Area)
             .HasForeignKey(x => x.AreaId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder
-            .HasMany(x => x.UserAccesses)
-            .WithOne(x => x.Area)
-            .HasForeignKey(x => x.AreaId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder
-            .HasMany(x => x.RoleAccesses)
-            .WithOne(x => x.Area)
-            .HasForeignKey(x => x.AreaId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

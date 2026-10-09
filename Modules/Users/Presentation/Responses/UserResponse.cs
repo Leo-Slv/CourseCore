@@ -14,7 +14,7 @@ public class UserResponse
 
     public IReadOnlyCollection<string> RoleNames { get; init; } = Array.Empty<string>();
 
-    public IReadOnlyCollection<string> AreaNames { get; init; } = Array.Empty<string>();
+    public IReadOnlyCollection<string> CourseTitles { get; init; } = Array.Empty<string>();
 
     public DateTime CreatedAt { get; init; }
 

@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Application.DTOs;
 using CourseCore.Api.Modules.Access.Application.Services;
 using CourseCore.Api.Modules.Access.Domain.Entities;
+using CourseCore.Api.Modules.Access.Domain.Enums;
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
@@ -19,6 +20,7 @@ public class GrantCourseAccessUseCase
     private readonly IAreaRepository _areas;
     private readonly IAccessRequestRepository _accessRequests;
     private readonly CourseAccessService _courseAccessService;
+    private readonly UserCourseAccessGranter _courseAccessGranter;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
 
@@ -28,6 +30,7 @@ public class GrantCourseAccessUseCase
         IAreaRepository areas,
         IAccessRequestRepository accessRequests,
         CourseAccessService courseAccessService,
+        UserCourseAccessGranter courseAccessGranter,
         IUnitOfWork unitOfWork,
         IAuditLogService auditLogs)
     {
@@ -36,6 +39,7 @@ public class GrantCourseAccessUseCase
         _areas = areas;
         _accessRequests = accessRequests;
         _courseAccessService = courseAccessService;
+        _courseAccessGranter = courseAccessGranter;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
     }
@@ -103,21 +107,11 @@ public class GrantCourseAccessUseCase
                 throw new ConflictException("Course has no active linked areas to grant.");
             }
 
-            foreach (var areaId in targetAreaIds)
-            {
-                var existingAccess = await _areas.FindUserAreaAccessAsync(userId, areaId, cancellationToken);
-
-                if (existingAccess is null)
-                {
-                    var newAccess = UserAreaAccess.Create(userId, areaId, canView: true, canManage: false);
-                    await _areas.CreateUserAreaAccessAsync(newAccess, cancellationToken);
-                }
-                else
-                {
-                    existingAccess.ChangePermissions(canView: true, existingAccess.CanManage);
-                    await _areas.UpdateUserAreaAccessAsync(existingAccess, cancellationToken);
-                }
-            }
+            await _courseAccessGranter.EnsureGrantedAsync(
+                userId,
+                courseId,
+                CourseAccessSource.Manual,
+                cancellationToken);
 
             request.Approve(decidedByUserId);
 
@@ -138,7 +132,6 @@ public class GrantCourseAccessUseCase
                 {
                     ["targetUserId"] = userId.ToString(),
                     ["courseId"] = courseId.ToString(),
-                    ["grantedAreaIds"] = string.Join(",", targetAreaIds),
                     ["grantedDirectly"] = "true",
                     ["displayName"] = $"{user.Email.Value} → {course.Title}"
                 },

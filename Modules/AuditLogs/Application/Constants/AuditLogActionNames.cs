@@ -18,10 +18,10 @@ public static class AuditLogActionNames
     public const string UserUpdated = "UserUpdated";
     public const string UserTokenVersionIncremented = "UserTokenVersionIncremented";
     public const string UserSessionsRevoked = "UserSessionsRevoked";
-    public const string UserAreaAccessGranted = "UserAreaAccessGranted";
-    public const string RoleAreaAccessGranted = "RoleAreaAccessGranted";
     public const string AccessRequestCreated = "AccessRequestCreated";
     public const string AccessRequestApproved = "AccessRequestApproved";
+    public const string OrderCreated = "OrderCreated";
+    public const string OrderPaid = "OrderPaid";
     public const string AccessRequestRejected = "AccessRequestRejected";
     public const string AreaCreated = "AreaCreated";
     public const string AreaUpdated = "AreaUpdated";
@@ -56,7 +56,7 @@ public static class AuditLogActionNames
     public const string LessonMaterialUploadRequested = "LessonMaterialUploadRequested";
     public const string UserRoleAssigned = "UserRoleAssigned";
     public const string UserRoleUnassigned = "UserRoleUnassigned";
-    public const string UserAreaAccessRevoked = "UserAreaAccessRevoked";
+    public const string UserCourseAccessRevoked = "UserCourseAccessRevoked";
     public const string TestimonialCreated = "TestimonialCreated";
     public const string TestimonialSubmitted = "TestimonialSubmitted";
     public const string TestimonialUpdated = "TestimonialUpdated";

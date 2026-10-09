@@ -93,6 +93,9 @@ public sealed class ExceptionHandlingMiddleware
             ForbiddenException => new ErrorDescriptor(
                 StatusCodes.Status403Forbidden,
                 "Forbidden"),
+            ExternalServiceException => new ErrorDescriptor(
+                StatusCodes.Status502BadGateway,
+                "Bad Gateway"),
             DomainException => new ErrorDescriptor(
                 StatusCodes.Status400BadRequest,
                 "Bad Request"),

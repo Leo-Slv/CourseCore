@@ -9,13 +9,13 @@ public class GetUserByIdUseCase
 {
     private readonly IUserRepository _users;
     private readonly IRoleRepository _roles;
-    private readonly IAreaRepository _areas;
+    private readonly IUserCourseAccessRepository _courseAccesses;
 
-    public GetUserByIdUseCase(IUserRepository users, IRoleRepository roles, IAreaRepository areas)
+    public GetUserByIdUseCase(IUserRepository users, IRoleRepository roles, IUserCourseAccessRepository courseAccesses)
     {
         _users = users;
         _roles = roles;
-        _areas = areas;
+        _courseAccesses = courseAccesses;
     }
 
     public async Task<UserOutput> ExecuteAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -28,11 +28,11 @@ public class GetUserByIdUseCase
         }
 
         var roles = await _roles.FindByUserIdAsync(userId, cancellationToken);
-        var areaNamesByUserId = await _areas.FindGrantedAreaNamesByUserIdsAsync([userId], cancellationToken);
+        var courseTitlesByUserId = await _courseAccesses.FindGrantedCourseTitlesByUserIdsAsync([userId], cancellationToken);
 
         return UserOutput.FromUser(
             user,
             roles.Select(role => role.Name).ToList(),
-            areaNamesByUserId.TryGetValue(userId, out var areaNames) ? areaNames : null);
+            courseTitlesByUserId.TryGetValue(userId, out var courseTitles) ? courseTitles : null);
     }
 }

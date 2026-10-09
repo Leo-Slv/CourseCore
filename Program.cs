@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Certificates;
 using CourseCore.Api.Modules.Testimonials;
 using CourseCore.Api.Modules.Courses;
 using CourseCore.Api.Modules.Media;
+using CourseCore.Api.Modules.Payments;
 using CourseCore.Api.Modules.Progress;
 using CourseCore.Api.Modules.Questions;
 using CourseCore.Api.Modules.Users;
@@ -84,6 +85,7 @@ builder.Services.AddCertificatesModule();
 builder.Services.AddTestimonialsModule();
 builder.Services.AddQuestionsModule();
 builder.Services.AddVisitorsModule();
+builder.Services.AddPaymentsModule(builder.Configuration);
 
 var app = builder.Build();
 

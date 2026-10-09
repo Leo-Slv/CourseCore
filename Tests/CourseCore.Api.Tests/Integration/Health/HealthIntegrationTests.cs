@@ -112,6 +112,8 @@ public class HealthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Turnstile__SecretKey", "integration-test-turnstile-secret");
         Environment.SetEnvironmentVariable("Resend__ApiKey", "integration-test-resend-api-key");
         Environment.SetEnvironmentVariable("Resend__FromAddress", "no-reply@coursecore.local");
+        Environment.SetEnvironmentVariable("Stripe__SecretKey", "sk_test_integrationtestkey");
+        Environment.SetEnvironmentVariable("Stripe__WebhookSecret", "whsec_integrationtestsecret");
     }
 
     private static void ClearProductionEnvironmentVariables()
@@ -129,6 +131,8 @@ public class HealthIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Environment.SetEnvironmentVariable("Turnstile__SecretKey", null);
         Environment.SetEnvironmentVariable("Resend__ApiKey", null);
         Environment.SetEnvironmentVariable("Resend__FromAddress", null);
+        Environment.SetEnvironmentVariable("Stripe__SecretKey", null);
+        Environment.SetEnvironmentVariable("Stripe__WebhookSecret", null);
     }
 }
 

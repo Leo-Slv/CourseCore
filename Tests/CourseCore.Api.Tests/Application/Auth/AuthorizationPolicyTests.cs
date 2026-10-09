@@ -40,48 +40,28 @@ public class AuthorizationPolicyTests
     }
 
     [Fact]
-    public async Task ManageUserAreaAccess_WhenUserHasManageUsersPermission_ShouldSucceed()
+    public async Task ManageCourseAccess_WhenUserHasManageUsersPermission_ShouldSucceed()
     {
         var result = await AuthorizeAsync(
-            AuthPolicyNames.ManageUserAreaAccess,
+            AuthPolicyNames.ManageCourseAccess,
             CreatePrincipal(new Claim(AuthClaimTypes.Permission, AuthPermissionNames.ManageUsers)));
 
         Assert.True(result.Succeeded);
     }
 
     [Fact]
-    public async Task ManageUserAreaAccess_WhenUserOnlyHasManageRolesPermission_ShouldFail()
+    public async Task ManageCourseAccess_WhenUserOnlyHasManageRolesPermission_ShouldFail()
     {
         var result = await AuthorizeAsync(
-            AuthPolicyNames.ManageUserAreaAccess,
+            AuthPolicyNames.ManageCourseAccess,
             CreatePrincipal(new Claim(AuthClaimTypes.Permission, AuthPermissionNames.ManageRoles)));
 
         Assert.False(result.Succeeded);
     }
 
-    [Fact]
-    public async Task ManageRoleAreaAccess_WhenUserHasManageRolesPermission_ShouldSucceed()
-    {
-        var result = await AuthorizeAsync(
-            AuthPolicyNames.ManageRoleAreaAccess,
-            CreatePrincipal(new Claim(AuthClaimTypes.Permission, AuthPermissionNames.ManageRoles)));
-
-        Assert.True(result.Succeeded);
-    }
-
-    [Fact]
-    public async Task ManageRoleAreaAccess_WhenUserOnlyHasManageUsersPermission_ShouldFail()
-    {
-        var result = await AuthorizeAsync(
-            AuthPolicyNames.ManageRoleAreaAccess,
-            CreatePrincipal(new Claim(AuthClaimTypes.Permission, AuthPermissionNames.ManageUsers)));
-
-        Assert.False(result.Succeeded);
-    }
 
     [Theory]
-    [InlineData(AuthPolicyNames.ManageUserAreaAccess)]
-    [InlineData(AuthPolicyNames.ManageRoleAreaAccess)]
+    [InlineData(AuthPolicyNames.ManageCourseAccess)]
     public async Task AccessGrantPolicies_WhenUserOnlyHasManageAreasPermission_ShouldFail(string policy)
     {
         var result = await AuthorizeAsync(
@@ -115,8 +95,7 @@ public class AuthorizationPolicyTests
     }
 
     [Theory]
-    [InlineData(AuthPolicyNames.ManageUserAreaAccess)]
-    [InlineData(AuthPolicyNames.ManageRoleAreaAccess)]
+    [InlineData(AuthPolicyNames.ManageCourseAccess)]
     [InlineData(AuthPolicyNames.CheckUserCourseAccess)]
     public async Task AccessAdministrationPolicies_WhenUserIsAdmin_ShouldSucceed(string policy)
     {
