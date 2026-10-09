@@ -5,6 +5,7 @@ using CourseCore.Api.Modules.Auth.Infrastructure.Security;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Tests.TestDoubles;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace CourseCore.Api.Tests.Application.Auth;
@@ -43,6 +44,19 @@ public class RequestPasswordResetUseCaseTests
         await fixture.UseCase.ExecuteAsync(ValidInput());
 
         Assert.Empty(fixture.EmailSender.Sent);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenEmailDeliveryFails_ShouldNotThrowSoTheResponseDoesNotRevealTheAccount()
+    {
+        var fixture = CreateFixture();
+        fixture.Users.Add(TestEntityFactory.User(email: "known.user@coursecore.local"));
+        fixture.EmailSender.ShouldFail = true;
+
+        var exception = await Record.ExceptionAsync(() => fixture.UseCase.ExecuteAsync(ValidInput()));
+
+        Assert.Null(exception);
+        Assert.Single(fixture.PasswordResetTokens.Added);
     }
 
     [Fact]
@@ -119,7 +133,8 @@ public class RequestPasswordResetUseCaseTests
             emailSender,
             unitOfWork,
             auditLogs,
-            Options.Create(new FrontendOptions { BaseUrl = "https://app.coursecore.local" }));
+            Options.Create(new FrontendOptions { BaseUrl = "https://app.coursecore.local" }),
+            NullLogger<RequestPasswordResetUseCase>.Instance);
 
         return new RequestPasswordResetFixture(useCase, users, captcha, passwordResetTokens, emailSender, auditLogs);
     }

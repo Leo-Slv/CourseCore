@@ -25,8 +25,15 @@ public sealed class FakeEmailSender : IEmailSender
 {
     public List<SentEmail> Sent { get; } = [];
 
+    public bool ShouldFail { get; set; }
+
     public Task SendAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {
+        if (ShouldFail)
+        {
+            throw new InvalidOperationException("Email provider is down.");
+        }
+
         Sent.Add(new SentEmail(to, subject, htmlBody));
 
         return Task.CompletedTask;

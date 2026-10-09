@@ -27,6 +27,7 @@ public class RequestPasswordResetUseCase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
     private readonly FrontendOptions _frontendOptions;
+    private readonly ILogger<RequestPasswordResetUseCase> _logger;
 
     public RequestPasswordResetUseCase(
         IUserRepository users,
@@ -37,8 +38,10 @@ public class RequestPasswordResetUseCase
         IEmailSender emailSender,
         IUnitOfWork unitOfWork,
         IAuditLogService auditLogs,
-        IOptions<FrontendOptions> frontendOptions)
+        IOptions<FrontendOptions> frontendOptions,
+        ILogger<RequestPasswordResetUseCase> logger)
     {
+        _logger = logger;
         _users = users;
         _captchaVerificationService = captchaVerificationService;
         _passwordResetTokens = passwordResetTokens;
@@ -100,10 +103,20 @@ public class RequestPasswordResetUseCase
                 cancellationToken: cancellationToken);
         }, cancellationToken);
 
-        await _emailSender.SendAsync(
-            user.Email.Value,
-            "Redefinição de senha",
-            AuthEmailTemplates.BuildPasswordResetHtml(_frontendOptions.BaseUrl, resetTokenValue),
-            cancellationToken);
+        try
+        {
+            await _emailSender.SendAsync(
+                user.Email.Value,
+                "Redefinição de senha",
+                AuthEmailTemplates.BuildPasswordResetHtml(_frontendOptions.BaseUrl, resetTokenValue),
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Same silence as the "no such account" branch above: a delivery failure
+            // must not turn into a 500 that only existing accounts would trigger,
+            // which would reveal which e-mails are registered.
+            _logger.LogError(exception, "Failed to send the password reset e-mail for user {UserId}.", user.Id);
+        }
     }
 }
