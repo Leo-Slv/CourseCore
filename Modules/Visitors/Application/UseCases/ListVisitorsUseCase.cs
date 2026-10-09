@@ -31,7 +31,8 @@ public class ListVisitorsUseCase
         }
 
         var search = string.IsNullOrWhiteSpace(input.Search) ? null : input.Search.Trim();
-        var (visitors, totalCount) = await _visitors.ListPagedAsync(input.Page, input.PageSize, search, cancellationToken);
+        var (visitors, totalCount) = await _visitors.ListPagedAsync(
+            input.Page, input.PageSize, search, input.Contacted, cancellationToken);
 
         return new PagedResult<VisitorOutput>
         {

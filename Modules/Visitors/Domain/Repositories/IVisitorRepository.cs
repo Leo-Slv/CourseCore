@@ -6,9 +6,14 @@ public interface IVisitorRepository
 {
     Task CreateAsync(Visitor visitor, CancellationToken cancellationToken = default);
 
+    Task<Visitor?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(Visitor visitor, CancellationToken cancellationToken = default);
+
     Task<(IReadOnlyCollection<Visitor> Items, int TotalCount)> ListPagedAsync(
         int page,
         int pageSize,
         string? search = null,
+        bool? contacted = null,
         CancellationToken cancellationToken = default);
 }

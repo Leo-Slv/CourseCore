@@ -19,6 +19,10 @@ public class VisitorConfiguration : IEntityTypeConfiguration<VisitorPersistenceM
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 
+        builder.Property(x => x.ContactedAt).IsRequired(false);
+        builder.Property(x => x.ContactedByUserId).IsRequired(false);
+
         builder.HasIndex(x => x.CreatedAt);
+        builder.HasIndex(x => x.ContactedAt);
     }
 }

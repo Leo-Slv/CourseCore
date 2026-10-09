@@ -56,7 +56,7 @@ As pastas numeradas expressam a ordem operacional:
 6. `04 - Courses`;
 7. `05 - Media / Videos`;
 8. `06 - Progress`;
-9. `07 - Visitors` — `Register Visitor` é anônimo (formulário "Primeira vez"); `List Visitors` usa o token do admin;
+9. `07 - Visitors` — `Register Visitor` é anônimo (formulário "Primeira vez"); `List Visitors` usa o token do admin; `Set Visitor Contacted` marca/desmarca o contato (usa `{{visitorId}}`);
 10. `90 - Deprecated` apenas quando necessário;
 11. `95 - Negative Scenarios` individualmente, após preparar suas dependências;
 12. `98 - Session Cleanup`;
@@ -130,7 +130,8 @@ Todos os endpoints de controller exigem JSON nos bodies indicados. Erros de apli
 | Progress | `POST /api/progress/lessons` | Bearer | body `lessonId`, `watchedSeconds`; `markAsCompleted` é legado | `LessonProgressResponse` | 200, 400, 401, 403, 404, 500 | Register Lesson Progress |
 | Progress | `GET /api/progress/courses/{courseId}` | Bearer | path `courseId` | `CourseProgressResponse` | 200, 400, 401, 403, 404, 500 | Get Course Progress |
 | Visitors | `POST /api/visitors` | Público; rate limit `VisitorRegistration` | body: `name`, `phone`, `email`, `address` (opcional), `captchaToken` | `RegisterVisitorResponse` (`id`, `submittedAt`) | 201, 400, 429, 500 | Register Visitor |
-| Visitors | `GET /api/visitors` | Bearer; `ReadVisitors` | query `page`, `pageSize`, `search` | `PagedResponse<VisitorResponse>` | 200, 400, 401, 403, 500 | List Visitors |
+| Visitors | `GET /api/visitors` | Bearer; `ReadVisitors` | query `page`, `pageSize`, `search`, `contacted` (opcional) | `PagedResponse<VisitorResponse>` (inclui `contacted`, `contactedAt`) | 200, 400, 401, 403, 500 | List Visitors |
+| Visitors | `PUT /api/visitors/{id}/contacted` | Bearer; `ManageVisitors` | path `id`; body: `contacted` | `VisitorResponse` | 200, 400, 401, 403, 404, 500 | Set Visitor Contacted |
 
 Não há endpoint `me/current user`, controller de Audit Logs nem endpoints públicos de CRUD para roles, módulos ou aulas nesta versão. Areas têm CRUD administrativo completo desde `03 - Areas`; não há remoção física, apenas desativação via `PUT`. O módulo Audit Logs registra eventos internamente, mas não expõe listagem HTTP. Não foram inventadas requests para rotas inexistentes.
 
@@ -147,7 +148,8 @@ As policies resolvem assim:
 - `CheckUserCourseAccess`: `users.manage`, `areas.manage`, `courses.manage` ou Admin;
 - `ManageCourses`: `courses.manage` ou Admin;
 - `ManageVideos`: `videos.manage` ou Admin;
-- `ReadVisitors`: `visitors.read` ou Admin.
+- `ReadVisitors`: `visitors.read` ou Admin;
+- `ManageVisitors`: `visitors.manage` ou Admin.
 
 `AdminOnly` e `ReadProgress` existem na configuração, mas nenhum endpoint atual os referencia.
 

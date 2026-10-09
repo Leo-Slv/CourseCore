@@ -16,6 +16,10 @@ public sealed class VisitorOutput
 
     public DateTime SubmittedAt { get; init; }
 
+    public bool Contacted { get; init; }
+
+    public DateTime? ContactedAt { get; init; }
+
     public static VisitorOutput FromVisitor(Visitor visitor)
     {
         return new VisitorOutput
@@ -25,7 +29,9 @@ public sealed class VisitorOutput
             Phone = visitor.Phone,
             Email = visitor.Email.Value,
             Address = visitor.Address,
-            SubmittedAt = visitor.CreatedAt
+            SubmittedAt = visitor.CreatedAt,
+            Contacted = visitor.IsContacted,
+            ContactedAt = visitor.ContactedAt
         };
     }
 }

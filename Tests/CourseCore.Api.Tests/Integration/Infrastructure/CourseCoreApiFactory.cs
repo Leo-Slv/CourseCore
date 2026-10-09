@@ -689,7 +689,8 @@ public sealed class CourseCoreApiFactory : WebApplicationFactory<Program>
             CreatePermission(AuthPermissionNames.ManageVideos, "Manage videos", now),
             CreatePermission(AuthPermissionNames.ReadProgress, "Read progress", now),
             CreatePermission(AuthPermissionNames.ReadAudit, "Read audit", now),
-            CreatePermission(AuthPermissionNames.ReadVisitors, "Read visitors", now)
+            CreatePermission(AuthPermissionNames.ReadVisitors, "Read visitors", now),
+            CreatePermission(AuthPermissionNames.ManageVisitors, "Manage visitors", now)
         };
         dbContext.Permissions.AddRange(permissions);
         dbContext.UserRoles.Add(new UserRolePersistenceModel

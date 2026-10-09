@@ -15,7 +15,9 @@ public static class VisitorMapper
             Email.Create(model.Email),
             model.Address,
             model.CreatedAt,
-            model.UpdatedAt);
+            model.UpdatedAt,
+            model.ContactedAt,
+            model.ContactedByUserId);
     }
 
     public static VisitorPersistenceModel ToPersistence(Visitor visitor)
@@ -27,8 +29,17 @@ public static class VisitorMapper
             Phone = visitor.Phone,
             Email = visitor.Email.Value,
             Address = visitor.Address,
+            ContactedAt = visitor.ContactedAt,
+            ContactedByUserId = visitor.ContactedByUserId,
             CreatedAt = visitor.CreatedAt,
             UpdatedAt = visitor.UpdatedAt
         };
+    }
+
+    public static void ApplyChanges(Visitor visitor, VisitorPersistenceModel model)
+    {
+        model.ContactedAt = visitor.ContactedAt;
+        model.ContactedByUserId = visitor.ContactedByUserId;
+        model.UpdatedAt = visitor.UpdatedAt;
     }
 }

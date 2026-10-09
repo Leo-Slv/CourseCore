@@ -12,6 +12,10 @@ public class VisitorPersistenceModel
 
     public string? Address { get; set; }
 
+    public DateTime? ContactedAt { get; set; }
+
+    public Guid? ContactedByUserId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

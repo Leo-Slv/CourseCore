@@ -7,4 +7,5 @@ public sealed class ListVisitorsRequest
     public int Page { get; init; } = PaginationLimits.DefaultPage;
     public int PageSize { get; init; } = PaginationLimits.DefaultPageSize;
     public string? Search { get; init; }
+    public bool? Contacted { get; init; }
 }

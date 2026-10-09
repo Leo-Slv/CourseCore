@@ -61,4 +61,54 @@ public class VisitorTests
 
         Assert.Null(visitor.Address);
     }
+
+    [Fact]
+    public void NewVisitor_ShouldNotBeContacted()
+    {
+        var visitor = Visitor.Create("Ana", "11987654321", Email.Create("ana@example.com"), null);
+
+        Assert.False(visitor.IsContacted);
+        Assert.Null(visitor.ContactedAt);
+        Assert.Null(visitor.ContactedByUserId);
+    }
+
+    [Fact]
+    public void MarkContacted_ShouldRecordWhenAndByWhomAndBeIdempotent()
+    {
+        var visitor = Visitor.Create("Ana", "11987654321", Email.Create("ana@example.com"), null);
+        var userId = Guid.NewGuid();
+
+        var first = visitor.MarkContacted(userId);
+        var contactedAt = visitor.ContactedAt;
+        var second = visitor.MarkContacted(Guid.NewGuid());
+
+        Assert.True(first);
+        Assert.False(second);
+        Assert.True(visitor.IsContacted);
+        Assert.Equal(contactedAt, visitor.ContactedAt);
+        Assert.Equal(userId, visitor.ContactedByUserId);
+    }
+
+    [Fact]
+    public void MarkContacted_WhenUserIdIsEmpty_ShouldThrow()
+    {
+        var visitor = Visitor.Create("Ana", "11987654321", Email.Create("ana@example.com"), null);
+
+        Assert.Throws<DomainException>(() => visitor.MarkContacted(Guid.Empty));
+    }
+
+    [Fact]
+    public void ClearContacted_ShouldResetStateAndReportChange()
+    {
+        var visitor = Visitor.Create("Ana", "11987654321", Email.Create("ana@example.com"), null);
+        visitor.MarkContacted(Guid.NewGuid());
+
+        var cleared = visitor.ClearContacted();
+        var clearedAgain = visitor.ClearContacted();
+
+        Assert.True(cleared);
+        Assert.False(clearedAgain);
+        Assert.False(visitor.IsContacted);
+        Assert.Null(visitor.ContactedByUserId);
+    }
 }

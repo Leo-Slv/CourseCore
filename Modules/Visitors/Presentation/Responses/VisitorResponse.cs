@@ -13,4 +13,8 @@ public class VisitorResponse
     public string? Address { get; init; }
 
     public DateTime SubmittedAt { get; init; }
+
+    public bool Contacted { get; init; }
+
+    public DateTime? ContactedAt { get; init; }
 }

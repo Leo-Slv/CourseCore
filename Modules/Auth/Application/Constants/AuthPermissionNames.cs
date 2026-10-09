@@ -10,4 +10,5 @@ public static class AuthPermissionNames
     public const string ReadProgress = "progress.read";
     public const string ReadAudit = "audit.read";
     public const string ReadVisitors = "visitors.read";
+    public const string ManageVisitors = "visitors.manage";
 }

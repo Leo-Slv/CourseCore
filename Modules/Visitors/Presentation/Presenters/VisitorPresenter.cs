@@ -21,7 +21,8 @@ public static class VisitorPresenter
     {
         Page = request.Page,
         PageSize = request.PageSize,
-        Search = request.Search
+        Search = request.Search,
+        Contacted = request.Contacted
     };
 
     public static RegisterVisitorResponse ToResponse(RegisterVisitorOutput output) => new()
@@ -37,7 +38,9 @@ public static class VisitorPresenter
         Phone = output.Phone,
         Email = output.Email,
         Address = output.Address,
-        SubmittedAt = output.SubmittedAt
+        SubmittedAt = output.SubmittedAt,
+        Contacted = output.Contacted,
+        ContactedAt = output.ContactedAt
     };
 
     public static PagedResponse<VisitorResponse> ToResponse(PagedResult<VisitorOutput> output) => new()

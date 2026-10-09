@@ -26,6 +26,12 @@ public class Visitor : EntityBase
 
     public string? Address { get; private set; }
 
+    public DateTime? ContactedAt { get; private set; }
+
+    public Guid? ContactedByUserId { get; private set; }
+
+    public bool IsContacted => ContactedAt.HasValue;
+
     public static Visitor Create(string name, string phone, Email email, string? address)
     {
         return new Visitor(name, phone, email, address);
@@ -38,14 +44,56 @@ public class Visitor : EntityBase
         Email email,
         string? address,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt,
+        DateTime? contactedAt = null,
+        Guid? contactedByUserId = null)
     {
         return new Visitor(name, phone, email, address)
         {
             Id = id,
             CreatedAt = createdAt,
-            UpdatedAt = updatedAt
+            UpdatedAt = updatedAt,
+            ContactedAt = contactedAt,
+            ContactedByUserId = contactedByUserId
         };
+    }
+
+    /// <summary>
+    /// Marks the visitor as contacted. Idempotent: an already contacted visitor keeps the
+    /// original date and responsible user. Returns true when the state changed.
+    /// </summary>
+    public bool MarkContacted(Guid contactedByUserId)
+    {
+        if (contactedByUserId == Guid.Empty)
+        {
+            throw new DomainException("ContactedByUserId is required.");
+        }
+
+        if (IsContacted)
+        {
+            return false;
+        }
+
+        ContactedAt = DateTime.UtcNow;
+        ContactedByUserId = contactedByUserId;
+        MarkAsUpdated();
+
+        return true;
+    }
+
+    /// <summary>Returns true when the state changed.</summary>
+    public bool ClearContacted()
+    {
+        if (!IsContacted)
+        {
+            return false;
+        }
+
+        ContactedAt = null;
+        ContactedByUserId = null;
+        MarkAsUpdated();
+
+        return true;
     }
 
     private static string ValidateName(string name)

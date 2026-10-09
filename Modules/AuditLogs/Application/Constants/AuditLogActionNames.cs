@@ -63,6 +63,8 @@ public static class AuditLogActionNames
     public const string TestimonialPublished = "TestimonialPublished";
     public const string TestimonialUnpublished = "TestimonialUnpublished";
     public const string VisitorRegistered = "VisitorRegistered";
+    public const string VisitorMarkedContacted = "VisitorMarkedContacted";
+    public const string VisitorMarkedNotContacted = "VisitorMarkedNotContacted";
     public const string QuestionAsked = "QuestionAsked";
     public const string QuestionAnswered = "QuestionAnswered";
     public const string QuestionRemoved = "QuestionRemoved";

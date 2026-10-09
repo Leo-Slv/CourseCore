@@ -114,6 +114,7 @@ public static class AuthDependencyInjection
             AddPermissionPolicy(options, AuthPolicyNames.ReadProgress, AuthPermissionNames.ReadProgress);
             AddPermissionPolicy(options, AuthPolicyNames.ReadAudit, AuthPermissionNames.ReadAudit);
             AddPermissionPolicy(options, AuthPolicyNames.ReadVisitors, AuthPermissionNames.ReadVisitors);
+            AddPermissionPolicy(options, AuthPolicyNames.ManageVisitors, AuthPermissionNames.ManageVisitors);
         });
 
         return services;

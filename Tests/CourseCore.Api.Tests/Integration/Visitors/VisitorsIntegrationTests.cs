@@ -246,6 +246,75 @@ public class VisitorsIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Equal(HttpStatusCode.TooManyRequests, third.StatusCode);
     }
 
+    [Fact]
+    public async Task SetContacted_WhenAdmin_ShouldToggleAndReflectInListAndFilter()
+    {
+        using var adminClient = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAdminAsync(adminClient);
+        using var anonymous = IntegrationAuth.CreateClient(_factory);
+        var email = UniqueEmail();
+        var created = await (await PostVisitorAsync(anonymous, "Contato Marcado", "11987654321", email))
+            .Content.ReadFromJsonAsync<RegisterVisitorResponse>();
+
+        var mark = await adminClient.PutAsJsonAsync($"/api/visitors/{created!.Id}/contacted", new { contacted = true });
+        var marked = await mark.Content.ReadFromJsonAsync<VisitorResponse>();
+        var doneList = await adminClient.GetFromJsonAsync<PagedResponse<VisitorResponse>>(
+            $"/api/visitors?contacted=true&search={Uri.EscapeDataString(email)}");
+        var pendingList = await adminClient.GetFromJsonAsync<PagedResponse<VisitorResponse>>(
+            $"/api/visitors?contacted=false&search={Uri.EscapeDataString(email)}");
+        var unmark = await adminClient.PutAsJsonAsync($"/api/visitors/{created.Id}/contacted", new { contacted = false });
+        var unmarked = await unmark.Content.ReadFromJsonAsync<VisitorResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, mark.StatusCode);
+        Assert.True(marked!.Contacted);
+        Assert.NotNull(marked.ContactedAt);
+        Assert.Single(doneList!.Items);
+        Assert.Empty(pendingList!.Items);
+        Assert.Equal(HttpStatusCode.OK, unmark.StatusCode);
+        Assert.False(unmarked!.Contacted);
+        Assert.Null(unmarked.ContactedAt);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CourseCoreDbContext>();
+        Assert.Contains(
+            await dbContext.AuditLogs.Where(log => log.EntityId == created.Id).Select(log => log.Action).ToListAsync(),
+            action => action == AuditLogActionNames.VisitorMarkedContacted);
+    }
+
+    [Fact]
+    public async Task SetContacted_WhenAnonymous_ShouldReturnUnauthorized()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+
+        var response = await client.PutAsJsonAsync($"/api/visitors/{Guid.NewGuid()}/contacted", new { contacted = true });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetContacted_WhenUserOnlyCanRead_ShouldReturnForbidden()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync(AuthPermissionNames.ReadVisitors);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PutAsJsonAsync($"/api/visitors/{Guid.NewGuid()}/contacted", new { contacted = true });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetContacted_WhenUserHasManageVisitorsPermission_ShouldReturnNotFoundForUnknownVisitor()
+    {
+        using var client = IntegrationAuth.CreateClient(_factory);
+        var user = await _factory.SeedUserAsync(AuthPermissionNames.ManageVisitors);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PutAsJsonAsync($"/api/visitors/{Guid.NewGuid()}/contacted", new { contacted = true });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private static string UniqueEmail()
     {
         return $"visitor.{Guid.NewGuid():N}@example.com";

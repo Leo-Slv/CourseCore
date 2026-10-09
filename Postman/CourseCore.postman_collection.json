@@ -1366,6 +1366,46 @@
                                      }
                                  }
                              ]
+                         },
+                         {
+                             "name": "Set Visitor Contacted",
+                             "request": {
+                                 "method": "PUT",
+                                 "header": [
+                                     {
+                                         "key": "Content-Type",
+                                         "type": "text",
+                                         "value": "application/json"
+                                     },
+                                     {
+                                         "key": "X-Correlation-ID",
+                                         "type": "text",
+                                         "value": "{{correlationId}}"
+                                     }
+                                 ],
+                                 "url": "{{baseUrl}}/api/visitors/{{visitorId}}/contacted",
+                                 "description": "Marks (contacted=true) or unmarks (contacted=false) a first-time visitor as already contacted by the church team. Idempotent. Bearer required; policy ManageVisitors (visitors.manage or Admin). Uses visitorId. Response: VisitorResponse. Main statuses: 200, 400, 401, 403, 404, 500.",
+                                 "body": {
+                                     "mode": "raw",
+                                     "raw": "{\n  \"contacted\": true\n}",
+                                     "options": {
+                                         "raw": {
+                                             "language": "json"
+                                         }
+                                     }
+                                 }
+                             },
+                             "event": [
+                                 {
+                                     "listen": "test",
+                                     "script": {
+                                         "exec": [
+                                             "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.eql(200); });"
+                                         ],
+                                         "type": "text/javascript"
+                                     }
+                                 }
+                             ]
                          }
                      ]
                  },

@@ -11,6 +11,7 @@ public static class VisitorsDependencyInjection
         services.AddScoped<IVisitorRepository, EfVisitorRepository>();
         services.AddScoped<RegisterVisitorUseCase>();
         services.AddScoped<ListVisitorsUseCase>();
+        services.AddScoped<SetVisitorContactedUseCase>();
 
         return services;
     }

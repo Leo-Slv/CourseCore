@@ -16,20 +16,42 @@ public sealed class FakeVisitorRepository : IVisitorRepository
         return Task.CompletedTask;
     }
 
+    public Task<Visitor?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Visitors.FirstOrDefault(visitor => visitor.Id == id));
+    }
+
+    public Task UpdateAsync(Visitor visitor, CancellationToken cancellationToken = default)
+    {
+        UpdateCalls++;
+
+        return Task.CompletedTask;
+    }
+
+    public int UpdateCalls { get; private set; }
+
+    public bool? LastContactedFilter { get; private set; }
+
     public Task<(IReadOnlyCollection<Visitor> Items, int TotalCount)> ListPagedAsync(
         int page,
         int pageSize,
         string? search = null,
+        bool? contacted = null,
         CancellationToken cancellationToken = default)
     {
         LastSearch = search;
+        LastContactedFilter = contacted;
 
-        var items = Visitors
+        var filtered = Visitors
+            .Where(visitor => contacted is null || visitor.IsContacted == contacted)
+            .ToArray();
+
+        var items = filtered
             .OrderByDescending(visitor => visitor.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToArray();
 
-        return Task.FromResult<(IReadOnlyCollection<Visitor>, int)>((items, Visitors.Count));
+        return Task.FromResult<(IReadOnlyCollection<Visitor>, int)>((items, filtered.Length));
     }
 }

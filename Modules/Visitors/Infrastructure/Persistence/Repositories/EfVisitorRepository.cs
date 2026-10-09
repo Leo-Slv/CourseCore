@@ -20,13 +20,36 @@ public class EfVisitorRepository : IVisitorRepository
         await _dbContext.Visitors.AddAsync(VisitorMapper.ToPersistence(visitor), cancellationToken);
     }
 
+    public async Task<Visitor?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.Visitors
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        return model is null ? null : VisitorMapper.ToDomain(model);
+    }
+
+    public async Task UpdateAsync(Visitor visitor, CancellationToken cancellationToken = default)
+    {
+        var model = await _dbContext.Visitors.FirstAsync(x => x.Id == visitor.Id, cancellationToken);
+        VisitorMapper.ApplyChanges(visitor, model);
+    }
+
     public async Task<(IReadOnlyCollection<Visitor> Items, int TotalCount)> ListPagedAsync(
         int page,
         int pageSize,
         string? search = null,
+        bool? contacted = null,
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Visitors.AsNoTracking();
+
+        if (contacted is not null)
+        {
+            query = contacted.Value
+                ? query.Where(x => x.ContactedAt != null)
+                : query.Where(x => x.ContactedAt == null);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {

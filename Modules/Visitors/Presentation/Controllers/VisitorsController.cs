@@ -3,6 +3,7 @@ using CourseCore.Api.Modules.Visitors.Application.UseCases;
 using CourseCore.Api.Modules.Visitors.Presentation.Presenters;
 using CourseCore.Api.Modules.Visitors.Presentation.Requests;
 using CourseCore.Api.Modules.Visitors.Presentation.Responses;
+using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Presentation.RateLimiting;
 using CourseCore.Api.Shared.Presentation.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -18,13 +19,19 @@ public class VisitorsController : ControllerBase
 {
     private readonly RegisterVisitorUseCase _registerVisitorUseCase;
     private readonly ListVisitorsUseCase _listVisitorsUseCase;
+    private readonly SetVisitorContactedUseCase _setVisitorContactedUseCase;
+    private readonly ICurrentUserService _currentUserService;
 
     public VisitorsController(
         RegisterVisitorUseCase registerVisitorUseCase,
-        ListVisitorsUseCase listVisitorsUseCase)
+        ListVisitorsUseCase listVisitorsUseCase,
+        SetVisitorContactedUseCase setVisitorContactedUseCase,
+        ICurrentUserService currentUserService)
     {
         _registerVisitorUseCase = registerVisitorUseCase;
         _listVisitorsUseCase = listVisitorsUseCase;
+        _setVisitorContactedUseCase = setVisitorContactedUseCase;
+        _currentUserService = currentUserService;
     }
 
     [HttpPost]
@@ -56,6 +63,35 @@ public class VisitorsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var output = await _listVisitorsUseCase.ExecuteAsync(VisitorPresenter.ToInput(request), cancellationToken);
+
+        return Ok(VisitorPresenter.ToResponse(output));
+    }
+
+    [HttpPut("{id:guid}/contacted")]
+    [Authorize(Policy = AuthPolicyNames.ManageVisitors)]
+    [ProducesResponseType(typeof(VisitorResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<VisitorResponse>> SetContactedAsync(
+        Guid id,
+        SetVisitorContactedRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actingUserId = _currentUserService.UserId;
+
+        if (actingUserId is null || actingUserId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Authenticated user was not found.");
+        }
+
+        var output = await _setVisitorContactedUseCase.ExecuteAsync(
+            id,
+            request.Contacted,
+            actingUserId.Value,
+            cancellationToken);
 
         return Ok(VisitorPresenter.ToResponse(output));
     }
