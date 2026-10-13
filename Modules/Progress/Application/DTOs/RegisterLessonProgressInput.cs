@@ -8,5 +8,7 @@ public class RegisterLessonProgressInput
 
     public int WatchedSeconds { get; init; }
 
+    public int? PositionSeconds { get; init; }
+
     public bool MarkAsCompleted { get; init; }
 }

@@ -879,6 +879,11 @@ namespace CourseCore.Shared.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("LastPositionSeconds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTime>("LastWatchedAt")
                         .HasColumnType("timestamp with time zone");
 

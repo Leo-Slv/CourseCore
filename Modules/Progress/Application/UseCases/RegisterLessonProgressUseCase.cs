@@ -106,7 +106,7 @@ public class RegisterLessonProgressUseCase
                 ? video.DurationSeconds
                 : (int?)null;
 
-            lessonProgress.RegisterWatch(input.WatchedSeconds, maxWatchedSeconds);
+            lessonProgress.RegisterWatch(input.WatchedSeconds, maxWatchedSeconds, input.PositionSeconds);
             lessonProgress.RecalculateCompletion(IsLessonCompletedByServer(video, lessonProgress.WatchedSeconds));
 
             await _progress.SaveLessonProgressAsync(lessonProgress, cancellationToken);
@@ -203,6 +203,11 @@ public class RegisterLessonProgressUseCase
         if (input.WatchedSeconds < 0)
         {
             throw new ArgumentException("WatchedSeconds cannot be negative.", nameof(input));
+        }
+
+        if (input.PositionSeconds < 0)
+        {
+            throw new ArgumentException("PositionSeconds cannot be negative.", nameof(input));
         }
     }
 }

@@ -14,6 +14,8 @@ public class LessonProgressOutput
 
     public int WatchedSeconds { get; init; }
 
+    public int LastPositionSeconds { get; init; }
+
     public DateTime LastWatchedAt { get; init; }
 
     public DateTime? CompletedAt { get; init; }
@@ -27,6 +29,7 @@ public class LessonProgressOutput
             LessonId = progress.LessonId,
             Completed = progress.Completed,
             WatchedSeconds = progress.WatchedSeconds,
+            LastPositionSeconds = progress.LastPositionSeconds,
             LastWatchedAt = progress.LastWatchedAt,
             CompletedAt = progress.CompletedAt
         };

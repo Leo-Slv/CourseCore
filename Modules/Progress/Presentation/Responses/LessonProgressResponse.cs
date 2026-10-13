@@ -12,6 +12,8 @@ public class LessonProgressResponse
 
     public int WatchedSeconds { get; init; }
 
+    public int LastPositionSeconds { get; init; }
+
     public DateTime LastWatchedAt { get; init; }
 
     public DateTime? CompletedAt { get; init; }

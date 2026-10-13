@@ -13,6 +13,7 @@ public static class ProgressPresenter
             UserId = userId,
             LessonId = request.LessonId,
             WatchedSeconds = request.WatchedSeconds,
+            PositionSeconds = request.PositionSeconds,
             MarkAsCompleted = request.MarkAsCompleted
         };
     }
@@ -26,6 +27,7 @@ public static class ProgressPresenter
             LessonId = output.LessonId,
             Completed = output.Completed,
             WatchedSeconds = output.WatchedSeconds,
+            LastPositionSeconds = output.LastPositionSeconds,
             LastWatchedAt = output.LastWatchedAt,
             CompletedAt = output.CompletedAt
         };

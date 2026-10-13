@@ -11,7 +11,8 @@ public class UserLessonProgress : EntityBase
         bool completed,
         int watchedSeconds,
         DateTime lastWatchedAt,
-        DateTime? completedAt)
+        DateTime? completedAt,
+        int lastPositionSeconds = 0)
     {
         UserId = ValidateId(userId, nameof(UserId));
         LessonId = ValidateId(lessonId, nameof(LessonId));
@@ -19,6 +20,7 @@ public class UserLessonProgress : EntityBase
         WatchedSeconds = ValidateWatchedSeconds(watchedSeconds);
         LastWatchedAt = lastWatchedAt;
         CompletedAt = completedAt;
+        LastPositionSeconds = ValidateWatchedSeconds(lastPositionSeconds);
     }
 
     public Guid UserId { get; private set; }
@@ -32,6 +34,9 @@ public class UserLessonProgress : EntityBase
     public DateTime LastWatchedAt { get; private set; }
 
     public DateTime? CompletedAt { get; private set; }
+
+    /// <summary>Where the player stopped, so the next visit can resume there.</summary>
+    public int LastPositionSeconds { get; private set; }
 
     public static UserLessonProgress Create(Guid userId, Guid lessonId)
     {
@@ -48,9 +53,10 @@ public class UserLessonProgress : EntityBase
         DateTime lastWatchedAt,
         DateTime? completedAt,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt,
+        int lastPositionSeconds = 0)
     {
-        return new UserLessonProgress(userId, lessonId, completed, watchedSeconds, lastWatchedAt, completedAt)
+        return new UserLessonProgress(userId, lessonId, completed, watchedSeconds, lastWatchedAt, completedAt, lastPositionSeconds)
         {
             Id = id,
             CreatedAt = createdAt,
@@ -58,7 +64,7 @@ public class UserLessonProgress : EntityBase
         };
     }
 
-    public void RegisterWatch(int watchedSeconds, int? maxWatchedSeconds = null)
+    public void RegisterWatch(int watchedSeconds, int? maxWatchedSeconds = null, int? positionSeconds = null)
     {
         var validatedWatchedSeconds = ValidateWatchedSeconds(watchedSeconds);
         var monotonicWatchedSeconds = Math.Max(WatchedSeconds, validatedWatchedSeconds);
@@ -69,6 +75,12 @@ public class UserLessonProgress : EntityBase
         if (effectiveWatchedSeconds != WatchedSeconds)
         {
             WatchedSeconds = effectiveWatchedSeconds;
+        }
+
+        if (positionSeconds.HasValue)
+        {
+            var position = ValidateWatchedSeconds(positionSeconds.Value);
+            LastPositionSeconds = maxWatchedSeconds.HasValue ? Math.Min(position, maxWatchedSeconds.Value) : position;
         }
 
         LastWatchedAt = DateTime.UtcNow;

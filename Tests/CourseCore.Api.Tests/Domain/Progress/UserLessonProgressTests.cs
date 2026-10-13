@@ -68,4 +68,48 @@ public class UserLessonProgressTests
         Assert.False(progress.Completed);
         Assert.Null(progress.CompletedAt);
     }
+
+    [Fact]
+    public void RegisterWatch_WhenPositionIsGiven_ShouldRememberWhereThePlayerStopped()
+    {
+        var progress = UserLessonProgress.Create(Guid.NewGuid(), Guid.NewGuid());
+
+        progress.RegisterWatch(30, maxWatchedSeconds: 100, positionSeconds: 45);
+
+        Assert.Equal(45, progress.LastPositionSeconds);
+        Assert.Equal(30, progress.WatchedSeconds);
+    }
+
+    [Fact]
+    public void RegisterWatch_WhenPositionGoesBackwards_ShouldKeepTheLatestPositionButNeverLowerWatchedSeconds()
+    {
+        var progress = UserLessonProgress.Create(Guid.NewGuid(), Guid.NewGuid());
+        progress.RegisterWatch(60, maxWatchedSeconds: 100, positionSeconds: 60);
+
+        progress.RegisterWatch(20, maxWatchedSeconds: 100, positionSeconds: 10);
+
+        Assert.Equal(10, progress.LastPositionSeconds);
+        Assert.Equal(60, progress.WatchedSeconds);
+    }
+
+    [Fact]
+    public void RegisterWatch_WhenPositionExceedsDuration_ShouldClampToDuration()
+    {
+        var progress = UserLessonProgress.Create(Guid.NewGuid(), Guid.NewGuid());
+
+        progress.RegisterWatch(10, maxWatchedSeconds: 100, positionSeconds: 5000);
+
+        Assert.Equal(100, progress.LastPositionSeconds);
+    }
+
+    [Fact]
+    public void RegisterWatch_WhenPositionIsOmitted_ShouldKeepThePreviousPosition()
+    {
+        var progress = UserLessonProgress.Create(Guid.NewGuid(), Guid.NewGuid());
+        progress.RegisterWatch(10, maxWatchedSeconds: 100, positionSeconds: 8);
+
+        progress.RegisterWatch(20, maxWatchedSeconds: 100);
+
+        Assert.Equal(8, progress.LastPositionSeconds);
+    }
 }

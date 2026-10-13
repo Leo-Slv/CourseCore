@@ -16,6 +16,7 @@ public class UserLessonProgressConfiguration : IEntityTypeConfiguration<UserLess
         builder.Property(x => x.LessonId).IsRequired();
         builder.Property(x => x.Completed).IsRequired();
         builder.Property(x => x.WatchedSeconds).IsRequired();
+        builder.Property(x => x.LastPositionSeconds).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.LastWatchedAt).IsRequired();
         builder.Property(x => x.CompletedAt).IsRequired(false);
         builder.Property(x => x.CreatedAt).IsRequired();

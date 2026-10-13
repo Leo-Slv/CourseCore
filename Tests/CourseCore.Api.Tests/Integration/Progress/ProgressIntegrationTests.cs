@@ -246,4 +246,48 @@ public class ProgressIntegrationTests : IClassFixture<CourseCoreApiFactory>
         Assert.Equal(0, moduleTwo.ProgressPercent);
         _ = lessonTwoId;
     }
+
+
+    [Fact]
+    public async Task RegisterLessonProgress_ShouldPersistThePlayerPositionAndReturnItWithTheCourseProgress()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        await _factory.SeedReadyVideoAsync(course.LessonId, durationSeconds: 100);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/progress/lessons", new
+        {
+            lessonId = course.LessonId,
+            watchedSeconds = 30,
+            positionSeconds = 42
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<LessonProgressResponse>();
+        Assert.Equal(42, body!.LastPositionSeconds);
+        Assert.False(body.Completed);
+
+        var course2 = await client.GetFromJsonAsync<CourseProgressResponse>($"/api/progress/courses/{course.CourseId}");
+        Assert.Equal(42, course2!.Lessons.Single(l => l.LessonId == course.LessonId).LastPositionSeconds);
+    }
+
+    [Fact]
+    public async Task RegisterLessonProgress_WhenPositionIsNegative_ShouldReturnBadRequest()
+    {
+        var user = await _factory.SeedUserAsync();
+        var course = await _factory.SeedPublishedCourseWithLessonAsync(user.Id);
+        using var client = IntegrationAuth.CreateClient(_factory);
+        await IntegrationAuth.AuthenticateAsAsync(client, user);
+
+        var response = await client.PostAsJsonAsync("/api/progress/lessons", new
+        {
+            lessonId = course.LessonId,
+            watchedSeconds = 1,
+            positionSeconds = -5
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

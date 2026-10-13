@@ -15,6 +15,8 @@ public class UserLessonProgressPersistenceModel
 
     public int WatchedSeconds { get; set; }
 
+    public int LastPositionSeconds { get; set; }
+
     public DateTime LastWatchedAt { get; set; }
 
     public DateTime? CompletedAt { get; set; }

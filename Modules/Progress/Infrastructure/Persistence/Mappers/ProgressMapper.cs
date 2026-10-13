@@ -54,7 +54,8 @@ public static class ProgressMapper
             model.LastWatchedAt,
             model.CompletedAt,
             model.CreatedAt,
-            model.UpdatedAt);
+            model.UpdatedAt,
+            model.LastPositionSeconds);
     }
 
     public static UserLessonProgressPersistenceModel ToPersistence(UserLessonProgress progress)
@@ -66,6 +67,7 @@ public static class ProgressMapper
             LessonId = progress.LessonId,
             Completed = progress.Completed,
             WatchedSeconds = progress.WatchedSeconds,
+            LastPositionSeconds = progress.LastPositionSeconds,
             LastWatchedAt = progress.LastWatchedAt,
             CompletedAt = progress.CompletedAt,
             CreatedAt = progress.CreatedAt,
