@@ -27,4 +27,4 @@ Cartão de teste: `4242 4242 4242 4242`, qualquer data futura e CVC.
 
 ## Cliente no ambiente de produção
 
-Veja `Docs/deployment-aws.md`: o frontend deve chamar `/api/...` na própria origem da Vercel (rewrite para a API) para o cookie de refresh funcionar.
+Veja `Docs/deployment-cloudrun.md`: o frontend deve chamar `/api/...` na própria origem da Vercel (rewrite para a API) para o cookie de refresh funcionar.

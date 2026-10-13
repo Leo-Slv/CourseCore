@@ -19,6 +19,7 @@ using CourseCore.Api.Shared.Presentation.Middleware;
 using CourseCore.Api.Shared.Presentation.OpenApi;
 using CourseCore.Api.Shared.Presentation.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 
@@ -74,6 +75,19 @@ builder.Services.AddOpenApi(options =>
 });
 builder.Services.AddSharedInfrastructure(builder.Configuration);
 builder.Services.AddCourseCoreRateLimiting(builder.Configuration);
+
+// Only meaningful when ASPNETCORE_FORWARDEDHEADERS_ENABLED=true. The default (1) trusts just
+// the last proxy hop. Behind two hops (Vercel rewrite -> Cloud Run) set it to 2 so the rate
+// limiter sees the real client IP instead of the first proxy's.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    var forwardLimit = builder.Configuration.GetValue<int?>("ForwardedHeaders:ForwardLimit");
+
+    if (forwardLimit is >= 1)
+    {
+        options.ForwardLimit = forwardLimit;
+    }
+});
 builder.Services.AddAuthModule(builder.Configuration);
 builder.Services.AddUsersModule();
 builder.Services.AddAccessModule();

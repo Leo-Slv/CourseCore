@@ -1,12 +1,12 @@
 # CI/CD - CourseCore API e plataforma-vdg
 
-Nada aqui foi executado no GitHub ainda: os workflows foram validados com `actionlint` e os comandos de CI rodados localmente. O primeiro push vai exercitar de verdade.
+Nada aqui foi executado no GitHub ainda: os workflows foram validados com `actionlint` e os comandos de CI rodados localmente. O primeiro push vai exercitar de verdade. A hospedagem da API e o Google Cloud estao em `Docs/deployment-cloudrun.md`.
 
 ## Visao geral
 
 | | CI (todo push/PR) | CD (producao) |
 | --- | --- | --- |
-| **API** (`CourseCore`) | restore, build, testes, migrations faltando, pacotes vulneraveis, build do Docker, scan de secrets | imagem no GHCR → migrations → deploy na EC2 → smoke test, com aprovacao manual e rollback |
+| **API** (`CourseCore`) | restore, build, testes, migrations faltando, pacotes vulneraveis, build do Docker, scan de secrets | imagem no Artifact Registry → migrations → Cloud Run (revisao sem trafego → smoke test → trafego), com aprovacao manual |
 | **Front** (`plataforma-vdg`) | typecheck, lint, testes, build, audit (nao bloqueia), scan de secrets | Vercel (integracao Git nativa) |
 
 ## API
@@ -22,9 +22,9 @@ Nada aqui foi executado no GitHub ainda: os workflows foram validados com `actio
 
 Dispara quando o **CI da master termina com sucesso** (`workflow_run`), em tag `v*` ou manualmente. Um CI vermelho nunca chega em producao; o commit publicado e exatamente o testado.
 
-1. **image**: build e push para `ghcr.io/<dono>/coursecore` com as tags `sha-<7>`, `latest` (e a tag `v*`).
+1. **image**: autentica no Google por Workload Identity Federation (sem chave) e publica `<regiao>-docker.pkg.dev/<projeto>/coursecore/api` com as tags `sha-<7>` e `latest`.
 2. **migrations** (environment `production`, pede aprovacao): gera o script SQL **idempotente** e o anexa como artefato `migration-script`. So aplica no Neon se a variavel do repositorio `APPLY_MIGRATIONS` for `true`. Respeita `Docs/deployment-migrations.md`: nada de migration no startup.
-3. **deploy** (environment `production`): por SSH roda `deploy/aws/deploy.sh` na EC2: `pull`, `up -d`, espera o healthcheck do container e, **se nao ficar saudavel, volta para a imagem anterior** e falha o job. Depois faz um smoke test em `https://<API_HOST>/health/ready`.
+3. **deploy** (environment `production`): `gcloud run deploy` cria uma **revisao sem trafego** (tag `candidate`) com a configuracao de `deploy/cloudrun/env.yaml` e os segredos do Secret Manager; testa `/health/ready` nessa revisao e **so entao move o trafego**. Se o teste falhar, o trafego nunca muda e a revisao anterior continua servindo (nao precisa de rollback). No primeiro deploy, que nao tem revisao anterior, testa a URL do servico.
 
 Os jobs `migrations` e `deploy` compartilham a mesma aprovacao do environment: aprove uma vez, depois de tirar o **branch/snapshot do Neon**.
 
@@ -33,30 +33,18 @@ Os jobs `migrations` e `deploy` compartilham a mesma aprovacao do environment: a
 **Settings → Environments → New environment `production`**
 - *Required reviewers*: voce.
 - *Deployment branches*: `master`.
-- Secrets do environment:
-
-| Secret | Valor |
-| --- | --- |
-| `SSH_HOST` | IP ou DNS da EC2 |
-| `SSH_USER` | usuario de deploy (ex.: `ubuntu`) |
-| `SSH_PRIVATE_KEY` | chave privada **so de deploy** (gere uma nova: `ssh-keygen -t ed25519`, publique a `.pub` no `~/.ssh/authorized_keys` da EC2) |
-| `SSH_KNOWN_HOSTS` | saida de `ssh-keyscan -t ed25519 <host>` (conferida por voce; evita man-in-the-middle) |
-| `NEON_DIRECT_CONNECTION` | connection string **direct** (sem `-pooler`) do Neon; so se for aplicar migrations pelo workflow |
-
-- Variables do environment/repositorio: `API_HOST` (ex.: `api.1-2-3-4.sslip.io`, usado no smoke test) e `APPLY_MIGRATIONS` (`true` para aplicar pelo workflow; ausente = so gera o script).
+- Secret do environment (so se for aplicar migrations pelo workflow): `NEON_DIRECT_CONNECTION` = connection string **direct** (sem `-pooler`) do Neon.
+- Variables (repositorio): `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER` e `GCP_SERVICE_ACCOUNT` (o `deploy/cloudrun/setup.sh` imprime os valores) e `APPLY_MIGRATIONS` (`true` para aplicar pelo workflow; ausente = so gera o script). **Nao existe nenhuma secret do Google no GitHub.**
 
 **Settings → Branches → regra para `master`**: exigir pull request e os status checks `build-and-test`, `docker-build` e `secret-scan` (e, no front, `quality`).
 
-**Na EC2** (uma vez, alem do que ja esta em `Docs/deployment-aws.md`):
-- a pasta `/opt/coursecore` com `docker-compose.yml`, `Caddyfile` e `.env` (de `deploy/aws/`);
-- o usuario de deploy no grupo `docker`;
-- pacote GHCR **publico**, ou `docker login ghcr.io` feito uma vez na EC2 com um PAT `read:packages`.
+**No Google Cloud** (uma vez): `deploy/cloudrun/setup.sh`, descrito em `Docs/deployment-cloudrun.md`.
 
 ### Como fazer uma release
 
 - Fluxo normal: merge na `master` → CI → CD pede aprovacao → aprovar.
 - Reimplantar/voltar para uma versao: *Actions → CourseCore CD → Run workflow* (usa o commit atual) ou publique uma tag `v1.2.3`.
-- Rollback manual: na EC2, `deploy/aws/deploy.sh ghcr.io/<dono>/coursecore:sha-<antigo>`.
+- Rollback manual: no console do Cloud Run (Revisoes) mande 100% do trafego para a revisao anterior, ou `gcloud run services update-traffic coursecore-api --region <regiao> --to-revisions <revisao>=100`.
 
 ## Front
 
@@ -79,4 +67,4 @@ Os dois repositorios tem `.github/dependabot.yml` (NuGet/Docker/Actions no back,
 - O gitleaks usa a acao oficial, gratuita em contas pessoais; em organizacao exige licenca.
 - Nao ha ambiente de homologacao: o `production` e o unico destino.
 - A aplicacao de migrations pelo workflow nao tira o snapshot do Neon sozinha; isso e manual, antes de aprovar.
-- O deploy usa uma unica EC2, entao ha uma janela curta de reinicio a cada release.
+- O Cloud Run escala a zero: a primeira requisicao depois de um periodo parado e mais lenta (cold start).
