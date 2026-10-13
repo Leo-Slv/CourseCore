@@ -1,0 +1,25 @@
+{
+	servers {
+		# Keep the X-Forwarded-For sent by the Vercel rewrite (client IP) instead of
+		# discarding it; Caddy then appends the Vercel IP. Together with
+		# ForwardedHeaders__ForwardLimit=2 the API rate-limits by the real client IP.
+		# Trade-off: a caller hitting this host directly can forge the first entry.
+		trusted_proxies static 0.0.0.0/0 ::/0
+	}
+}
+
+{$API_HOST} {
+	encode zstd gzip
+
+	# /health/ready and /health expose DB state; only liveness is public
+	# (see Docs/production-configuration.md).
+	@internalHealth path /health /health/ready
+	respond @internalHealth 404
+
+	# Matches Kestrel's 1 MiB limit so oversized bodies are rejected early.
+	request_body {
+		max_size 1MB
+	}
+
+	reverse_proxy coursecore-api:8080
+}
