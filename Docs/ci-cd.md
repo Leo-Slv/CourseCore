@@ -24,7 +24,9 @@ Dispara quando o **CI da master termina com sucesso** (`workflow_run`), em tag `
 
 1. **image**: build e push para `ghcr.io/<dono>/coursecore` com as tags `sha-<7>`, `latest` (e a tag `v*`).
 2. **migrations** (environment `production`, pede aprovacao): gera o script SQL **idempotente** e o anexa como artefato `migration-script`. So aplica no Neon se a variavel do repositorio `APPLY_MIGRATIONS` for `true`. Respeita `Docs/deployment-migrations.md`: nada de migration no startup.
-3. **deploy** (environment `production`): por SSH roda `deploy/aws/deploy.sh` na EC2: `pull`, `up -d`, espera o healthcheck do container e, **se nao ficar saudavel, volta para a imagem anterior** e falha o job. Depois faz um smoke test em `https://<API_HOST>/health/live` (o Caddy esconde `/health/ready` e `/health`, que mostram o estado do banco).
+3. **deploy** (so roda se a variavel `AUTO_DEPLOY` for `true`; veja o aviso abaixo) (environment `production`): por SSH roda `deploy/aws/deploy.sh` na EC2: `pull`, `up -d`, espera o healthcheck do container e, **se nao ficar saudavel, volta para a imagem anterior** e falha o job. Depois faz um smoke test em `https://<API_HOST>/health/live` (o Caddy esconde `/health/ready` e `/health`, que mostram o estado do banco).
+
+> **Atencao:** os runners do GitHub nao tem IP fixo. Se a porta 22 da EC2 estiver liberada so para o seu IP (recomendado), o job `deploy` nao consegue conectar. Por isso ele e opcional: sem `AUTO_DEPLOY=true` o CD so publica a imagem (e gera o SQL), e voce faz o deploy manual por SSH (`Docs/deployment-aws.md`).
 
 Os jobs `migrations` e `deploy` compartilham a mesma aprovacao do environment: aprove uma vez, depois de tirar o **branch/snapshot do Neon**.
 

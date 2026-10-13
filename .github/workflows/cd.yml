@@ -133,7 +133,11 @@ jobs:
           fi
           psql "$NEON_DIRECT_CONNECTION" -v ON_ERROR_STOP=1 -f artifacts/migrations/coursecore-migration.sql
 
+  # Opt-in: GitHub-hosted runners have no fixed IP, so this only works while the EC2
+  # security group allows SSH from them. Set the repository variable AUTO_DEPLOY=true
+  # to enable it; otherwise deploy by hand (Docs/deployment-aws.md, "Deploy manual").
   deploy:
+    if: vars.AUTO_DEPLOY == 'true'
     needs: [image, migrations]
     runs-on: ubuntu-latest
     timeout-minutes: 15

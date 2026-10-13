@@ -116,3 +116,14 @@ Alternativa sem rewrite: chamar a API direto e usar `SameSite=None` (+ `Secure`)
 - [ ] Login mantem sessao apos refresh da pagina (cookie `coursecore_refresh_token`).
 - [ ] `Seed__Admin__Enabled=false`; segredos so no `.env` da EC2.
 - [ ] Snapshot/branch do Neon antes de cada migration.
+
+## Deploy manual (padrao enquanto a porta 22 for so do seu IP)
+
+O CD publica a imagem em `ghcr.io/<dono-em-minusculas>/coursecore` (tags `sha-<7>` e `latest`). Para colocar uma versao no ar, na EC2:
+
+```bash
+cd /opt/coursecore
+bash deploy.sh ghcr.io/<dono-em-minusculas>/coursecore:latest   # pull, up -d, espera ficar saudavel e volta atras se falhar
+```
+
+(`deploy.sh` e o `deploy/aws/deploy.sh` do repositorio; copie-o para `/opt/coursecore` junto do compose.) Para o deploy automatico a partir do GitHub, defina a variavel de repositorio `AUTO_DEPLOY=true` e os secrets `SSH_*` (`Docs/ci-cd.md`).
