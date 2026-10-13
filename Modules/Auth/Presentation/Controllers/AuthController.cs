@@ -79,6 +79,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("me/avatar-upload-url")]
+    [Authorize]
     [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -138,6 +139,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("confirm-email")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -154,6 +156,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("resend-confirmation")]
+    [Authorize]
     [EnableRateLimiting(RateLimitPolicyNames.AuthResendConfirmation)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -201,6 +204,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("me")]
+    [Authorize]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(CurrentUserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -214,6 +218,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPut("me")]
+    [Authorize]
     [ProducesResponseType(typeof(CurrentUserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -231,6 +236,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("change-password")]
+    [Authorize]
     [EnableRateLimiting(RateLimitPolicyNames.AuthChangePassword)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]

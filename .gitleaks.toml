@@ -1,0 +1,10 @@
+# Extends the default ruleset. The only exceptions are test fixtures: fake keys that merely
+# look like Stripe tokens (sk_test_integrationtestkey, whsec_...) and are never real credentials.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake credentials used by automated tests"
+paths = [
+  '''Tests/.*''',
+]
