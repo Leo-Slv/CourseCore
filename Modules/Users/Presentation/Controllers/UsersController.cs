@@ -105,6 +105,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{userId:guid}/roles/{roleId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
@@ -121,6 +122,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{userId:guid}/roles/{roleId:guid}")]
+    [Authorize(Policy = AuthPolicyNames.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]

@@ -112,6 +112,73 @@ public class EfRoleRepository : IRoleRepository
                 group => (IReadOnlyCollection<string>)group.Select(row => row.RoleName).ToList());
     }
 
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindPermissionKeysByRoleIdsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await _dbContext.RolePermissions
+            .AsNoTracking()
+            .Where(x => x.Permission != null)
+            .Select(x => new { x.RoleId, x.Permission!.Key })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(row => row.RoleId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyCollection<string>)group.Select(row => row.Key).OrderBy(key => key).ToList());
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, int>> CountMembersByRoleIdAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.UserRoles
+            .AsNoTracking()
+            .Where(x => x.User != null && x.User.Active)
+            .GroupBy(x => x.RoleId)
+            .Select(group => new { RoleId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(row => row.RoleId, row => row.Count, cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Guid>> FindUserIdsByRoleIdAsync(
+        Guid roleId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.UserRoles
+            .AsNoTracking()
+            .Where(x => x.RoleId == roleId)
+            .Select(x => x.UserId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task ReplacePermissionsAsync(
+        Guid roleId,
+        IReadOnlyCollection<string> permissionKeys,
+        CancellationToken cancellationToken = default)
+    {
+        var wanted = await _dbContext.Permissions
+            .Where(x => permissionKeys.Contains(x.Key))
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        var current = await _dbContext.RolePermissions
+            .Where(x => x.RoleId == roleId)
+            .ToListAsync(cancellationToken);
+
+        _dbContext.RolePermissions.RemoveRange(current.Where(x => !wanted.Contains(x.PermissionId)));
+
+        var now = DateTime.UtcNow;
+        var toAdd = wanted
+            .Where(permissionId => current.All(x => x.PermissionId != permissionId))
+            .Select(permissionId => new RolePermissionPersistenceModel
+            {
+                RoleId = roleId,
+                PermissionId = permissionId,
+                CreatedAt = now
+            });
+
+        await _dbContext.RolePermissions.AddRangeAsync(toAdd, cancellationToken);
+    }
+
     public async Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
     {
         var exists = await _dbContext.UserRoles

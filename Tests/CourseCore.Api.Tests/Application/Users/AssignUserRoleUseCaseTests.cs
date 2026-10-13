@@ -1,3 +1,4 @@
+using CourseCore.Api.Modules.Users.Application.Services;
 using CourseCore.Api.Modules.Users.Application.UseCases;
 using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Tests.TestDoubles;
@@ -16,7 +17,7 @@ public class AssignUserRoleUseCaseTests
         users.Add(user);
         await roles.CreateAsync(role);
         var auditLogs = new FakeAuditLogService();
-        var useCase = new AssignUserRoleUseCase(users, roles, new FakeUnitOfWork(), auditLogs);
+        var useCase = new AssignUserRoleUseCase(users, roles, new FakeUnitOfWork(), auditLogs, new UserSessionInvalidator(users, new FakeRefreshTokenRepository()));
 
         await useCase.ExecuteAsync(user.Id, role.Id);
 
@@ -32,7 +33,8 @@ public class AssignUserRoleUseCaseTests
         var roles = new FakeRoleRepository();
         var role = TestEntityFactory.Role();
         await roles.CreateAsync(role);
-        var useCase = new AssignUserRoleUseCase(new FakeUserRepository(), roles, new FakeUnitOfWork(), new FakeAuditLogService());
+        var users = new FakeUserRepository();
+        var useCase = new AssignUserRoleUseCase(users, roles, new FakeUnitOfWork(), new FakeAuditLogService(), new UserSessionInvalidator(users, new FakeRefreshTokenRepository()));
 
         await Assert.ThrowsAsync<NotFoundException>(() => useCase.ExecuteAsync(Guid.NewGuid(), role.Id));
     }
@@ -43,8 +45,30 @@ public class AssignUserRoleUseCaseTests
         var users = new FakeUserRepository();
         var user = TestEntityFactory.User();
         users.Add(user);
-        var useCase = new AssignUserRoleUseCase(users, new FakeRoleRepository(), new FakeUnitOfWork(), new FakeAuditLogService());
+        var useCase = new AssignUserRoleUseCase(users, new FakeRoleRepository(), new FakeUnitOfWork(), new FakeAuditLogService(), new UserSessionInvalidator(users, new FakeRefreshTokenRepository()));
 
         await Assert.ThrowsAsync<NotFoundException>(() => useCase.ExecuteAsync(user.Id, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenRoleIsAssigned_ShouldInvalidateTheUserSessions()
+    {
+        var users = new FakeUserRepository();
+        var roles = new FakeRoleRepository();
+        var refreshTokens = new FakeRefreshTokenRepository();
+        var user = TestEntityFactory.User();
+        var role = TestEntityFactory.Role(name: "Backoffice");
+        users.Add(user);
+        await roles.CreateAsync(role);
+        var useCase = new AssignUserRoleUseCase(
+            users, roles, new FakeUnitOfWork(), new FakeAuditLogService(),
+            new UserSessionInvalidator(users, refreshTokens));
+        var versionBefore = user.TokenVersion;
+
+        await useCase.ExecuteAsync(user.Id, role.Id);
+
+        var stored = await users.FindByIdAsync(user.Id);
+        Assert.Equal(versionBefore + 1, stored!.TokenVersion);
+        Assert.Equal(user.Id, refreshTokens.LastRevokedUserId);
     }
 }

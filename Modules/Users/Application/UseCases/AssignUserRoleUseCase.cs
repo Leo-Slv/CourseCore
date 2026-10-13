@@ -1,6 +1,7 @@
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
+using CourseCore.Api.Modules.Users.Application.Services;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
@@ -13,17 +14,20 @@ public class AssignUserRoleUseCase
     private readonly IRoleRepository _roles;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
+    private readonly UserSessionInvalidator _sessions;
 
     public AssignUserRoleUseCase(
         IUserRepository users,
         IRoleRepository roles,
         IUnitOfWork unitOfWork,
-        IAuditLogService auditLogs)
+        IAuditLogService auditLogs,
+        UserSessionInvalidator sessions)
     {
         _users = users;
         _roles = roles;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
+        _sessions = sessions;
     }
 
     public Task ExecuteAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
@@ -55,6 +59,7 @@ public class AssignUserRoleUseCase
             }
 
             await _roles.AssignToUserAsync(userId, roleId, cancellationToken);
+            await _sessions.InvalidateAsync([userId], cancellationToken);
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.UserRoleAssigned,
                 "User",

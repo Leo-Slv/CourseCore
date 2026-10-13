@@ -54,6 +54,9 @@ public static class AuditLogActionNames
     public const string LessonMaterialsReordered = "LessonMaterialsReordered";
     public const string VideoUploadRequested = "VideoUploadRequested";
     public const string LessonMaterialUploadRequested = "LessonMaterialUploadRequested";
+    public const string RoleCreated = "RoleCreated";
+    public const string RoleUpdated = "RoleUpdated";
+    public const string RolePermissionsChanged = "RolePermissionsChanged";
     public const string UserRoleAssigned = "UserRoleAssigned";
     public const string UserRoleUnassigned = "UserRoleUnassigned";
     public const string UserCourseAccessRevoked = "UserCourseAccessRevoked";

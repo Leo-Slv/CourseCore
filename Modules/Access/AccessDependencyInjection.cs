@@ -29,7 +29,13 @@ public static class AccessDependencyInjection
         services.AddScoped<RevokeUserCourseAccessUseCase>();
         services.AddScoped<GrantCourseAccessUseCase>();
         services.AddScoped<ListGrantedCourseAccessUseCase>();
+        services.AddScoped<IPermissionRepository, EfPermissionRepository>();
         services.AddScoped<ListRolesUseCase>();
+        services.AddScoped<ListRoleDetailsUseCase>();
+        services.AddScoped<ListPermissionsUseCase>();
+        services.AddScoped<CreateRoleUseCase>();
+        services.AddScoped<UpdateRoleUseCase>();
+        services.AddScoped<SetRolePermissionsUseCase>();
         services.AddScoped<RequestAreaImageUploadUseCase>();
 
         return services;

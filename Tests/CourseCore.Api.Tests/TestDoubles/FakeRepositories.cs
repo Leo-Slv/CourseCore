@@ -182,6 +182,49 @@ public sealed class FakeRoleRepository : IRoleRepository
         return Task.FromResult<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>>(result);
     }
 
+    public Dictionary<Guid, List<string>> PermissionKeysByRoleId { get; } = [];
+
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindPermissionKeysByRoleIdsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>>(
+            PermissionKeysByRoleId.ToDictionary(
+                pair => pair.Key,
+                pair => (IReadOnlyCollection<string>)pair.Value.ToArray()));
+    }
+
+    public Task<IReadOnlyDictionary<Guid, int>> CountMembersByRoleIdAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var counts = _rolesByUserId
+            .SelectMany(pair => pair.Value)
+            .GroupBy(role => role.Id)
+            .ToDictionary(group => group.Key, group => group.Count());
+
+        return Task.FromResult<IReadOnlyDictionary<Guid, int>>(counts);
+    }
+
+    public Task<IReadOnlyCollection<Guid>> FindUserIdsByRoleIdAsync(
+        Guid roleId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyCollection<Guid>>(
+            _rolesByUserId
+                .Where(pair => pair.Value.Any(role => role.Id == roleId))
+                .Select(pair => pair.Key)
+                .ToArray());
+    }
+
+    public Task ReplacePermissionsAsync(
+        Guid roleId,
+        IReadOnlyCollection<string> permissionKeys,
+        CancellationToken cancellationToken = default)
+    {
+        PermissionKeysByRoleId[roleId] = permissionKeys.ToList();
+
+        return Task.CompletedTask;
+    }
+
     public Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
     {
         if (_roles.TryGetValue(roleId, out var role))

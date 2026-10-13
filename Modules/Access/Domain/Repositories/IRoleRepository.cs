@@ -24,6 +24,21 @@ public interface IRoleRepository
 
     Task UpdateAsync(Role role, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<string>>> FindPermissionKeysByRoleIdsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<Guid, int>> CountMembersByRoleIdAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<Guid>> FindUserIdsByRoleIdAsync(
+        Guid roleId,
+        CancellationToken cancellationToken = default);
+
+    Task ReplacePermissionsAsync(
+        Guid roleId,
+        IReadOnlyCollection<string> permissionKeys,
+        CancellationToken cancellationToken = default);
+
     Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
 
     Task RemoveFromUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);

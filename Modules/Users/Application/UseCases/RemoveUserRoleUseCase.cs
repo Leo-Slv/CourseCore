@@ -1,6 +1,8 @@
 using CourseCore.Api.Modules.Access.Domain.Repositories;
 using CourseCore.Api.Modules.AuditLogs.Application.Constants;
 using CourseCore.Api.Modules.AuditLogs.Application.Services;
+using CourseCore.Api.Modules.Auth.Application.Constants;
+using CourseCore.Api.Modules.Users.Application.Services;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
 using CourseCore.Api.Shared.Application.Exceptions;
@@ -13,17 +15,20 @@ public class RemoveUserRoleUseCase
     private readonly IRoleRepository _roles;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
+    private readonly UserSessionInvalidator _sessions;
 
     public RemoveUserRoleUseCase(
         IUserRepository users,
         IRoleRepository roles,
         IUnitOfWork unitOfWork,
-        IAuditLogService auditLogs)
+        IAuditLogService auditLogs,
+        UserSessionInvalidator sessions)
     {
         _users = users;
         _roles = roles;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
+        _sessions = sessions;
     }
 
     public Task ExecuteAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
@@ -54,7 +59,20 @@ public class RemoveUserRoleUseCase
                 throw new NotFoundException("Role not found.");
             }
 
+            if (string.Equals(role.Name, AuthRoleNames.Admin, StringComparison.OrdinalIgnoreCase)
+                && user.Active)
+            {
+                var holders = await _roles.FindUserIdsByRoleIdAsync(roleId, cancellationToken);
+                var counts = await _roles.CountMembersByRoleIdAsync(cancellationToken);
+
+                if (holders.Contains(userId) && counts.GetValueOrDefault(roleId) <= 1)
+                {
+                    throw new ConflictException("The last active administrator cannot lose the Admin role.");
+                }
+            }
+
             await _roles.RemoveFromUserAsync(userId, roleId, cancellationToken);
+            await _sessions.InvalidateAsync([userId], cancellationToken);
             await _auditLogs.RecordAsync(
                 AuditLogActionNames.UserRoleUnassigned,
                 "User",
