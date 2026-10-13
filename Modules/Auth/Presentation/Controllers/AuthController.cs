@@ -79,6 +79,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("me/avatar-upload-url")]
+    [EnableRateLimiting(RateLimitPolicyNames.Upload)]
     [Authorize]
     [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]

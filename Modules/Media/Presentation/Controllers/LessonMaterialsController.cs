@@ -1,3 +1,5 @@
+using CourseCore.Api.Shared.Presentation.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Media.Application.UseCases;
 using CourseCore.Api.Modules.Media.Presentation.Presenters;
@@ -45,6 +47,7 @@ public class LessonMaterialsController : ControllerBase
     }
 
     [HttpPost("upload-url")]
+    [EnableRateLimiting(RateLimitPolicyNames.Upload)]
     [Authorize(Policy = AuthPolicyNames.ManageVideos)]
     [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]

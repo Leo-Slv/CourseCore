@@ -1,3 +1,5 @@
+using CourseCore.Api.Shared.Presentation.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using CourseCore.Api.Modules.Payments.Application.UseCases;
 using CourseCore.Api.Modules.Payments.Presentation.Presenters;
 using CourseCore.Api.Modules.Payments.Presentation.Responses;
@@ -30,6 +32,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost("api/courses/{courseId:guid}/checkout")]
+    [EnableRateLimiting(RateLimitPolicyNames.Checkout)]
     [ProducesResponseType(typeof(CheckoutResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]

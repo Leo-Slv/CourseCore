@@ -193,3 +193,5 @@ The API exposes:
 ```
 
 `/health/live` is the only endpoint intended for public exposure and always returns aggregate status only. `/health/ready` validates database connectivity and `/health` aggregates checks; both must be restricted by the private network or reverse proxy. They return component names and durations only in Development, and aggregate status only in Production.
+
+Protecao contra abuso (bloqueio de login por conta e limites por usuario): `Docs/abuse-protection.md`.

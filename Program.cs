@@ -129,9 +129,10 @@ app.UseRouting();
 
 app.UseCors(CorsPolicyName);
 
-app.UseRateLimiter();
-
 app.UseAuthentication();
+
+// After authentication so per-user limits can identify the caller.
+app.UseRateLimiter();
 
 app.UseAuthorization();
 

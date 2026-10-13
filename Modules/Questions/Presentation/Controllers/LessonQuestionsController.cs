@@ -1,3 +1,5 @@
+using CourseCore.Api.Shared.Presentation.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Questions.Application.UseCases;
@@ -64,6 +66,7 @@ public class LessonQuestionsController : ControllerBase
     }
 
     [HttpPost("lessons/{lessonId:guid}")]
+    [EnableRateLimiting(RateLimitPolicyNames.UserContent)]
     [ProducesResponseType(typeof(LessonQuestionResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

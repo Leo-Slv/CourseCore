@@ -1,3 +1,5 @@
+using CourseCore.Api.Shared.Presentation.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using CourseCore.Api.Modules.Access.Application.UseCases;
 using CourseCore.Api.Modules.Access.Presentation.Presenters;
 using CourseCore.Api.Modules.Access.Presentation.Requests;
@@ -45,6 +47,7 @@ public class AccessRequestsController : ControllerBase
     }
 
     [HttpPost("")]
+    [EnableRateLimiting(RateLimitPolicyNames.UserContent)]
     [ProducesResponseType(typeof(AccessRequestResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

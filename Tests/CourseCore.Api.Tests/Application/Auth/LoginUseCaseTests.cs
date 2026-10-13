@@ -1,4 +1,5 @@
 using CourseCore.Api.Modules.Auth.Application.DTOs;
+using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Modules.Auth.Application.Services;
 using CourseCore.Api.Modules.Auth.Application.UseCases;
 using CourseCore.Api.Modules.Auth.Infrastructure.Security;
@@ -108,6 +109,92 @@ public class LoginUseCaseTests
         }));
     }
 
+    private static LoginInput Attempt(string password, string email = "user@coursecore.local")
+    {
+        return new LoginInput { Email = email, Password = password };
+    }
+
+    private static async Task FailRepeatedlyAsync(LoginFixture fixture, int times, string email = "user@coursecore.local")
+    {
+        for (var i = 0; i < times; i++)
+        {
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => fixture.UseCase.ExecuteAsync(Attempt("wrong", email)));
+        }
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_AfterFiveFailures_ShouldRejectEvenTheCorrectPasswordWithRetryAfter()
+    {
+        var fixture = CreateFixture();
+        await FailRepeatedlyAsync(fixture, 5);
+
+        var exception = await Assert.ThrowsAsync<TooManyRequestsException>(
+            () => fixture.UseCase.ExecuteAsync(Attempt("password")));
+
+        Assert.True(exception.RetryAfter > TimeSpan.Zero);
+        Assert.True(exception.RetryAfter <= TimeSpan.FromMinutes(15));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenLocked_ShouldNotEvenCheckThePassword()
+    {
+        var fixture = CreateFixture();
+        await FailRepeatedlyAsync(fixture, 5);
+        var checksBefore = fixture.PasswordHasher.VerifyCalls + fixture.PasswordHasher.VerifyDummyCalls;
+
+        await Assert.ThrowsAsync<TooManyRequestsException>(() => fixture.UseCase.ExecuteAsync(Attempt("password")));
+
+        Assert.Equal(checksBefore, fixture.PasswordHasher.VerifyCalls + fixture.PasswordHasher.VerifyDummyCalls);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_AfterTheLockoutExpires_ShouldAcceptTheCorrectPasswordAgain()
+    {
+        var fixture = CreateFixture();
+        await FailRepeatedlyAsync(fixture, 5);
+
+        fixture.Time.Advance(TimeSpan.FromMinutes(16));
+        var output = await fixture.UseCase.ExecuteAsync(Attempt("password"));
+
+        Assert.Equal("access-token-1", output.Token.AccessToken);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_AFewFailuresThenSuccess_ShouldResetTheCounter()
+    {
+        var fixture = CreateFixture();
+        await FailRepeatedlyAsync(fixture, 4);
+        await fixture.UseCase.ExecuteAsync(Attempt("password"));
+
+        // Four more failures would have locked the account without the reset (4 + 4 > 5).
+        await FailRepeatedlyAsync(fixture, 4);
+        var output = await fixture.UseCase.ExecuteAsync(Attempt("password"));
+
+        Assert.NotNull(output);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_UnknownEmails_AreThrottledToo_SoLockoutDoesNotRevealWhichAccountsExist()
+    {
+        var fixture = CreateFixture();
+        await FailRepeatedlyAsync(fixture, 5, "nobody@coursecore.local");
+
+        await Assert.ThrowsAsync<TooManyRequestsException>(
+            () => fixture.UseCase.ExecuteAsync(Attempt("anything", "nobody@coursecore.local")));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_LockingOneAccount_ShouldNotAffectAnotherOne()
+    {
+        var fixture = CreateFixture();
+        await FailRepeatedlyAsync(fixture, 5, "other@coursecore.local");
+
+        var output = await fixture.UseCase.ExecuteAsync(Attempt("password"));
+
+        Assert.NotNull(output);
+    }
+
     private static LoginFixture CreateFixture(bool addUser = true, bool userActive = true)
     {
         var users = new FakeUserRepository();
@@ -124,6 +211,8 @@ public class LoginUseCaseTests
         }
 
         var passwordHasher = new FakePasswordHasher();
+        var time = new ManualTimeProvider();
+        var tracker = new InMemoryLoginAttemptTracker(Options.Create(new LoginLockoutOptions()), time);
         var sessionIssuer = new SessionIssuer(
             roles,
             new FakeTokenService(),
@@ -141,9 +230,10 @@ public class LoginUseCaseTests
             sessionIssuer,
             unitOfWork,
             auditLogs,
+            tracker,
             NullLogger<LoginUseCase>.Instance);
 
-        return new LoginFixture(useCase, refreshTokens, unitOfWork, auditLogs, passwordHasher);
+        return new LoginFixture(useCase, refreshTokens, unitOfWork, auditLogs, passwordHasher, tracker, time);
     }
 
     private sealed record LoginFixture(
@@ -151,5 +241,7 @@ public class LoginUseCaseTests
         FakeRefreshTokenRepository RefreshTokens,
         FakeUnitOfWork UnitOfWork,
         FakeAuditLogService AuditLogs,
-        FakePasswordHasher PasswordHasher);
+        FakePasswordHasher PasswordHasher,
+        InMemoryLoginAttemptTracker Tracker,
+        ManualTimeProvider Time);
 }

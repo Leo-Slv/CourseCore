@@ -1,3 +1,5 @@
+using CourseCore.Api.Shared.Presentation.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Courses.Application.UseCases;
 using CourseCore.Api.Modules.Courses.Presentation.Presenters;
@@ -44,6 +46,7 @@ public class CourseModulesController : ControllerBase
     }
 
     [HttpPost("{moduleId:guid}/image-upload-url")]
+    [EnableRateLimiting(RateLimitPolicyNames.Upload)]
     [ProducesResponseType(typeof(UploadUrlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

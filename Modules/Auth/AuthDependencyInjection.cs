@@ -28,6 +28,9 @@ public static class AuthDependencyInjection
         services.Configure<AuthResponseOptions>(configuration.GetSection("Auth"));
         services.Configure<FrontendOptions>(configuration.GetSection("Frontend"));
         services.Configure<RefreshTokenCookieOptions>(configuration.GetSection("Auth:RefreshTokenCookie"));
+        services.Configure<LoginLockoutOptions>(configuration.GetSection(LoginLockoutOptions.SectionName));
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<ILoginAttemptTracker, InMemoryLoginAttemptTracker>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<IPasswordPolicy, PasswordPolicy>();

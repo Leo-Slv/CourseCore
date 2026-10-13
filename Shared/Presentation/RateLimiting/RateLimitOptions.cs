@@ -2,6 +2,34 @@ namespace CourseCore.Api.Shared.Presentation.RateLimiting;
 
 public sealed class RateLimitOptions
 {
+    /// <summary>Safety net for every request, per signed-in user (or per IP when anonymous).</summary>
+    public RateLimitPolicyOptions Global { get; init; } = new()
+    {
+        PermitLimit = 300,
+        WindowSeconds = 60
+    };
+
+    /// <summary>Creating a Stripe Checkout session (costs a call to Stripe).</summary>
+    public RateLimitPolicyOptions Checkout { get; init; } = new()
+    {
+        PermitLimit = 5,
+        WindowSeconds = 60
+    };
+
+    /// <summary>Requests for pre-signed upload URLs.</summary>
+    public RateLimitPolicyOptions Upload { get; init; } = new()
+    {
+        PermitLimit = 10,
+        WindowSeconds = 60
+    };
+
+    /// <summary>Content a student posts: questions, testimonials, access requests.</summary>
+    public RateLimitPolicyOptions UserContent { get; init; } = new()
+    {
+        PermitLimit = 10,
+        WindowSeconds = 60
+    };
+
     public RateLimitPolicyOptions Login { get; init; } = new()
     {
         PermitLimit = 5,

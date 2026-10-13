@@ -6,6 +6,7 @@ using CourseCore.Api.Modules.Auth.Application.Services;
 using CourseCore.Api.Modules.Auth.Domain.Repositories;
 using CourseCore.Api.Modules.Users.Domain.Repositories;
 using CourseCore.Api.Shared.Application.Contracts;
+using CourseCore.Api.Shared.Application.Exceptions;
 using CourseCore.Api.Shared.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +20,7 @@ public class LoginUseCase
     private readonly SessionIssuer _sessionIssuer;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogs;
+    private readonly ILoginAttemptTracker _attempts;
     private readonly ILogger<LoginUseCase> _logger;
 
     public LoginUseCase(
@@ -28,6 +30,7 @@ public class LoginUseCase
         SessionIssuer sessionIssuer,
         IUnitOfWork unitOfWork,
         IAuditLogService auditLogs,
+        ILoginAttemptTracker attempts,
         ILogger<LoginUseCase> logger)
     {
         _users = users;
@@ -36,6 +39,7 @@ public class LoginUseCase
         _sessionIssuer = sessionIssuer;
         _unitOfWork = unitOfWork;
         _auditLogs = auditLogs;
+        _attempts = attempts;
         _logger = logger;
     }
 
@@ -50,6 +54,16 @@ public class LoginUseCase
         }
 
         var email = Email.Create(input.Email);
+
+        // Checked before the password so a locked account cannot be unlocked by guessing right.
+        if (_attempts.GetRemainingLockout(email.Value) is { } retryAfter)
+        {
+            _logger.LogWarning("Login attempt blocked: the account is temporarily locked after repeated failures.");
+            throw new TooManyRequestsException(
+                "Too many failed login attempts. Try again later.",
+                retryAfter);
+        }
+
         var user = await _users.FindByEmailAsync(email, cancellationToken);
         var passwordIsValid = user is null
             ? _passwordHasher.VerifyDummy(input.Password)
@@ -57,9 +71,12 @@ public class LoginUseCase
 
         if (user is null || !user.Active || !passwordIsValid)
         {
+            _attempts.RegisterFailure(email.Value);
             _logger.LogWarning("Login attempt rejected with invalid credentials.");
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
+
+        _attempts.RegisterSuccess(email.Value);
 
         var session = await _sessionIssuer.BuildAsync(user, cancellationToken);
 

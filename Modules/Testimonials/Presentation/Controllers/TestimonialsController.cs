@@ -1,3 +1,5 @@
+using CourseCore.Api.Shared.Presentation.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using CourseCore.Api.Modules.Auth.Application.Constants;
 using CourseCore.Api.Modules.Media.Application.Services;
 using CourseCore.Api.Modules.Testimonials.Application.UseCases;
@@ -49,6 +51,7 @@ public class TestimonialsController : ControllerBase
     }
 
     [HttpPost("mine")]
+    [EnableRateLimiting(RateLimitPolicyNames.UserContent)]
     [ProducesResponseType(typeof(TestimonialResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]

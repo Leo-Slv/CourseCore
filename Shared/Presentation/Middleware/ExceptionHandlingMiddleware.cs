@@ -60,6 +60,12 @@ public sealed class ExceptionHandlingMiddleware
                 correlationId);
         }
 
+        if (exception is TooManyRequestsException tooMany)
+        {
+            context.Response.Headers["Retry-After"] = Math.Ceiling(tooMany.RetryAfter.TotalSeconds)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = error.StatusCode;
 
@@ -87,6 +93,9 @@ public sealed class ExceptionHandlingMiddleware
             NotFoundException => new ErrorDescriptor(
                 StatusCodes.Status404NotFound,
                 "Not Found"),
+            TooManyRequestsException => new ErrorDescriptor(
+                StatusCodes.Status429TooManyRequests,
+                "Too Many Requests"),
             ConflictException => new ErrorDescriptor(
                 StatusCodes.Status409Conflict,
                 "Conflict"),
