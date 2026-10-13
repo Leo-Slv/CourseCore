@@ -55,6 +55,8 @@ The CI does not run EF Core migrations and does not execute:
 dotnet ef database update
 ```
 
+Delivery to production is described in `Docs/ci-cd.md`.
+
 Migration execution must remain a controlled deployment operation, not part of basic validation.
 
 The current CI also does not start PostgreSQL and does not apply generated SQL scripts. A future deployment workflow may generate an idempotent migration script as an artifact:

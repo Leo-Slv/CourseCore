@@ -74,7 +74,7 @@ cd ~/coursecore && cp .env.example .env && chmod 600 .env && nano .env
 
 ## 5. Imagem da API
 
-O workflow `.github/workflows/publish-image.yml` publica `ghcr.io/<owner>/coursecore` ao criar uma tag `v*` (ou manualmente em Actions). Se o pacote ficar privado, na EC2 faca `docker login ghcr.io` com um PAT `read:packages`; ou torne o pacote publico (a imagem nao contem segredos).
+A imagem e publicada pelo workflow `.github/workflows/cd.yml` (veja `Docs/ci-cd.md`): a cada merge na master com CI verde (`sha-<7>` e `latest`) e em tags `v*`. Se o pacote ficar privado, na EC2 faca `docker login ghcr.io` com um PAT `read:packages`; ou torne o pacote publico (a imagem nao contem segredos).
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0

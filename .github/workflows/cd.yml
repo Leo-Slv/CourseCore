@@ -1,0 +1,185 @@
+name: CourseCore CD
+
+# Continuous delivery to the AWS EC2 host (Docker Compose + Caddy) and Neon.
+#
+#   CI green on master ──► image (GHCR) ──► migrations ──► deploy ──► smoke test
+#                                              │              │
+#                                  both wait for approval in the `production` environment
+#
+# Setup (GitHub → Settings → Environments → production): see Docs/ci-cd.md.
+on:
+  workflow_run:
+    workflows: ["CourseCore CI"]
+    types: [completed]
+    branches: [master, main]
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  # A failed CI run must never reach production.
+  image:
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      ref: ${{ steps.ref.outputs.ref }}
+      sha: ${{ steps.ref.outputs.sha }}
+
+    steps:
+      - name: Resolve what is being released
+        id: ref
+        run: |
+          sha="${{ github.event.workflow_run.head_sha || github.sha }}"
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "ref=ghcr.io/${owner}/coursecore:sha-${sha:0:7}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout the tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/coursecore
+          tags: |
+            type=sha
+            type=ref,event=tag
+            type=raw,value=latest
+
+      - name: Build and push (final stage)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: final
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Always produces the reviewed, idempotent SQL. It is only applied to Neon
+  # when the repository variable APPLY_MIGRATIONS is "true", and only after the
+  # `production` environment approval (take a Neon branch/snapshot before approving).
+  migrations:
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+      - name: Checkout the tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.image.outputs.sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Generate idempotent migration script
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.9
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          mkdir -p artifacts/migrations
+          dotnet ef migrations script --idempotent \
+            --context CourseCoreDbContext \
+            --output artifacts/migrations/coursecore-migration.sql
+
+      - name: Upload migration script
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-script
+          path: artifacts/migrations/coursecore-migration.sql
+
+      - name: Apply migrations to Neon
+        if: vars.APPLY_MIGRATIONS == 'true'
+        env:
+          # Direct (non-pooled) Neon connection string.
+          NEON_DIRECT_CONNECTION: ${{ secrets.NEON_DIRECT_CONNECTION }}
+        run: |
+          if [ -z "$NEON_DIRECT_CONNECTION" ]; then
+            echo "::error::Secret NEON_DIRECT_CONNECTION is not set in the production environment"
+            exit 1
+          fi
+          psql "$NEON_DIRECT_CONNECTION" -v ON_ERROR_STOP=1 -f artifacts/migrations/coursecore-migration.sql
+
+  deploy:
+    needs: [image, migrations]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+      - name: Checkout (deploy script only)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.image.outputs.sha }}
+          sparse-checkout: deploy/aws
+
+      - name: Prepare SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy on the EC2 host (with automatic rollback)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          IMAGE_REF: ${{ needs.image.outputs.ref }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "$SSH_USER@$SSH_HOST" 'bash -s' -- "$IMAGE_REF" < deploy/aws/deploy.sh
+
+      - name: Smoke test through the public URL
+        env:
+          API_HOST: ${{ vars.API_HOST }}
+        run: |
+          if [ -z "$API_HOST" ]; then
+            echo "::warning::Variable API_HOST is not set; skipping the public smoke test"
+            exit 0
+          fi
+          for attempt in $(seq 1 12); do
+            if curl -fsS --max-time 10 "https://${API_HOST}/health/ready" > /dev/null; then
+              echo "https://${API_HOST}/health/ready is up"
+              exit 0
+            fi
+            echo "attempt $attempt failed, retrying..."
+            sleep 10
+          done
+          echo "::error::https://${API_HOST}/health/ready did not respond"
+          exit 1
