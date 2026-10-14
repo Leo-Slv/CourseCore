@@ -272,7 +272,7 @@ public class AuthController : ControllerBase
             refreshToken,
             cancellationToken);
 
-        AppendRefreshTokenCookie(output);
+        AppendRefreshTokenCookie(output, rememberMe: !_refreshTokenCookieService.IsSessionOnly(Request));
 
         return Ok(AuthPresenter.ToResponse(output, ShouldExposeRefreshTokenInBody()));
     }

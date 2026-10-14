@@ -6,5 +6,7 @@ public interface IRefreshTokenCookieService
 
     string? Read(HttpRequest request);
 
+    bool IsSessionOnly(HttpRequest request);
+
     void Delete(HttpResponse response);
 }

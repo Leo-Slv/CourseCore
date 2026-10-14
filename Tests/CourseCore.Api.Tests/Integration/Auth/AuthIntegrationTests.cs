@@ -83,6 +83,41 @@ public class AuthIntegrationTests : IClassFixture<CourseCoreApiFactory>
     }
 
     [Fact]
+    public async Task RefreshToken_WhenSessionWasStartedWithoutRememberMe_ShouldKeepCookieAsSessionCookie()
+    {
+        using var client = CreateClient();
+        var login = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = CourseCoreApiFactory.AdminEmail,
+            password = CourseCoreApiFactory.AdminPassword,
+            rememberMe = false
+        });
+        var loginAuth = await ReadAuthTokenAsync(login);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh-token")
+        {
+            Content = JsonContent.Create(new { refreshToken = string.Empty })
+        };
+        request.Headers.Add("Cookie", $"{RefreshTokenCookieName}={loginAuth.RefreshToken}; {RefreshTokenCookieName}_session=1");
+        var refresh = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        Assert.DoesNotContain("max-age", GetSetCookieHeader(refresh), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WhenSessionWasStartedWithRememberMe_ShouldKeepCookiePersistent()
+    {
+        using var client = CreateClient();
+        var login = await LoginAsync(client);
+
+        var refresh = await PostWithRefreshCookieAsync(client, "/api/auth/refresh-token", login.RefreshToken);
+
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        Assert.Contains("max-age", GetSetCookieHeader(refresh), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Login_WhenProduction_ShouldSetSecureCookieAndNotReturnRefreshTokenInBody()
     {
         SetProductionEnvironmentVariables();

@@ -23,6 +23,22 @@ public sealed class RefreshTokenCookieService : IRefreshTokenCookieService
             GetCookieName(),
             refreshToken,
             BuildCookieOptions(rememberMe));
+
+        // A session cookie carries no lifetime of its own, so a marker remembers the choice and
+        // keeps refresh-token rotation from turning it into a persistent cookie.
+        if (rememberMe)
+        {
+            response.Cookies.Delete(GetSessionOnlyCookieName(), BuildDeleteCookieOptions());
+        }
+        else
+        {
+            response.Cookies.Append(GetSessionOnlyCookieName(), "1", BuildCookieOptions(rememberMe: false));
+        }
+    }
+
+    public bool IsSessionOnly(HttpRequest request)
+    {
+        return request.Cookies.ContainsKey(GetSessionOnlyCookieName());
     }
 
     public string? Read(HttpRequest request)
@@ -35,6 +51,12 @@ public sealed class RefreshTokenCookieService : IRefreshTokenCookieService
     public void Delete(HttpResponse response)
     {
         response.Cookies.Delete(GetCookieName(), BuildDeleteCookieOptions());
+        response.Cookies.Delete(GetSessionOnlyCookieName(), BuildDeleteCookieOptions());
+    }
+
+    private string GetSessionOnlyCookieName()
+    {
+        return $"{GetCookieName()}_session";
     }
 
     private CookieOptions BuildCookieOptions(bool rememberMe)
